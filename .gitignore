@@ -23,3 +23,15 @@
 /app/Config/core.php
 /app/Config/database.php
 /vendors/*
+
+# AI 
+CLAUDE.md
+AGENTS.md
+PRODUCT.md
+DESIGN.md
+HANDOVER.md
+.claude/
+.mcp.json
+/docs/plan
+**/.envrc
+/.obeya/
