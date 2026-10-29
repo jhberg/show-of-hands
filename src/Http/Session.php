@@ -46,14 +46,9 @@ final class Session
         }
         session_name('soh_session');
         session_save_path($this->savePath);
-        session_set_cookie_params([
-            'lifetime' => $this->lifetimeSeconds,
-            'path' => '/',
-            'secure' => $this->secure,
-            'httponly' => true,
-            'samesite' => 'Lax',
-        ]);
-        session_start([
+        $cookie = ['path' => '/', 'secure' => $this->secure, 'httponly' => true, 'samesite' => 'Lax'];
+        session_set_cookie_params(['lifetime' => $this->lifetimeSeconds] + $cookie);
+        $started = session_start([
             'use_strict_mode' => true,
             'use_only_cookies' => true,
             'gc_maxlifetime' => $this->lifetimeSeconds,
@@ -63,6 +58,15 @@ final class Session
             // Signed-in responses send their own Cache-Control: no-store.
             'cache_limiter' => '',
         ]);
+        if (!$started) {
+            // Without this, an unwritable session directory shows up only as every form "expiring".
+            throw new \RuntimeException("Cannot start the session in {$this->savePath}.");
+        }
+        // PHP sends the cookie only for a new session. Renewing it on every visit makes the
+        // lifetime count from the member's last visit, not from sign-in.
+        if (($_COOKIE[session_name()] ?? null) === session_id()) {
+            setcookie((string) session_name(), (string) session_id(), ['expires' => time() + $this->lifetimeSeconds] + $cookie);
+        }
     }
 
     public function get(string $key): mixed
