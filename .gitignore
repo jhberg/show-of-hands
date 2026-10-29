@@ -35,3 +35,4 @@ HANDOVER.md
 /docs/plan
 **/.envrc
 /.obeya/
+.DS_Store
