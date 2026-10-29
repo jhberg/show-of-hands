@@ -1,0 +1,5 @@
+<span class="wm">
+    {%- for run in brand.wordmarkRuns -%}
+        {%- if run.accent -%}<i>{{ run.text }}</i>{%- else -%}{{ run.text }}{%- endif -%}
+    {%- endfor -%}
+</span>

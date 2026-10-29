@@ -1,0 +1,2 @@
+# The document root is public/. Should a host serve the whole folder anyway, nothing in data/ goes out.
+Require all denied

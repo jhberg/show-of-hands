@@ -1,0 +1,9 @@
+services:
+  app:
+    build: docker
+    volumes:
+      - .:/app
+    ports:
+      # Local only: the dev login signs anyone in as any member.
+      - "127.0.0.1:${APP_PORT:-8080}:8080"
+    command: composer serve

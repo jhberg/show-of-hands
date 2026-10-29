@@ -1,30 +1,22 @@
-# CakePHP 3
+# Dependencies
+/vendor/
+/node_modules/
 
-/vendor/*
-/config/app.php
+# Instance files: each choir's own configuration, wording, and branding
+/config/config.php
+/config/translations/
+/public/brand/
 
-/tmp/cache/models/*
-!/tmp/cache/models/empty
-/tmp/cache/persistent/*
-!/tmp/cache/persistent/empty
-/tmp/cache/views/*
-!/tmp/cache/views/empty
-/tmp/sessions/*
-!/tmp/sessions/empty
-/tmp/tests/*
-!/tmp/tests/empty
+# Runtime data: database, backups, sessions, logs, caches
+/data/*
+!/data/.gitkeep
+!/data/.htaccess
 
-/logs/*
-!/logs/empty
+# Test and tool output
+/tests/e2e/results/
+/.twig-cs-fixer.cache
 
-# CakePHP 2
-
-/app/tmp/*
-/app/Config/core.php
-/app/Config/database.php
-/vendors/*
-
-# AI 
+# AI
 CLAUDE.md
 AGENTS.md
 PRODUCT.md

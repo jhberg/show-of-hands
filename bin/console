@@ -1,0 +1,17 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+use ShowOfHands\Infrastructure\Console\BrandCheckCommand;
+use ShowOfHands\Infrastructure\Console\TranslationCheckCommand;
+use ShowOfHands\Paths;
+use Symfony\Component\Console\Application;
+
+require dirname(__DIR__) . '/vendor/autoload.php';
+
+$paths = new Paths(dirname(__DIR__));
+$console = new Application('show-of-hands');
+$console->add(new BrandCheckCommand($paths));
+$console->add(new TranslationCheckCommand($paths));
+$console->run();

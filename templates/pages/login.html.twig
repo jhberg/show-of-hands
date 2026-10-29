@@ -1,0 +1,23 @@
+{% extends 'layout.html.twig' %}
+
+{% block body %}
+<main class="login">
+    <div class="login-lang">
+        {{ include('partials/locale_switch.html.twig') }}
+    </div>
+    {% set logo = brand_assets.logo %}
+    {% if logo %}
+        <img class="logo" src="{{ logo }}" alt="{{ brand.name }}">
+    {% else %}
+        <p class="logo-wm">{{ include('partials/wordmark.html.twig') }}</p>
+    {% endif %}
+    <h1>{{ 'app.title'|trans }}</h1>
+    <p class="lead">{{ 'login.lead'|trans({brand: brand.name}) }}</p>
+    <a class="gbtn" href="/auth/google">{{ icon('google') }}{{ 'login.google'|trans }}</a>
+    <ul class="facts">
+        <li>{{ 'login.facts.one_vote'|trans }}</li>
+        <li>{{ 'login.facts.anonymous'|trans }}</li>
+        <li>{{ 'login.facts.result'|trans }}</li>
+    </ul>
+</main>
+{% endblock %}

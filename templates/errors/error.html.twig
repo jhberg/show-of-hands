@@ -1,0 +1,33 @@
+{% extends 'layout.html.twig' %}
+
+{# Literal keys, so the translation check sees every one of them. #}
+{% set title = {
+    not_found: 'error.not_found.title'|trans,
+    forbidden: 'error.forbidden.title'|trans,
+    csrf: 'error.csrf.title'|trans,
+    server: 'error.server.title'|trans,
+}[kind] %}
+{% set text = {
+    not_found: 'error.not_found.text'|trans,
+    forbidden: 'error.forbidden.text'|trans,
+    csrf: 'error.csrf.text'|trans,
+    server: 'error.server.text'|trans,
+}[kind] %}
+
+{% block title %}{{ title }} · {{ parent() }}{% endblock %}
+
+{% block body %}
+{{ include('partials/header.html.twig') }}
+<main class="main">
+    <div class="error-page">
+        <h1>{{ title }}</h1>
+        <p class="lead">{{ text }}</p>
+        <div class="actions">
+            <a class="btn primary" href="/">{{ 'error.home'|trans }}</a>
+        </div>
+        {% if details %}
+            <pre class="details">{{ details }}</pre>
+        {% endif %}
+    </div>
+</main>
+{% endblock %}

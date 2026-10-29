@@ -1,0 +1,31 @@
+app:
+  title: Abstimmung
+  page_title: '{brand} Abstimmung'
+
+locale:
+  label: Sprache
+  de: Deutsch
+  en: English
+
+login:
+  lead: Melde dich mit deinem Google-Konto an, dem {brand}-Konto oder deinem privaten, wenn es hinterlegt ist. Abstimmen kann nur, wer in der Mitgliederliste steht.
+  google: Mit Google anmelden
+  facts:
+    one_vote: Eine Stimme pro Mitglied, geprüft über die E-Mail-Adresse.
+    anonymous: Die Stimme selbst ist anonym und bis zum Abschluss änderbar. Wer schon abgestimmt hat, ist sichtbar.
+    result: Das Ergebnis erscheint auf der Abstimmungsseite, sobald der Vorstand die Abstimmung abschließt.
+
+error:
+  home: Zur Startseite
+  not_found:
+    title: Seite nicht gefunden
+    text: Diese Seite gibt es nicht. Vielleicht ist der Link veraltet.
+  forbidden:
+    title: Kein Zugriff
+    text: Diese Seite ist für dich nicht freigegeben.
+  csrf:
+    title: Formular abgelaufen
+    text: Die Seite war zu lange offen. Lade sie neu und versuche es noch einmal.
+  server:
+    title: Etwas ist schiefgelaufen
+    text: Die Seite konnte nicht geladen werden. Versuche es gleich noch einmal. Wenn der Fehler bleibt, sag der Verwaltung Bescheid.

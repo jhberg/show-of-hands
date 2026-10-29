@@ -1,0 +1,31 @@
+app:
+  title: Voting
+  page_title: '{brand} Voting'
+
+locale:
+  label: Language
+  de: Deutsch
+  en: English
+
+login:
+  lead: 'Sign in with your Google account: your {brand} account, or your private one if it is registered. Only people on the member list can vote.'
+  google: Sign in with Google
+  facts:
+    one_vote: One vote per member, checked by email address.
+    anonymous: Your vote is anonymous and can be changed until the poll closes. Who has voted is visible.
+    result: The result appears on the poll page as soon as the board closes the poll.
+
+error:
+  home: Go to the start page
+  not_found:
+    title: Page not found
+    text: This page does not exist. The link may be out of date.
+  forbidden:
+    title: No access
+    text: This page is not open to you.
+  csrf:
+    title: Form expired
+    text: The page was open for too long. Reload it and try again.
+  server:
+    title: Something went wrong
+    text: The page could not be loaded. Try again in a moment. If the error stays, tell the admins.

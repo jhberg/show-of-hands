@@ -1,0 +1,16 @@
+<header class="top">
+    <div class="top-in">
+        <a class="brand" href="/">
+            {%- set header_logo = brand_assets.headerLogo -%}
+            {%- if header_logo -%}
+                <img class="hlogo" src="{{ header_logo }}" alt="{{ brand.name }}">
+            {%- else -%}
+                {{ include('partials/wordmark.html.twig') }}
+            {%- endif -%}
+            <small>{{ 'app.title'|trans }}</small>
+        </a>
+        <div class="user">
+            {{ include('partials/locale_switch.html.twig') }}
+        </div>
+    </div>
+</header>

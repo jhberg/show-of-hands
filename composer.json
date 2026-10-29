@@ -1,0 +1,66 @@
+{
+    "name": "show-of-hands/show-of-hands",
+    "description": "Anonymous, self-hosted voting for choirs (PHP, white-label).",
+    "type": "project",
+    "license": "Apache-2.0",
+    "require": {
+        "php": "~8.3.0",
+        "ext-intl": "*",
+        "ext-mbstring": "*",
+        "ext-openssl": "*",
+        "ext-pdo_sqlite": "*",
+        "php-di/php-di": "^7.0",
+        "slim/psr7": "^1.7",
+        "slim/slim": "^4.14",
+        "symfony/console": "^7.3",
+        "symfony/translation": "^7.3",
+        "symfony/twig-bridge": "^7.3",
+        "symfony/yaml": "^7.3",
+        "twig/twig": "^3.21"
+    },
+    "require-dev": {
+        "friendsofphp/php-cs-fixer": "^3.75",
+        "phpstan/phpstan": "^2.1",
+        "phpunit/phpunit": "^12.0",
+        "vincentlanglet/twig-cs-fixer": "^3.5"
+    },
+    "autoload": {
+        "psr-4": {
+            "ShowOfHands\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "ShowOfHands\\Tests\\": "tests/"
+        }
+    },
+    "config": {
+        "platform": {
+            "php": "8.3.0"
+        },
+        "sort-packages": true
+    },
+    "scripts": {
+        "serve": [
+            "Composer\\Config::disableProcessTimeout",
+            "php -S 0.0.0.0:8080 -t public public/index.php"
+        ],
+        "test": "phpunit",
+        "check": [
+            "phpstan analyse --no-progress --memory-limit=512M",
+            "php-cs-fixer check --diff",
+            "twig-cs-fixer lint templates",
+            "@php bin/console translation:check"
+        ],
+        "fix": [
+            "php-cs-fixer fix",
+            "twig-cs-fixer lint --fix templates"
+        ]
+    },
+    "scripts-descriptions": {
+        "serve": "Run the app on port 8080 with PHP's built-in server.",
+        "test": "Run the unit and HTTP tests.",
+        "check": "Run PHPStan, the coding standard, the Twig lint, and the translation check.",
+        "fix": "Apply the coding standard to PHP and Twig files."
+    }
+}
