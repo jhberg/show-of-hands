@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace ShowOfHands\Infrastructure\Config;
 
+use ShowOfHands\Domain\EmailAddress;
+use ShowOfHands\Domain\VoiceGroup;
 use ShowOfHands\Infrastructure\I18n\Locales;
 
 /**
@@ -101,17 +103,12 @@ final class ConfigLoader
             $lifetime = 30;
         }
 
-        $admin = $this->get($data, 'bootstrap_admin');
-        if ($admin !== null && !is_array($admin)) {
-            $this->errors[] = "bootstrap_admin must be an array with 'name', 'email', and 'group'.";
-            $admin = null;
-        }
+        $admin = $this->bootstrapAdmin($data);
 
         if ($this->errors !== []) {
             throw new ConfigException($this->path, $this->errors);
         }
 
-        /** @var array<string, mixed>|null $admin */
         return new Config(
             appUrl: $url,
             secret: $secret,
@@ -167,6 +164,28 @@ final class ConfigLoader
             fontFamily: $family === '' ? null : $family,
             fontFiles: $files,
         );
+    }
+
+    /**
+     * @param array<mixed> $data
+     */
+    private function bootstrapAdmin(array $data): ?BootstrapAdmin
+    {
+        if ($this->get($data, 'bootstrap_admin') === null) {
+            return null;
+        }
+        $name = $this->string($data, 'bootstrap_admin.name') ?? '';
+        $email = $this->string($data, 'bootstrap_admin.email') ?? '';
+        $group = $this->string($data, 'bootstrap_admin.group', '');
+        $normalized = EmailAddress::normalize($email);
+        if ($email !== '' && $normalized === null) {
+            $this->errors[] = "bootstrap_admin.email '{$email}' is not a valid email address.";
+        }
+        if ($group !== '' && preg_match(VoiceGroup::KEY_PATTERN, $group) !== 1) {
+            $this->errors[] = "bootstrap_admin.group must be a voice group key such as 'S1': up to 4 capital letters or digits.";
+        }
+
+        return $name === '' || $normalized === null ? null : new BootstrapAdmin($name, $normalized, $group === '' ? null : $group);
     }
 
     private function fontFile(mixed $entry, string $key): ?FontFile

@@ -15,6 +15,8 @@ final class Session
 
     private bool $started = false;
 
+    private string $memoryId = 'initial';
+
     private function __construct(
         private readonly bool $native,
         private readonly string $savePath = '',
@@ -52,9 +54,9 @@ final class Session
             'use_strict_mode' => true,
             'use_only_cookies' => true,
             'gc_maxlifetime' => $this->lifetimeSeconds,
-            // Many hosts set gc_probability to 0 and clean up by cron, which never sees data/sessions/.
-            'gc_probability' => 1,
-            'gc_divisor' => 100,
+            // Lazy maintenance deletes expired session files, because many hosts switch PHP's
+            // collection off and clean up by cron, which never sees data/sessions/.
+            'gc_probability' => 0,
             // Signed-in responses send their own Cache-Control: no-store.
             'cache_limiter' => '',
         ]);
@@ -84,6 +86,61 @@ final class Session
         } else {
             $this->memory[$key] = $value;
         }
+    }
+
+    /**
+     * Returns the value and removes it, for one-time values such as a flash message.
+     */
+    public function take(string $key): mixed
+    {
+        $value = $this->get($key);
+        $this->remove($key);
+
+        return $value;
+    }
+
+    public function remove(string $key): void
+    {
+        $this->start();
+        if ($this->native) {
+            unset($_SESSION[$key]);
+        } else {
+            unset($this->memory[$key]);
+        }
+    }
+
+    /**
+     * Gives the session a new id and a new CSRF token and deletes the old id, so neither
+     * an id nor a token that was known before sign-in is worth anything afterwards.
+     */
+    public function regenerate(): void
+    {
+        $this->remove('csrf');
+        if ($this->native) {
+            session_regenerate_id(true);
+        } else {
+            $this->memoryId = bin2hex(random_bytes(16));
+        }
+    }
+
+    /**
+     * Forgets everything, the CSRF token included, and continues under a new id.
+     */
+    public function clear(): void
+    {
+        $this->start();
+        if ($this->native) {
+            $_SESSION = [];
+        } else {
+            $this->memory = [];
+        }
+        $this->regenerate();
+    }
+
+    /** The in-memory session's id, so tests can see that it changed. */
+    public function memoryId(): string
+    {
+        return $this->memoryId;
     }
 
     public function csrfToken(): string

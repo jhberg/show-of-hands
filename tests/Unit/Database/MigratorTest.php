@@ -79,6 +79,26 @@ final class MigratorTest extends TestCase
         self::assertSame(1, self::scalar($copy, 'PRAGMA user_version'));
     }
 
+    public function testDatesTheBackupToTheSuccessfulMigration(): void
+    {
+        $this->migration('0001_init.sql', 'CREATE TABLE t (n INTEGER);');
+        $pdo = ConnectionFactory::open($this->dir . '/app.sqlite');
+        $this->migrator($pdo)->migrate();
+        $this->migration('0002_broken.sql', 'INSERT INTO missing VALUES (1);');
+        try {
+            $this->migrator($pdo)->migrate();
+        } catch (\RuntimeException) {
+        }
+        $backup = $this->dir . '/backup/app-v1.sqlite';
+        touch($backup, time() - 7 * 86400);
+
+        $this->migration('0002_broken.sql', 'CREATE TABLE u (n INTEGER);');
+        $this->migrator($pdo)->migrate();
+
+        clearstatcache();
+        self::assertGreaterThan(time() - 60, (int) filemtime($backup), 'Maintenance keeps the backup for a day after this success.');
+    }
+
     public function testRollsBackAFailedMigration(): void
     {
         $this->migration('0001_init.sql', 'CREATE TABLE t (n INTEGER);');

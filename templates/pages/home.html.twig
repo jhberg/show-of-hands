@@ -1,0 +1,21 @@
+{% extends 'layout.html.twig' %}
+
+{% block body %}
+{{ include('partials/header.html.twig', {active: 'home'}) }}
+<main class="main">
+    <h1>{{ 'home.greeting'|trans({name: first_name}) }}</h1>
+    <p class="lead">{{ 'home.lead'|trans }}</p>
+    <div class="sec">
+        <h2>{{ 'home.open'|trans }} <span class="chip open"><i class="dot"></i>{{ open_polls|length }}</span></h2>
+        {% if open_polls is empty %}
+            <div class="empty">{{ 'home.open_empty'|trans }}</div>
+        {% endif %}
+    </div>
+    <div class="sec">
+        <h2>{{ 'home.closed'|trans }}</h2>
+        {% if closed_polls is empty %}
+            <div class="empty">{{ 'home.closed_empty'|trans({days: retention_days}) }}</div>
+        {% endif %}
+    </div>
+</main>
+{% endblock %}

@@ -17,7 +17,7 @@ final class ErrorPageTest extends HttpTestCase
         $html = $this->body($response);
         self::assertStringContainsString('Page not found', $html);
         self::assertStringContainsString('<html lang="en">', $html);
-        self::assertStringContainsString('value="en" lang="en" aria-label="English" aria-current="true"', $html);
+        self::assertStringContainsString('value="en" lang="en" title="English" aria-current="true"', $html);
         self::assertStringContainsString('class="top"', $html);
         self::assertSame('no-store', $response->getHeaderLine('Cache-Control'));
         self::assertNotSame('', $response->getHeaderLine('Content-Security-Policy'));

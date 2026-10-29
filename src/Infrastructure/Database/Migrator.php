@@ -9,11 +9,16 @@ namespace ShowOfHands\Infrastructure\Database;
  *
  * The schema version lives in SQLite's user_version, so the check on every request
  * costs one directory listing and one pragma. Before it changes an existing schema,
- * the migrator copies the database to data/backup/. A file lock keeps two requests
- * from migrating at the same time.
+ * the migrator copies the database to data/backup/, which lazy maintenance deletes a day
+ * after the migration succeeded. A file lock keeps two requests from migrating at the same time.
  */
 final class Migrator
 {
+    public const BACKUP_DIR = 'backup';
+    /** One backup per schema version, named after the version it holds. */
+    public const BACKUP_GLOB = 'app-v*.sqlite';
+    private const BACKUP_NAME = 'app-v%d.sqlite';
+
     private const FILE_PATTERN = '/^(\d{4})_[a-z0-9_]+\.sql$/';
 
     public function __construct(
@@ -41,11 +46,13 @@ final class Migrator
             if ($pending === []) {
                 return 0;
             }
-            if ($this->version() > 0) {
-                $this->backup();
-            }
+            $backup = $this->version() > 0 ? $this->backup() : null;
             foreach ($pending as $number => $file) {
                 $this->apply($number, $file);
+            }
+            if ($backup !== null) {
+                // Lazy maintenance deletes the backup 24 hours after this moment, the successful migration.
+                touch($backup);
             }
 
             return count($pending);
@@ -114,20 +121,25 @@ final class Migrator
         }
     }
 
-    private function backup(): void
+    /**
+     * @return string the backup's path
+     */
+    private function backup(): string
     {
-        $dir = $this->dataDir . '/backup';
+        $dir = $this->dataDir . '/' . self::BACKUP_DIR;
         if (!is_dir($dir) && !mkdir($dir, 0o770, true) && !is_dir($dir)) {
             throw new \RuntimeException("Cannot create {$dir}.");
         }
         // One backup per schema version. A migration that keeps failing must not copy the database on every request.
-        $target = sprintf('%s/app-v%d.sqlite', $dir, $this->version());
+        $target = $dir . '/' . sprintf(self::BACKUP_NAME, $this->version());
         if (is_file($target)) {
-            return;
+            return $target;
         }
         // VACUUM INTO writes a consistent copy even while other connections read.
         $statement = $this->pdo->prepare('VACUUM INTO ?');
         $statement->execute([$target]);
         chmod($target, 0o600);
+
+        return $target;
     }
 }

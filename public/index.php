@@ -21,7 +21,7 @@ if (PHP_SAPI === 'cli-server') {
 
 require $root . '/vendor/autoload.php';
 
-$paths = new Paths($root);
+$paths = Paths::fromEnvironment($root);
 try {
     $config = ConfigLoader::fromFile($paths->config());
 } catch (ConfigException $e) {

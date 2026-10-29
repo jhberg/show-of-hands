@@ -9,6 +9,7 @@
         "ext-mbstring": "*",
         "ext-openssl": "*",
         "ext-pdo_sqlite": "*",
+        "league/oauth2-google": "^4.0",
         "php-di/php-di": "^7.0",
         "slim/psr7": "^1.7",
         "slim/slim": "^4.14",

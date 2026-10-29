@@ -10,6 +10,13 @@ locale:
 login:
   lead: 'Sign in with your Google account: your {brand} account, or your private one if it is registered. Only people on the member list can vote.'
   google: Sign in with Google
+  google_other: Sign in with another account
+  return_hint: After signing in, you go straight to the poll.
+  dev_login: Sign in without Google (development)
+  unknown:
+    title: This address is not registered as a member.
+    signed_in_as: Signed in as
+    hint: Please sign in with your {brand} account or the private address the admins registered.
   facts:
     one_vote: One vote per member, checked by email address.
     anonymous: Your vote is anonymous and can be changed until the poll closes. Who has voted is visible.
@@ -29,3 +36,45 @@ error:
   server:
     title: Something went wrong
     text: The page could not be loaded. Try again in a moment. If the error stays, tell the admins.
+
+nav:
+  label: Sections
+  vote: Vote
+  admin: Admin
+  logout: Sign out
+
+role:
+  board: Board
+  admin: Admin
+
+toast:
+  signed_in: Signed in as {name}.
+  signed_in_via: Signed in as {name} with {address}.
+  sign_in_failed: Sign-in did not work. Please try again.
+
+home:
+  greeting: Hello {name}
+  lead: Each poll has its own link. Open a poll to cast your vote or see where it stands.
+  open: Open
+  open_empty: No poll is open right now. You will get a link as soon as someone applies.
+  closed: Closed
+  closed_empty: '{days, plural, one {No closed poll yet. Results are deleted automatically # day after closing.} other {No closed poll yet. Results are deleted automatically # days after closing.}}'
+
+poll:
+  back: All polls
+  missing: This poll no longer exists or has not been published yet.
+
+admin:
+  polls:
+    title: Polls
+    lead: Create and publish. Each poll gets its own link. The board closes it on the poll page.
+
+dev_login:
+  kicker: Development only
+  title: Choose an account
+  lead: This page replaces the Google sign-in while app.env is dev. It signs in through the same address check as Google.
+  private: private
+  other: Other address
+  other_help: An address that belongs to no member shows the login page's error.
+  submit: Sign in
+  empty: No members yet. bin/console seed:demo adds sample data.

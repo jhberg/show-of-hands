@@ -1,0 +1,50 @@
+{% extends 'layout.html.twig' %}
+
+{% block title %}{{ 'dev_login.title'|trans }} · {{ parent() }}{% endblock %}
+
+{% block body %}
+{{ include('partials/header.html.twig') }}
+<main class="main">
+    <p class="ghead">{{ 'dev_login.kicker'|trans }}</p>
+    <h1>{{ 'dev_login.title'|trans }}</h1>
+    <p class="help">{{ 'dev_login.lead'|trans }}</p>
+    <form method="post" action="/dev-login">
+        {{ include('partials/csrf_field.html.twig') }}
+        <input type="hidden" name="return" value="{{ return }}">
+        <ul class="accts">
+            {% for account in accounts %}
+                {% for email in account.emails %}
+                    <li>
+                        <button name="email" value="{{ email }}">
+                            <span class="avatar" aria-hidden="true">{{ account.member.initials }}</span>
+                            <span class="t">
+                                <b>{{ account.member.name }}</b>
+                                <span>{{ email }}</span>
+                                {%- if loop.index0 > 0 or account.member.isBoard or account.member.isAdmin %}
+                                    <span class="chips">
+                                        {%- if loop.index0 > 0 %}<span class="chip">{{ 'dev_login.private'|trans }}</span>{% endif -%}
+                                        {%- if account.member.isBoard %}<span class="chip open">{{ 'role.board'|trans }}</span>{% endif -%}
+                                        {%- if account.member.isAdmin %}<span class="chip closed">{{ 'role.admin'|trans }}</span>{% endif -%}
+                                    </span>
+                                {%- endif %}
+                            </span>
+                        </button>
+                    </li>
+                {% endfor %}
+            {% else %}
+                <li class="empty">{{ 'dev_login.empty'|trans }}</li>
+            {% endfor %}
+        </ul>
+    </form>
+    <form class="dev-other field" method="post" action="/dev-login">
+        {{ include('partials/csrf_field.html.twig') }}
+        <input type="hidden" name="return" value="{{ return }}">
+        <label for="dev-email">{{ 'dev_login.other'|trans }}</label>
+        <div class="row">
+            <input id="dev-email" name="email" type="email" required autocomplete="off" placeholder="name@example.org">
+            <button class="btn">{{ 'dev_login.submit'|trans }}</button>
+        </div>
+        <p class="help mt-6">{{ 'dev_login.other_help'|trans }}</p>
+    </form>
+</main>
+{% endblock %}

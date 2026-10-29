@@ -8,9 +8,9 @@ Each choir runs its own copy on an ordinary PHP web space, with its own name, lo
 
 ## Requirements
 
-- PHP 8.3 with the extensions `pdo_sqlite`, `intl`, `mbstring`, and `openssl`
+- PHP 8.3 with the extensions `pdo_sqlite`, `intl`, `mbstring`, and `openssl`, plus `curl` or `allow_url_fopen` for the call to Google
 - A web space whose document root can point at the `public/` folder (for example a Plesk subdomain)
-- A Google Cloud OAuth client for the sign-in *(to come)*
+- A Google Cloud OAuth client (web application) with the redirect URI `https://<your-host>/auth/google/callback`
 
 No database server, no Node, no cron job, and no shell are needed.
 
@@ -18,9 +18,13 @@ No database server, no Node, no cron job, and no shell are needed.
 
 1. Upload the release ZIP and point the document root at `public/`.
 2. Copy `config/config.example.php` to `config/config.php` and fill in the values. Every key is documented in that file.
-3. Open the site. The first request creates the database in `data/`.
+3. Open the site. The first request creates the database in `data/`, the default voice groups, and the first member from `bootstrap_admin` with board and admin roles. Where a shell exists, `bin/console member:add` adds members as well.
 
 The app checks `config/config.php` on every request. If a value is missing or wrong, the page lists every problem with the key's name.
+
+Members sign in with Google. The app asks Google only for the account's email address and lets in whoever is on the member list with that address. Up to two addresses per member are possible, for example the choir account and a private one.
+
+Housekeeping runs on requests, at most once an hour: it deletes expired session files and the database backup that an update made, a day after the update succeeded. Hosts with cron can run `bin/console purge` instead.
 
 ## Branding
 
@@ -46,8 +50,11 @@ The dev environment runs in Docker, so the machine needs no local PHP.
 ```bash
 cp config/config.example.php config/config.php   # set app.url to http://localhost:8080, app.env to 'dev', and a secret
 docker compose run --rm app composer install
+docker compose run --rm app bin/console seed:demo # sample choir: 25 invented members in nine voice groups
 docker compose up                                 # serves http://localhost:8080
 ```
+
+With `app.env = 'dev'`, `/dev-login` signs you in as any member, or with any address to see the unknown-address error. Without a Google client in the config, the Google button leads there. The dev login answers only requests to `localhost` from loopback or from the ranges in `SHOW_OF_HANDS_DEV_PEERS`, which `compose.yaml` sets for Docker's port forwarding.
 
 Commands run inside the service:
 
@@ -56,6 +63,7 @@ docker compose run --rm app composer check        # PHPStan, coding standard, Tw
 docker compose run --rm app composer test         # unit and HTTP tests
 docker compose run --rm app composer fix          # apply the coding standard
 docker compose run --rm app bin/console brand:check
+docker compose --profile e2e up --exit-code-from e2e e2e   # Playwright journeys against a seeded copy on port 8081
 ```
 
 Set `APP_PORT` to serve on another port than 8080.

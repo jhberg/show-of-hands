@@ -4,14 +4,20 @@
 declare(strict_types=1);
 
 use ShowOfHands\Infrastructure\Console\BrandCheckCommand;
+use ShowOfHands\Infrastructure\Console\MemberAddCommand;
+use ShowOfHands\Infrastructure\Console\PurgeCommand;
+use ShowOfHands\Infrastructure\Console\SeedDemoCommand;
 use ShowOfHands\Infrastructure\Console\TranslationCheckCommand;
 use ShowOfHands\Paths;
 use Symfony\Component\Console\Application;
 
 require dirname(__DIR__) . '/vendor/autoload.php';
 
-$paths = new Paths(dirname(__DIR__));
+$paths = Paths::fromEnvironment(dirname(__DIR__));
 $console = new Application('show-of-hands');
 $console->add(new BrandCheckCommand($paths));
 $console->add(new TranslationCheckCommand($paths));
+$console->add(new MemberAddCommand($paths));
+$console->add(new SeedDemoCommand($paths));
+$console->add(new PurgeCommand($paths));
 $console->run();

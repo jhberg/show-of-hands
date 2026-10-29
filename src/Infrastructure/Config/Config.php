@@ -9,9 +9,6 @@ namespace ShowOfHands\Infrastructure\Config;
  */
 final readonly class Config
 {
-    /**
-     * @param array<string, mixed>|null $bootstrapAdmin validated by the sign-in setup, not here
-     */
     public function __construct(
         public string $appUrl,
         public string $secret,
@@ -23,12 +20,17 @@ final readonly class Config
         public ?string $workspaceDomain,
         public Brand $brand,
         public int $sessionLifetimeDays,
-        public ?array $bootstrapAdmin = null,
+        public ?BootstrapAdmin $bootstrapAdmin = null,
     ) {}
 
     public function isDev(): bool
     {
         return $this->env === 'dev';
+    }
+
+    public function hasGoogleClient(): bool
+    {
+        return $this->googleClientId !== '' && $this->googleClientSecret !== '';
     }
 
     public function isHttps(): bool

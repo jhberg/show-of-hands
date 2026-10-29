@@ -1,3 +1,4 @@
+{% set active = active|default(null) %}
 <header class="top">
     <div class="top-in">
         <a class="brand" href="/">
@@ -9,8 +10,26 @@
             {%- endif -%}
             <small>{{ 'app.title'|trans }}</small>
         </a>
-        <div class="user">
+        {% if member %}
+            <nav class="nav" aria-label="{{ 'nav.label'|trans }}">
+                <a href="/"{% if active == 'home' %} class="on" aria-current="page"{% endif %}>{{ 'nav.vote'|trans }}</a>
+                {%- if member.isAdmin %}
+                    <a href="/admin/polls"{% if active == 'admin' %} class="on" aria-current="page"{% endif %}>{{ 'nav.admin'|trans }}</a>
+                {%- endif %}
+            </nav>
+        {% endif %}
+        <div class="top-lang">
             {{ include('partials/locale_switch.html.twig') }}
         </div>
+        {% if member %}
+            <div class="user">
+                <span class="avatar" aria-hidden="true">{{ member.initials }}</span>
+                <span class="uname">{{ member.name }}</span>
+                <form class="logout" method="post" action="/logout">
+                    {{ include('partials/csrf_field.html.twig') }}
+                    <button class="btn ghost sm">{{ 'nav.logout'|trans }}</button>
+                </form>
+            </div>
+        {% endif %}
     </div>
 </header>

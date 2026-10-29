@@ -10,6 +10,13 @@ locale:
 login:
   lead: Melde dich mit deinem Google-Konto an, dem {brand}-Konto oder deinem privaten, wenn es hinterlegt ist. Abstimmen kann nur, wer in der Mitgliederliste steht.
   google: Mit Google anmelden
+  google_other: Mit einem anderen Konto anmelden
+  return_hint: Nach der Anmeldung geht es direkt zur Abstimmung.
+  dev_login: Ohne Google anmelden (Entwicklung)
+  unknown:
+    title: Diese Adresse ist nicht als Mitglied hinterlegt.
+    signed_in_as: Angemeldet mit
+    hint: Bitte mit dem {brand}-Konto oder der bei der Verwaltung hinterlegten privaten Adresse anmelden.
   facts:
     one_vote: Eine Stimme pro Mitglied, geprüft über die E-Mail-Adresse.
     anonymous: Die Stimme selbst ist anonym und bis zum Abschluss änderbar. Wer schon abgestimmt hat, ist sichtbar.
@@ -29,3 +36,45 @@ error:
   server:
     title: Etwas ist schiefgelaufen
     text: Die Seite konnte nicht geladen werden. Versuche es gleich noch einmal. Wenn der Fehler bleibt, sag der Verwaltung Bescheid.
+
+nav:
+  label: Bereiche
+  vote: Abstimmen
+  admin: Verwaltung
+  logout: Abmelden
+
+role:
+  board: Vorstand
+  admin: Verwaltung
+
+toast:
+  signed_in: Angemeldet als {name}.
+  signed_in_via: Angemeldet als {name} über {address}.
+  sign_in_failed: Die Anmeldung hat nicht geklappt. Bitte versuche es noch einmal.
+
+home:
+  greeting: Hallo {name}
+  lead: Jede Abstimmung hat einen eigenen Link. Öffne die Abstimmung, um die Stimme abzugeben oder den Stand zu sehen.
+  open: Offen
+  open_empty: Zurzeit ist keine Abstimmung offen. Du bekommst einen Link, sobald es eine Bewerbung gibt.
+  closed: Abgeschlossen
+  closed_empty: '{days, plural, one {Noch keine abgeschlossene Abstimmung. Ergebnisse werden # Tag nach dem Abschluss automatisch gelöscht.} other {Noch keine abgeschlossene Abstimmung. Ergebnisse werden # Tage nach dem Abschluss automatisch gelöscht.}}'
+
+poll:
+  back: Alle Abstimmungen
+  missing: Diese Abstimmung gibt es nicht mehr oder sie ist noch nicht freigeschaltet.
+
+admin:
+  polls:
+    title: Abstimmungen
+    lead: Anlegen und freischalten. Jede Abstimmung bekommt einen eigenen Link. Abgeschlossen wird vom Vorstand auf der Abstimmungsseite.
+
+dev_login:
+  kicker: Nur in der Entwicklung
+  title: Konto auswählen
+  lead: Diese Seite ersetzt die Google-Anmeldung, solange app.env auf dev steht. Sie meldet über dieselbe Adressprüfung an wie Google.
+  private: privat
+  other: Andere Adresse
+  other_help: Eine Adresse, die keinem Mitglied gehört, zeigt die Fehlermeldung der Anmeldeseite.
+  submit: Anmelden
+  empty: Noch keine Mitglieder. bin/console seed:demo legt Beispieldaten an.

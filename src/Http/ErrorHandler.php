@@ -7,22 +7,20 @@ namespace ShowOfHands\Http;
 use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
+use ShowOfHands\Infrastructure\Log\ErrorLog;
 use Slim\Exception\HttpForbiddenException;
 use Slim\Exception\HttpMethodNotAllowedException;
 use Slim\Exception\HttpNotFoundException;
 
 /**
  * Renders 404, 403, and 500 as pages in the app's style, and logs unexpected errors.
- *
- * Log lines name the exception and where it happened. They never contain request data,
- * so a ballot's choice cannot end up in a log.
  */
 final readonly class ErrorHandler
 {
     public function __construct(
         private Renderer $renderer,
         private ResponseFactoryInterface $responses,
-        private string $logFile,
+        private ErrorLog $log,
         private bool $showDetails,
     ) {}
 
@@ -35,7 +33,7 @@ final readonly class ErrorHandler
             default => [500, 'server'],
         };
         if ($status === 500) {
-            $this->log($error);
+            $this->log->error($error);
         }
 
         try {
@@ -44,23 +42,11 @@ final readonly class ErrorHandler
                 'details' => $this->showDetails && $status === 500 ? (string) $error : null,
             ], $status);
         } catch (\Throwable $renderError) {
-            $this->log($renderError);
+            $this->log->error($renderError);
             $response = $this->responses->createResponse($status)->withHeader('Content-Type', 'text/plain; charset=utf-8');
             $response->getBody()->write($status === 500 ? 'Internal error.' : 'Error ' . $status . '.');
 
             return $response;
-        }
-    }
-
-    private function log(\Throwable $error): void
-    {
-        $dir = dirname($this->logFile);
-        if (!is_dir($dir)) {
-            @mkdir($dir, 0o770, true);
-        }
-        $line = sprintf("[%s] %s: %s at %s:%d\n", gmdate('c'), $error::class, $error->getMessage(), $error->getFile(), $error->getLine());
-        if (@file_put_contents($this->logFile, $line, FILE_APPEND | LOCK_EX) === false) {
-            error_log(rtrim($line));
         }
     }
 }

@@ -13,11 +13,11 @@ use Symfony\Component\Yaml\Yaml;
 final class TranslationCheck
 {
     /**
-     * Matches 'key'|trans in Twig and ->trans('key' in PHP.
+     * Matches 'key'|trans in Twig, and ->trans('key' and ->toast('key' in PHP.
      */
     private const USAGE_PATTERNS = [
         '/[\'"]([a-z0-9_]+(?:\.[a-z0-9_]+)+)[\'"]\s*\|\s*trans\b/',
-        '/->trans\(\s*[\'"]([a-z0-9_]+(?:\.[a-z0-9_]+)+)[\'"]/',
+        '/->(?:trans|toast)\(\s*[\'"]([a-z0-9_]+(?:\.[a-z0-9_]+)+)[\'"]/',
     ];
 
     /**

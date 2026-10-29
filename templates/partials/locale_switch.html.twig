@@ -3,6 +3,6 @@
     {{ include('partials/csrf_field.html.twig') }}
     <input type="hidden" name="return" value="{{ current_url }}">
     {%- for code in locales %}
-        <button class="lang-btn" name="locale" value="{{ code }}" lang="{{ code }}" aria-label="{{ names[code] }}"{% if code == locale %} aria-current="true"{% endif %}>{{ code|upper }}</button>
+        <button class="lang-btn" name="locale" value="{{ code }}" lang="{{ code }}" title="{{ names[code] }}"{% if code == locale %} aria-current="true"{% endif %}>{{ code|upper }}</button>
     {%- endfor %}
 </form>

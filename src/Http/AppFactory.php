@@ -9,19 +9,35 @@ use function DI\autowire;
 use DI\Container;
 use DI\ContainerBuilder;
 use Psr\Http\Message\ResponseFactoryInterface;
+use ShowOfHands\Http\Action\AdminPollsAction;
+use ShowOfHands\Http\Action\DevLoginAction;
+use ShowOfHands\Http\Action\GoogleCallbackAction;
+use ShowOfHands\Http\Action\GoogleStartAction;
 use ShowOfHands\Http\Action\HomeAction;
 use ShowOfHands\Http\Action\LocaleAction;
 use ShowOfHands\Http\Action\LoginAction;
+use ShowOfHands\Http\Action\LogoutAction;
+use ShowOfHands\Http\Action\PollAction;
 use ShowOfHands\Http\Action\ThemeAction;
 use ShowOfHands\Http\Middleware\CsrfMiddleware;
+use ShowOfHands\Http\Middleware\DatabaseMiddleware;
 use ShowOfHands\Http\Middleware\LocaleMiddleware;
-use ShowOfHands\Http\Middleware\MigrateMiddleware;
+use ShowOfHands\Http\Middleware\MemberMiddleware;
+use ShowOfHands\Http\Middleware\RequireMember;
+use ShowOfHands\Http\Middleware\RequireRole;
 use ShowOfHands\Http\Middleware\SecurityHeadersMiddleware;
+use ShowOfHands\Infrastructure\Auth\GoogleSignIn;
+use ShowOfHands\Infrastructure\Auth\LeagueGoogleSignIn;
+use ShowOfHands\Infrastructure\Clock\Clock;
+use ShowOfHands\Infrastructure\Clock\SystemClock;
 use ShowOfHands\Infrastructure\Config\BrandAssets;
 use ShowOfHands\Infrastructure\Config\Config;
 use ShowOfHands\Infrastructure\Database\ConnectionFactory;
 use ShowOfHands\Infrastructure\Database\Migrator;
 use ShowOfHands\Infrastructure\I18n\TranslatorFactory;
+use ShowOfHands\Infrastructure\Log\ErrorLog;
+use ShowOfHands\Infrastructure\Maintenance\Maintenance;
+use ShowOfHands\Infrastructure\Setup\FirstStart;
 use ShowOfHands\Infrastructure\Theme\Theme;
 use ShowOfHands\Infrastructure\Theme\ThemeBuilder;
 use ShowOfHands\Paths;
@@ -29,6 +45,7 @@ use Slim\App;
 use Slim\Factory\AppFactory as SlimAppFactory;
 use Slim\Interfaces\RouteResolverInterface;
 use Slim\Psr7\Factory\ResponseFactory;
+use Slim\Routing\RouteCollectorProxy;
 use Symfony\Bridge\Twig\Extension\TranslationExtension;
 use Symfony\Component\Translation\Translator;
 use Twig\Environment;
@@ -50,16 +67,34 @@ final class AppFactory
         $app = SlimAppFactory::createFromContainer($container);
         $container->set(RouteResolverInterface::class, $app->getRouteResolver());
 
-        $app->get('/', HomeAction::class);
+        $responses = $app->getResponseFactory();
+
         $app->get('/login', LoginAction::class);
+        $app->post('/logout', LogoutAction::class);
         $app->post('/locale', LocaleAction::class);
         $app->get(ThemeAction::PATH, ThemeAction::class);
+        if ($config->hasGoogleClient()) {
+            $app->get('/auth/google', GoogleStartAction::class);
+            $app->get(LeagueGoogleSignIn::CALLBACK_PATH, GoogleCallbackAction::class);
+        }
+        if ($config->isDev()) {
+            $app->map(['GET', 'POST'], '/dev-login', DevLoginAction::class);
+        }
+
+        $app->group('', function (RouteCollectorProxy $member) use ($responses): void {
+            $member->get('/', HomeAction::class);
+            $member->get('/polls/{id:[0-9]+}', PollAction::class);
+            $member->group('/admin', function (RouteCollectorProxy $admin): void {
+                $admin->get('/polls', AdminPollsAction::class);
+            })->add(RequireRole::admin($responses));
+        })->add(new RequireMember($responses));
 
         // Slim runs the middleware added last first. Read the list from the bottom up.
         $app->add(CsrfMiddleware::class);
+        $app->add(MemberMiddleware::class);
         $app->addRoutingMiddleware();
         $app->addBodyParsingMiddleware();
-        $app->add(MigrateMiddleware::class);
+        $app->add(DatabaseMiddleware::class);
         $errors = $app->addErrorMiddleware($config->isDev(), true, true);
         // Resolved from the container only when an error happens.
         $errors->setDefaultErrorHandler(ErrorHandler::class);
@@ -71,9 +106,11 @@ final class AppFactory
     }
 
     /**
+     * The service container, also used by bin/console.
+     *
      * @param array<string, mixed> $overrides
      */
-    private static function container(Paths $paths, Config $config, array $overrides): Container
+    public static function container(Paths $paths, Config $config, array $overrides = []): Container
     {
         $themeVersion = substr(sha1(json_encode([
             ThemeBuilder::VERSION,
@@ -90,7 +127,18 @@ final class AppFactory
             ResponseFactoryInterface::class => autowire(ResponseFactory::class),
             \PDO::class => static fn(): \PDO => ConnectionFactory::open($paths->database()),
             Migrator::class => static fn(\PDO $pdo): Migrator => new Migrator($pdo, $paths->migrations(), $paths->data()),
-            Session::class => static fn(): Session => Session::native($paths->data() . '/sessions', $config->sessionLifetimeDays, $config->isHttps()),
+            Session::class => static fn(): Session => Session::native($paths->sessions(), $config->sessionLifetimeDays, $config->isHttps()),
+            Clock::class => autowire(SystemClock::class),
+            ErrorLog::class => static fn(): ErrorLog => new ErrorLog($paths->data() . '/logs/app.log'),
+            FirstStart::class => autowire()
+                ->constructorParameter('admin', $config->bootstrapAdmin)
+                ->constructorParameter('defaultLocale', $config->defaultLocale),
+            Maintenance::class => autowire()
+                ->constructorParameter('sessionsDir', $paths->sessions())
+                ->constructorParameter('backupDir', $paths->data() . '/' . Migrator::BACKUP_DIR)
+                ->constructorParameter('sessionLifetimeDays', $config->sessionLifetimeDays),
+            GoogleSignIn::class => static fn(): GoogleSignIn => new LeagueGoogleSignIn($config->googleClientId, $config->googleClientSecret, $config->appUrl),
+            DevLoginGuard::class => static fn(): DevLoginGuard => DevLoginGuard::fromEnvironment(),
             Translator::class => static fn(): Translator => TranslatorFactory::create(
                 [$paths->translations(), $paths->translationOverrides()],
                 $config->defaultLocale,
@@ -108,15 +156,13 @@ final class AppFactory
 
                 return $twig;
             },
-            ErrorHandler::class => static fn(Renderer $renderer, ResponseFactoryInterface $responses): ErrorHandler => new ErrorHandler(
-                $renderer,
-                $responses,
-                $paths->data() . '/logs/app.log',
-                $config->isDev(),
-            ),
+            ErrorHandler::class => autowire()->constructorParameter('showDetails', $config->isDev()),
             LocaleMiddleware::class => static fn(Translator $translator): LocaleMiddleware => new LocaleMiddleware($translator, $config->defaultLocale),
             SecurityHeadersMiddleware::class => static fn(): SecurityHeadersMiddleware => new SecurityHeadersMiddleware($config->isHttps()),
-            LocaleAction::class => static fn(ReturnPath $returnPath): LocaleAction => new LocaleAction($returnPath, $config->isHttps()),
+            LocaleAction::class => autowire()->constructorParameter('https', $config->isHttps()),
+            LoginAction::class => autowire()
+                ->constructorParameter('googleConfigured', $config->hasGoogleClient())
+                ->constructorParameter('devLogin', $config->isDev()),
         ]);
         $builder->addDefinitions($overrides);
 

@@ -12,16 +12,34 @@ final readonly class Paths
     public function __construct(
         public string $root,
         public ?string $dataOverride = null,
+        public ?string $configOverride = null,
     ) {}
+
+    /**
+     * SHOW_OF_HANDS_CONFIG and SHOW_OF_HANDS_DATA point a second copy, such as the one the
+     * end-to-end tests run against, at its own config file and data directory.
+     */
+    public static function fromEnvironment(string $root): self
+    {
+        $config = getenv('SHOW_OF_HANDS_CONFIG');
+        $data = getenv('SHOW_OF_HANDS_DATA');
+
+        return new self($root, is_string($data) && $data !== '' ? $data : null, is_string($config) && $config !== '' ? $config : null);
+    }
 
     public function config(): string
     {
-        return $this->root . '/config/config.php';
+        return $this->configOverride ?? $this->root . '/config/config.php';
     }
 
     public function data(): string
     {
         return $this->dataOverride ?? $this->root . '/data';
+    }
+
+    public function sessions(): string
+    {
+        return $this->data() . '/sessions';
     }
 
     public function database(): string

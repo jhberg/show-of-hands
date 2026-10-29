@@ -18,7 +18,17 @@ final class LoginPageTest extends HttpTestCase
         self::assertStringContainsString('<html lang="de">', $html);
         self::assertStringContainsString('Mit Google anmelden', $html);
         self::assertStringContainsString('dem Example Choir-Konto', $html);
+        self::assertStringContainsString('href="/dev-login"', $html, 'Without a Google client, development signs in through the dev login.');
+    }
+
+    public function testLinksTheGoogleFlowWhenAClientIsConfigured(): void
+    {
+        $this->app = $this->createApp(prod: true);
+
+        $html = $this->body($this->request('GET', '/login'));
+
         self::assertStringContainsString('href="/auth/google"', $html);
+        self::assertStringNotContainsString('/dev-login', $html);
     }
 
     public function testRendersInTheLanguageFromTheCookie(): void

@@ -158,6 +158,30 @@ final class ConfigLoaderTest extends TestCase
         }
     }
 
+    public function testReadsTheBootstrapAdmin(): void
+    {
+        $data = self::valid();
+        $data['bootstrap_admin'] = ['name' => ' Alex Example ', 'email' => 'Alex@Example.org', 'group' => 'S1'];
+
+        $admin = ConfigLoader::fromArray($data)->bootstrapAdmin;
+
+        self::assertNotNull($admin);
+        self::assertSame(['Alex Example', 'alex@example.org', 'S1'], [$admin->name, $admin->email, $admin->group]);
+        self::assertNull(ConfigLoader::fromArray(self::valid())->bootstrapAdmin);
+    }
+
+    public function testValidatesTheBootstrapAdmin(): void
+    {
+        $data = self::valid();
+        $data['bootstrap_admin'] = ['email' => 'alex', 'group' => 'soprano'];
+
+        $errors = self::errors($data);
+
+        self::assertContains('bootstrap_admin.name is required.', $errors);
+        self::assertContains("bootstrap_admin.email 'alex' is not a valid email address.", $errors);
+        self::assertContains("bootstrap_admin.group must be a voice group key such as 'S1': up to 4 capital letters or digits.", $errors);
+    }
+
     public function testSplitsTheWordmarkIntoAccentRuns(): void
     {
         $data = self::valid();

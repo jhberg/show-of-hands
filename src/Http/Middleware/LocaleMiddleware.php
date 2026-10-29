@@ -13,11 +13,10 @@ use Symfony\Component\Translation\Translator;
 
 /**
  * Picks the request's locale: the language cookie, then the configured default.
- * A signed-in member's saved choice will come first once members exist.
+ * MemberMiddleware replaces it with a signed-in member's saved choice.
  */
 final readonly class LocaleMiddleware implements MiddlewareInterface
 {
-    public const ATTRIBUTE = 'locale';
     public const COOKIE = 'soh_locale';
 
     public function __construct(
@@ -31,6 +30,6 @@ final readonly class LocaleMiddleware implements MiddlewareInterface
         $locale = Locales::isSupported($cookie) ? $cookie : $this->defaultLocale;
         $this->translator->setLocale($locale);
 
-        return $handler->handle($request->withAttribute(self::ATTRIBUTE, $locale));
+        return $handler->handle($request);
     }
 }
