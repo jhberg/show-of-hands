@@ -1,0 +1,8 @@
+parameters:
+    level: max
+    paths:
+        - bin/console
+        - public/index.php
+        - src
+        - tests
+    tmpDir: data/cache/phpstan

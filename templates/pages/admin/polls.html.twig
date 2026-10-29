@@ -1,0 +1,15 @@
+{% extends 'layout.html.twig' %}
+
+{% block title %}{{ 'nav.admin'|trans }} · {{ parent() }}{% endblock %}
+
+{% block body %}
+{{ include('partials/header.html.twig', {active: 'admin'}) }}
+<main class="main wide">
+    <div class="page-head">
+        <div>
+            <h1>{{ 'admin.polls.title'|trans }}</h1>
+            <p class="lead">{{ 'admin.polls.lead'|trans }}</p>
+        </div>
+    </div>
+</main>
+{% endblock %}

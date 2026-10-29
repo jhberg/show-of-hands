@@ -1,0 +1,36 @@
+{% extends 'layout.html.twig' %}
+
+{% block body %}
+<main class="login">
+    <div class="login-lang">
+        {{ include('partials/locale_switch.html.twig') }}
+    </div>
+    {% set logo = brand_assets.logo %}
+    {% if logo %}
+        <img class="logo" src="{{ logo }}" alt="{{ brand.name }}">
+    {% else %}
+        <p class="logo-wm">{{ include('partials/wordmark.html.twig') }}</p>
+    {% endif %}
+    <h1>{{ 'app.title'|trans }}</h1>
+    {% if error_email %}
+        <div class="err" role="alert">
+            <b>{{ 'login.unknown.title'|trans }}</b>
+            <p class="help mt-6">{{ 'login.unknown.signed_in_as'|trans }} <span class="mono">{{ error_email }}</span>. {{ 'login.unknown.hint'|trans({brand: brand.name}) }}</p>
+        </div>
+    {% else %}
+        <p class="lead">{{ 'login.lead'|trans({brand: brand.name}) }}</p>
+    {% endif %}
+    <a class="gbtn" href="{{ google_url }}">{{ icon('google') }}{{ error_email ? 'login.google_other'|trans : 'login.google'|trans }}</a>
+    {% if returns_to_poll %}
+        <p class="help mt-12">{{ 'login.return_hint'|trans }}</p>
+    {% endif %}
+    {% if dev_login_url %}
+        <p class="help mt-12"><a href="{{ dev_login_url }}">{{ 'login.dev_login'|trans }}</a></p>
+    {% endif %}
+    <ul class="facts">
+        <li>{{ 'login.facts.one_vote'|trans }}</li>
+        <li>{{ 'login.facts.anonymous'|trans }}</li>
+        <li>{{ 'login.facts.result'|trans }}</li>
+    </ul>
+</main>
+{% endblock %}

@@ -1,0 +1,9 @@
+{% extends 'layout.html.twig' %}
+
+{% block body %}
+{{ include('partials/header.html.twig', {active: 'home'}) }}
+<main class="main">
+    <a class="back" href="/">{{ icon('arrow') }}{{ 'poll.back'|trans }}</a>
+    <div class="empty">{{ 'poll.missing'|trans }}</div>
+</main>
+{% endblock %}

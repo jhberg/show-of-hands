@@ -1,0 +1,48 @@
+services:
+  app:
+    build: docker
+    volumes:
+      - .:/app
+    ports:
+      # Local only: the dev login signs anyone in as any member.
+      - "127.0.0.1:${APP_PORT:-8080}:8080"
+    environment:
+      # Docker forwards the host's requests from the bridge gateway, not from loopback.
+      # The dev login accepts these private ranges in addition to loopback.
+      SHOW_OF_HANDS_DEV_PEERS: "172.16.0.0/12,192.168.0.0/16"
+    command: composer serve
+
+  # End-to-end tests: docker compose --profile e2e up --exit-code-from e2e e2e
+  # A seeded copy on its own config and data directory, reseeded on every start.
+  e2e-app:
+    build: docker
+    profiles: [e2e]
+    volumes:
+      - .:/app
+    environment:
+      SHOW_OF_HANDS_CONFIG: /app/tests/e2e/config.php
+      SHOW_OF_HANDS_DATA: /tmp/e2e-data
+    command: sh -c "bin/console seed:demo && php -S 0.0.0.0:8081 -t public public/index.php"
+    healthcheck:
+      test: ["CMD", "php", "-r", "exit(@file_get_contents('http://localhost:8081/login') === false ? 1 : 0);"]
+      interval: 2s
+      retries: 30
+
+  # Playwright shares the app's network namespace, so its requests come from loopback.
+  e2e:
+    image: mcr.microsoft.com/playwright:v1.64.1-noble
+    profiles: [e2e]
+    network_mode: service:e2e-app
+    depends_on:
+      e2e-app:
+        condition: service_healthy
+    working_dir: /app
+    volumes:
+      - .:/app
+      - e2e-node-modules:/app/node_modules
+    environment:
+      CI: "1"
+    command: sh -c "npm ci --no-audit --no-fund && npx playwright test"
+
+volumes:
+  e2e-node-modules:
