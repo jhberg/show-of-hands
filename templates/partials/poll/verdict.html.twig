@@ -1,0 +1,7 @@
+{#- The verdict of a closed poll in its kind's words, for the result and the home page's chip. -#}
+{%- set accepted = poll.tally.isAccepted -%}
+{%- if poll.kind.value == 'admission' -%}
+    {{ accepted ? 'result.verdict.admission_yes'|trans : 'result.verdict.admission_no'|trans }}
+{%- else -%}
+    {{ accepted ? 'result.verdict.exception_yes'|trans : 'result.verdict.exception_no'|trans }}
+{%- endif -%}

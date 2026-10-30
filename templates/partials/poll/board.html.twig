@@ -1,0 +1,21 @@
+{# The board's close. Whether the confirmation shows lives in ?confirm=close, so it works without JavaScript. #}
+<section class="board" id="board">
+    <h2>{{ 'board.title'|trans }}</h2>
+    <p class="help">{{ 'board.help'|trans }}</p>
+    {% if board.confirm %}
+        <div class="warnbox">
+            <p><b>{{ 'board.confirm_title'|trans }}</b> {{ 'board.summary'|trans({cast: turnout.castWeight, total: turnout.eligible, missing: turnout.missing|length, pending: board.pending}) }}</p>
+            <form class="row" method="post" action="/polls/{{ poll.id }}/close" hx-post="/polls/{{ poll.id }}/close" hx-target="closest main" hx-swap="outerHTML">
+                {{ include('partials/csrf_field.html.twig') }}
+                {# htmx moves the focus here after the swap, so the second tap is one key away. #}
+                <button class="btn primary" autofocus>{{ 'board.confirm'|trans }}</button>
+                <a class="btn" href="/polls/{{ poll.id }}#board" hx-get="/polls/{{ poll.id }}" hx-target="closest main" hx-swap="outerHTML">{{ 'board.cancel'|trans }}</a>
+            </form>
+        </div>
+    {% else %}
+        <form class="actions mt-12" method="get" action="/polls/{{ poll.id }}#board" hx-get="/polls/{{ poll.id }}" hx-target="closest main" hx-swap="outerHTML">
+            <input type="hidden" name="confirm" value="close">
+            <button class="btn">{{ 'board.close'|trans }}</button>
+        </form>
+    {% endif %}
+</section>

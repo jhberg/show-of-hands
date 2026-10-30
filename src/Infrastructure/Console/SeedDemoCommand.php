@@ -15,6 +15,7 @@ use ShowOfHands\Infrastructure\I18n\DayFormat;
 use ShowOfHands\Infrastructure\Persistence\BallotRepository;
 use ShowOfHands\Infrastructure\Persistence\DelegationRepository;
 use ShowOfHands\Infrastructure\Persistence\MemberRepository;
+use ShowOfHands\Infrastructure\Persistence\PollCloser;
 use ShowOfHands\Infrastructure\Persistence\PollRepository;
 use ShowOfHands\Infrastructure\Persistence\VoiceGroupRepository;
 use Symfony\Component\Console\Attribute\AsCommand;
@@ -120,7 +121,8 @@ final class SeedDemoCommand extends DatabaseCommand
     }
 
     /**
-     * The mockup's polls: two admissions at the next audition, an exception, and a draft.
+     * The mockup's polls: two admissions at the next audition, an exception, a draft, and an
+     * admission closed ten days ago. The closed one comes last, so the others keep their ids.
      *
      * @param list<int> $ids member ids in the order of MEMBERS
      */
@@ -143,6 +145,7 @@ final class SeedDemoCommand extends DatabaseCommand
         $second = $polls->add(PollKind::Admission, 'Mila Sandberg', null, 'A2', $audition->format('Y-m-d'), $texts['second_note'], PollStatus::Open, $stamp(-3, 20, 5), $stamp(-3, 20, 12));
         $exception = $polls->add(PollKind::Exception, 'Jakob Lenz', strtr($texts['question'], ['{date}' => $dayAndMonth($day(12))]), 'B1', $day(9)->format('Y-m-d'), $texts['exception_note'], PollStatus::Open, $stamp(-1, 20, 50), $stamp(-1, 21, 0));
         $draft = $polls->add(PollKind::Admission, 'Jakob Lenz', null, 'B1', $day(16)->format('Y-m-d'), '', PollStatus::Draft, $stamp(0, 9, 0));
+        $closed = $polls->add(PollKind::Admission, 'Lea Hartwig', null, 'A1', $day(-10)->format('Y-m-d'), '', PollStatus::Open, $stamp(-17, 19, 25), $stamp(-17, 19, 30));
 
         // Member numbers count from 1 in the order of MEMBERS, as in the mockup.
         $ballots = $this->service(BallotRepository::class);
@@ -150,6 +153,7 @@ final class SeedDemoCommand extends DatabaseCommand
             [$first, [1, 2, 8, 15, 20, 21], [6, 9, 17]],
             [$second, [1, 14], [19]],
             [$exception, [14, 20], []],
+            [$closed, [1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17], [18, 19, 20, 21, 22, 23, 25]],
         ] as [$poll, $yes, $no]) {
             foreach ($yes as $number) {
                 $ballots->cast($poll, $ids[$number - 1], Choice::Yes);
@@ -159,16 +163,19 @@ final class SeedDemoCommand extends DatabaseCommand
             }
         }
 
-        // The mockup's delegations in the first poll, sender then recipient.
+        // The mockup's delegations, sender then recipient.
         $delegations = $this->service(DelegationRepository::class);
-        foreach ([[4, 1], [23, 19], [12, 8]] as [$from, $to]) {
-            $refusal = $delegations->delegate($first, $ids[$from - 1], $ids[$to - 1]);
+        foreach ([[$first, 4, 1], [$first, 23, 19], [$first, 12, 8], [$closed, 3, 2]] as [$poll, $from, $to]) {
+            $refusal = $delegations->delegate($poll, $ids[$from - 1], $ids[$to - 1]);
             if ($refusal !== null) {
                 throw new \RuntimeException("The sample delegation {$from} → {$to} was refused: {$refusal->name}. Is delegation switched off in the settings?");
             }
         }
 
-        return count([$first, $second, $exception, $draft]);
+        // 17 of 25 voting rights say Yes, exactly two thirds.
+        $this->service(PollCloser::class)->close($closed, $day(-10)->setTime(21, 5));
+
+        return count([$first, $second, $exception, $draft, $closed]);
     }
 
     /** "Rosa Kühn" becomes "rosa.kuehn". */

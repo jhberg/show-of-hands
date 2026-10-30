@@ -13,7 +13,7 @@ use ShowOfHands\Paths;
 
 /**
  * While a poll is open, nothing reads the ballots table except the signed-in member's own row,
- * also when they hand their vote on, take it back, or vote again.
+ * also when they hand their vote on, take it back, or vote again. Only the close counts them.
  */
 final class BallotSecrecyTest extends HttpTestCase
 {
@@ -70,6 +70,32 @@ final class BallotSecrecyTest extends HttpTestCase
         self::assertSame(['INSERT', 'INSERT', 'DELETE', 'DELETE', 'INSERT'], array_map(static fn(array $entry): string => strtok(ltrim($entry['sql']), ' ') ?: '', $writes));
         foreach ($writes as $entry) {
             self::assertSame([$poll, $ownToken], array_slice($entry['params'], 0, 2));
+        }
+    }
+
+    public function testOnlyTheCloseReadsAllBallotsAndTheResultReadsTheTally(): void
+    {
+        $max = $this->addMember('Max Example', ['max@example.org'], board: true);
+        $lou = $this->addMember('Lou Example', ['lou@example.org']);
+        $poll = $this->addPoll();
+        $this->service(BallotRepository::class)->cast($poll, $lou, Choice::No);
+        $this->signIn('max@example.org');
+        $ownToken = $this->service(BallotToken::class)->for($poll, $max);
+        $this->request('GET', "/polls/{$poll}?confirm=close");
+
+        LoggingPdo::reset();
+        $this->request('POST', "/polls/{$poll}/close", [CsrfMiddleware::FIELD => $this->session->csrfToken()]);
+        $close = array_values(array_filter(LoggingPdo::entries(), static fn(array $entry): bool => stripos($entry['sql'], 'ballots') !== false));
+        self::assertSame(['SELECT token, choice FROM ballots WHERE poll_id = ?'], array_column($close, 'sql'));
+
+        LoggingPdo::reset();
+        $this->request('GET', "/polls/{$poll}");
+        $this->request('GET', '/');
+        foreach (LoggingPdo::entries() as $entry) {
+            if (stripos($entry['sql'], 'ballots') !== false) {
+                self::assertSame(self::OWN_BALLOT_READ, $entry['sql']);
+                self::assertSame([$poll, $ownToken], $entry['params']);
+            }
         }
     }
 }

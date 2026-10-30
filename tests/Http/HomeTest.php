@@ -23,7 +23,7 @@ final class HomeTest extends HttpTestCase
         $this->service(BallotRepository::class)->cast($early, $kim, Choice::No);
         $this->signIn('kim@example.org');
 
-        $html = $this->body($this->request('GET', '/'));
+        $html = strstr($this->body($this->request('GET', '/')), 'Abgeschlossen</h2>', true) ?: '';
 
         self::assertStringContainsString('<i class="dot"></i>4</span>', $html);
         preg_match_all('#<a href="/polls/(\d+)">#', $html, $links);

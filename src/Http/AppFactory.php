@@ -12,6 +12,7 @@ use Psr\Http\Message\ResponseFactoryInterface;
 use ShowOfHands\Domain\BallotToken;
 use ShowOfHands\Http\Action\AdminPollsAction;
 use ShowOfHands\Http\Action\BallotAction;
+use ShowOfHands\Http\Action\CloseAction;
 use ShowOfHands\Http\Action\DelegationAction;
 use ShowOfHands\Http\Action\DevLoginAction;
 use ShowOfHands\Http\Action\GoogleCallbackAction;
@@ -91,6 +92,7 @@ final class AppFactory
             $member->post('/polls/{id:[0-9]+}/ballot', BallotAction::class);
             $member->post('/polls/{id:[0-9]+}/delegation', DelegationAction::class);
             $member->post('/polls/{id:[0-9]+}/delegation/revoke', RevokeDelegationAction::class);
+            $member->post('/polls/{id:[0-9]+}/close', CloseAction::class)->add(RequireRole::board($responses));
             $member->group('/admin', function (RouteCollectorProxy $admin): void {
                 $admin->get('/polls', AdminPollsAction::class);
             })->add(RequireRole::admin($responses));
@@ -144,7 +146,8 @@ final class AppFactory
             Maintenance::class => autowire()
                 ->constructorParameter('sessionsDir', $paths->sessions())
                 ->constructorParameter('backupDir', $paths->data() . '/' . Migrator::BACKUP_DIR)
-                ->constructorParameter('sessionLifetimeDays', $config->sessionLifetimeDays),
+                ->constructorParameter('sessionLifetimeDays', $config->sessionLifetimeDays)
+                ->constructorParameter('timezone', $config->timezone),
             GoogleSignIn::class => static fn(): GoogleSignIn => new LeagueGoogleSignIn($config->googleClientId, $config->googleClientSecret, $config->appUrl),
             DevLoginGuard::class => static fn(): DevLoginGuard => DevLoginGuard::fromEnvironment(),
             Translator::class => static fn(): Translator => TranslatorFactory::create(

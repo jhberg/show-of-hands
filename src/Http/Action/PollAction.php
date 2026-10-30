@@ -12,7 +12,7 @@ use ShowOfHands\Infrastructure\Persistence\PollRepository;
 
 /**
  * The poll page that every member reaches through the poll's link. An htmx request, such as
- * opening the delegation panel, gets only <main>.
+ * opening the delegation panel or the board's confirmation, gets only <main>.
  */
 final readonly class PollAction
 {
@@ -34,7 +34,14 @@ final readonly class PollAction
         }
 
         if ($request->getHeaderLine('HX-Request') === 'true' && $request->getHeaderLine('HX-History-Restore-Request') !== 'true') {
-            return $this->page->fragment($request, $response, $poll, $member, delegationOpen: PollPage::delegationOpen($request));
+            return $this->page->fragment(
+                $request,
+                $response,
+                $poll,
+                $member,
+                delegationOpen: PollPage::delegationOpen($request),
+                confirmClose: PollPage::confirmClose($request),
+            );
         }
 
         return $this->page->page($request, $response, $poll, $member);

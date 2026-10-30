@@ -55,7 +55,10 @@ final readonly class HomeAction
                 'voted' => isset($voted[$poll->id]),
                 'delegated_to' => $firstNames[$recipients[$poll->id] ?? 0] ?? null,
             ], $open),
-            'closed_polls' => [],
+            'closed_polls' => array_map(static fn(Poll $poll): array => [
+                'poll' => $poll,
+                'group_label' => VoiceGroup::labelOf($groups, $poll->voiceGroupKey),
+            ], $this->polls->closed()),
             'retention_days' => $this->settings->retentionDays(),
         ]);
     }

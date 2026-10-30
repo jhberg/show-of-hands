@@ -62,6 +62,7 @@ toast:
     refused: Die Übertragung ist so nicht möglich. Die Seite zeigt jetzt den aktuellen Stand.
     revoked: Übertragung zurückgenommen. Dein Stimmrecht liegt wieder bei dir.
   poll_closed: Die Abstimmung ist bereits abgeschlossen.
+  close_done: Abstimmung abgeschlossen. Das Ergebnis ist jetzt sichtbar.
 
 home:
   greeting: Hallo {name}
@@ -140,6 +141,31 @@ turnout:
   delegations: Übertragene Stimmen
   pending: noch nicht abgegeben
   lock: Zwischenstände gibt es nicht. Das Ergebnis erscheint erst, wenn der Vorstand die Abstimmung abschließt.
+
+board:
+  title: Abschluss durch den Vorstand
+  help: Du bist als Vorstand hinterlegt und kannst diese Abstimmung abschließen. Danach ist keine Stimmabgabe mehr möglich, und das Ergebnis erscheint für alle Mitglieder auf dieser Seite. Ein versehentlicher Abschluss lässt sich nur von der Verwaltung zurücknehmen.
+  close: Abstimmung abschließen
+  confirm_title: Wirklich abschließen?
+  summary: '{cast} von {total} Stimmrechten sind abgegeben{missing, plural, =0 {} one {, # Mitglied fehlt noch} other {, # Mitglieder fehlen noch}}{pending, plural, =0 {} one {, # übertragene Stimme ist noch nicht abgegeben} other {, # übertragene Stimmen sind noch nicht abgegeben}}.'
+  confirm: Abschließen und Ergebnis anzeigen
+  cancel: Abbrechen
+
+result:
+  title: Ergebnis
+  verdict:
+    admission_yes: Aufgenommen
+    admission_no: Nicht aufgenommen
+    exception_yes: Ausnahme genehmigt
+    exception_no: Ausnahme abgelehnt
+  yes_share: '{percent} Ja'
+  threshold: '⅔ = {needed} Ja'
+  legend:
+    yes: '{count} Ja · {percent}'
+    no: '{count} Nein · {percent}'
+    abstained: '{count} nicht abgegeben · {percent}'
+  explanation: '{yes, plural, one {# von {total} Stimmberechtigten hat mit Ja gestimmt} other {# von {total} Stimmberechtigten haben mit Ja gestimmt}}, das sind {percent}. {needed, plural, one {Nötig ist mindestens # Ja-Stimme} other {Nötig sind mindestens # Ja-Stimmen}}, also zwei Drittel aller Stimmberechtigten. Nicht abgegebene Stimmen gelten als Enthaltung und zählen nicht als Ja. {cast} von {total} Stimmrechten wurden abgegeben{delegated, plural, =0 {} other {, # davon übertragen}}.'
+  deletion: Diese Abstimmung wird samt Ergebnis am {date} automatisch gelöscht.
 
 admin:
   polls:
