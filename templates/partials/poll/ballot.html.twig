@@ -1,0 +1,33 @@
+{% set admission = poll.kind.value == 'admission' %}
+<section class="ballot">
+    <h2>{{ 'ballot.title'|trans }}</h2>
+    <p class="q">
+        {%- if admission -%}
+            {{ 'ballot.question.admission'|trans({name: poll.subjectName}) }}
+        {%- else -%}
+            {{ poll.question ?? 'poll.question_missing'|trans }}
+        {%- endif -%}
+    </p>
+    <form method="post" action="/polls/{{ poll.id }}/ballot" hx-post="/polls/{{ poll.id }}/ballot" hx-target="closest main" hx-swap="outerHTML">
+        {{ include('partials/csrf_field.html.twig') }}
+        <div class="choices" role="group" aria-label="{{ 'ballot.group'|trans }}">
+            {% for option in ['yes', 'no'] %}
+                {% set pressed = choice is not null and choice.value == option %}
+                {# Ids let htmx keep the focus on the tapped button across the swap. #}
+                <button class="choice" id="choice-{{ option }}" name="choice" value="{{ option }}" aria-pressed="{{ pressed ? 'true' : 'false' }}">
+                    {%- if option == 'yes' -%}
+                        <span class="big">{{ 'ballot.yes'|trans }}</span><small>{{ admission ? 'ballot.sub.admission_yes'|trans : 'ballot.sub.exception_yes'|trans }}</small>
+                    {%- else -%}
+                        <span class="big">{{ 'ballot.no'|trans }}</span><small>{{ admission ? 'ballot.sub.admission_no'|trans : 'ballot.sub.exception_no'|trans }}</small>
+                    {%- endif -%}
+                    {%- if pressed %}<span class="sel">{{ icon('check') }}{{ 'ballot.yours'|trans }}</span>{% endif -%}
+                </button>
+            {% endfor %}
+        </div>
+    </form>
+    {% if choice is not null %}
+        <div class="reg">{{ icon('check') }}<span><b>{{ choice.value == 'yes' ? 'ballot.registered_yes'|trans : 'ballot.registered_no'|trans }}</b> {{ 'ballot.registered_text'|trans }}</span></div>
+    {% else %}
+        <p class="help mt-12">{{ 'ballot.hint'|trans }}</p>
+    {% endif %}
+</section>

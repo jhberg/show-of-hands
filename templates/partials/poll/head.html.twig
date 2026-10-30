@@ -1,0 +1,27 @@
+{% set admission = poll.kind.value == 'admission' %}
+<div class="vote-head">
+    <p class="kicker">{{ admission ? 'poll.kicker.admission'|trans : 'poll.kicker.exception'|trans }}</p>
+    <h1>{{ poll.subjectName }}</h1>
+    <p class="meta">
+        {{- group_label }} · {% if poll.date is null -%}
+            {{ 'poll.date_open'|trans }}
+        {%- elseif admission -%}
+            {{ 'poll.date.admission'|trans({date: poll.date|day_long}) }}
+        {%- else -%}
+            {{ 'poll.date.exception'|trans({date: poll.date|day_long}) }}
+        {%- endif -%}
+    </p>
+    {% if poll.showsQuestionInHead %}
+        <p class="note"><b>{{ poll.question ?? 'poll.question_missing'|trans }}</b></p>
+    {% endif %}
+    <div class="status">
+        {%- if poll.isOpen -%}
+            <span class="chip open"><i class="dot"></i>{{ 'poll.status.open'|trans }}</span>
+        {%- else -%}
+            <span class="chip closed">{{ 'poll.status.closed'|trans }}</span>
+        {%- endif -%}
+    </div>
+    {% if poll.note != '' %}
+        <p class="note">{{ poll.note }}</p>
+    {% endif %}
+</div>

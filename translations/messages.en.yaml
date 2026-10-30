@@ -51,6 +51,11 @@ toast:
   signed_in: Signed in as {name}.
   signed_in_via: Signed in as {name} with {address}.
   sign_in_failed: Sign-in did not work. Please try again.
+  ballot:
+    registered: 'Vote registered: {choice}.'
+    changed: 'Vote changed: {choice}.'
+    unchanged: 'Still {choice}.'
+  poll_closed: This poll is already closed.
 
 home:
   greeting: Hello {name}
@@ -59,10 +64,53 @@ home:
   open_empty: No poll is open right now. You will get a link as soon as someone applies.
   closed: Closed
   closed_empty: '{days, plural, one {No closed poll yet. Results are deleted automatically # day after closing.} other {No closed poll yet. Results are deleted automatically # days after closing.}}'
+  exception: Exception
+  voted: Voted
+  not_voted: Not voted yet
 
 poll:
   back: All polls
   missing: This poll no longer exists or has not been published yet.
+  kicker:
+    admission: Vote on admitting
+    exception: Vote on a probation exception for
+  date:
+    admission: Audition on {date}
+    exception: Decision by {date}
+  date_open: Date to be set
+  question_missing: The question is still missing.
+  status:
+    open: Open
+    closed: Closed
+
+ballot:
+  title: Your vote
+  question:
+    admission: Should {name} be admitted to the choir?
+  group: Your choice
+  yes: 'Yes'
+  no: 'No'
+  sub:
+    admission_yes: admit
+    admission_no: do not admit
+    exception_yes: approve
+    exception_no: decline
+  yours: Your vote
+  registered_yes: 'Your vote is registered: Yes.'
+  registered_no: 'Your vote is registered: No.'
+  registered_text: You can change it while the poll is open. It is anonymous. Others only see that you have voted.
+  hint: Tap Yes or No. Your vote is registered at once and stays anonymous. Others only see that you have voted.
+
+turnout:
+  title: Turnout
+  count: '{total, plural, one {of # voting right cast} other {of # voting rights cast}}'
+  bar: Voting rights cast
+  summary: '{voted, plural, one {# member has} other {# members have}} voted{missing, plural, =0 {. Everyone took part.} one {, # is still missing.} other {, # are still missing.}}'
+  missing: Not voted yet
+  no_group: No group
+  names_hidden: Only the board and the admins see the names.
+  all_voted: All members have voted.
+  lock: There are no interim results. The result appears only once the board closes the poll.
 
 admin:
   polls:

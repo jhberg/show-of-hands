@@ -9,13 +9,16 @@ namespace ShowOfHands\Infrastructure\Database;
  */
 final class ConnectionFactory
 {
-    public static function open(string $path): \PDO
+    /**
+     * @param class-string<\PDO> $class a subclass for tests that watch the queries
+     */
+    public static function open(string $path, string $class = \PDO::class): \PDO
     {
         $dir = dirname($path);
         if (!is_dir($dir) && !mkdir($dir, 0o770, true) && !is_dir($dir)) {
             throw new \RuntimeException("Cannot create the data directory {$dir}.");
         }
-        $pdo = new \PDO('sqlite:' . $path, null, null, [
+        $pdo = new $class('sqlite:' . $path, null, null, [
             \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
             \PDO::ATTR_DEFAULT_FETCH_MODE => \PDO::FETCH_ASSOC,
             \PDO::ATTR_EMULATE_PREPARES => false,

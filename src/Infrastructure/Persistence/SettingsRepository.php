@@ -16,6 +16,12 @@ final readonly class SettingsRepository
         return (int) $this->get('retention_days');
     }
 
+    /** Whether ordinary members see the names of those who have not voted. Board and admins always do. */
+    public function showOpenNames(): bool
+    {
+        return $this->get('show_open_names') === '1';
+    }
+
     /**
      * Claims the maintenance run for this request when the last one is at least $interval seconds old.
      * The claim is one conditional UPDATE, so two parallel requests never both run it. A plain read

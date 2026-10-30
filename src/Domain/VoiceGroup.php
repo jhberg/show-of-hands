@@ -17,6 +17,22 @@ final readonly class VoiceGroup
     ) {}
 
     /**
+     * The label of the group with this key, or the key when the group no longer exists.
+     *
+     * @param list<self> $groups
+     */
+    public static function labelOf(array $groups, string $key): string
+    {
+        foreach ($groups as $group) {
+            if ($group->key === $key) {
+                return $group->label;
+            }
+        }
+
+        return $key;
+    }
+
+    /**
      * The groups a new installation starts with, labelled in its default language.
      * Labels are data from then on, so they are not translation keys.
      *

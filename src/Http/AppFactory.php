@@ -9,7 +9,9 @@ use function DI\autowire;
 use DI\Container;
 use DI\ContainerBuilder;
 use Psr\Http\Message\ResponseFactoryInterface;
+use ShowOfHands\Domain\BallotToken;
 use ShowOfHands\Http\Action\AdminPollsAction;
+use ShowOfHands\Http\Action\BallotAction;
 use ShowOfHands\Http\Action\DevLoginAction;
 use ShowOfHands\Http\Action\GoogleCallbackAction;
 use ShowOfHands\Http\Action\GoogleStartAction;
@@ -84,6 +86,7 @@ final class AppFactory
         $app->group('', function (RouteCollectorProxy $member) use ($responses): void {
             $member->get('/', HomeAction::class);
             $member->get('/polls/{id:[0-9]+}', PollAction::class);
+            $member->post('/polls/{id:[0-9]+}/ballot', BallotAction::class);
             $member->group('/admin', function (RouteCollectorProxy $admin): void {
                 $admin->get('/polls', AdminPollsAction::class);
             })->add(RequireRole::admin($responses));
@@ -129,6 +132,7 @@ final class AppFactory
             Migrator::class => static fn(\PDO $pdo): Migrator => new Migrator($pdo, $paths->migrations(), $paths->data()),
             Session::class => static fn(): Session => Session::native($paths->sessions(), $config->sessionLifetimeDays, $config->isHttps()),
             Clock::class => autowire(SystemClock::class),
+            BallotToken::class => static fn(): BallotToken => new BallotToken($config->secret),
             ErrorLog::class => static fn(): ErrorLog => new ErrorLog($paths->data() . '/logs/app.log'),
             FirstStart::class => autowire()
                 ->constructorParameter('admin', $config->bootstrapAdmin)
@@ -152,7 +156,7 @@ final class AppFactory
                     'strict_variables' => $config->isDev(),
                 ]);
                 $twig->addExtension(new TranslationExtension($translator));
-                $twig->addExtension(new TwigExtension($config->brand, $assets, $themeVersion, $paths->templates() . '/icons', $session));
+                $twig->addExtension(new TwigExtension($config->brand, $assets, $themeVersion, $paths->templates() . '/icons', $session, $translator));
 
                 return $twig;
             },

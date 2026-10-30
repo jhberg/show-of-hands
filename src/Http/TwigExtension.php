@@ -7,13 +7,17 @@ namespace ShowOfHands\Http;
 use ShowOfHands\Http\Action\ThemeAction;
 use ShowOfHands\Infrastructure\Config\Brand;
 use ShowOfHands\Infrastructure\Config\BrandAssets;
+use ShowOfHands\Infrastructure\I18n\DayFormat;
 use ShowOfHands\Infrastructure\I18n\Locales;
+use Symfony\Component\Translation\Translator;
 use Twig\Extension\AbstractExtension;
 use Twig\Extension\GlobalsInterface;
+use Twig\TwigFilter;
 use Twig\TwigFunction;
 
 /**
- * Twig globals for the brand and the locales, and the functions asset(), icon(), and csrf_token().
+ * Twig globals for the brand and the locales, the functions asset(), icon(), and csrf_token(),
+ * and the filters day_long and day_short for dates without time.
  */
 final class TwigExtension extends AbstractExtension implements GlobalsInterface
 {
@@ -26,6 +30,7 @@ final class TwigExtension extends AbstractExtension implements GlobalsInterface
         private readonly string $themeVersion,
         private readonly string $iconDir,
         private readonly Session $session,
+        private readonly Translator $translator,
     ) {}
 
     public function getGlobals(): array
@@ -46,6 +51,29 @@ final class TwigExtension extends AbstractExtension implements GlobalsInterface
             new TwigFunction('icon', $this->icon(...), ['is_safe' => ['html']]),
             new TwigFunction('csrf_token', $this->session->csrfToken(...)),
         ];
+    }
+
+    public function getFilters(): array
+    {
+        return [
+            // "Di., 3. November 2026"
+            new TwigFilter('day_long', fn(string $date): string => $this->formatDay($date, 'EEEdMMMMy')),
+            // "3. Nov."
+            new TwigFilter('day_short', fn(string $date): string => $this->formatDay($date, 'dMMM')),
+        ];
+    }
+
+    /**
+     * Formats a Y-m-d date in the active language.
+     */
+    private function formatDay(string $date, string $skeleton): string
+    {
+        $day = \DateTimeImmutable::createFromFormat('!Y-m-d', $date, new \DateTimeZone('UTC'));
+        if ($day === false) {
+            throw new \InvalidArgumentException("Invalid date '{$date}'.");
+        }
+
+        return DayFormat::format($day, $skeleton, $this->translator->getLocale());
     }
 
     private function icon(string $name): string

@@ -51,6 +51,11 @@ toast:
   signed_in: Angemeldet als {name}.
   signed_in_via: Angemeldet als {name} über {address}.
   sign_in_failed: Die Anmeldung hat nicht geklappt. Bitte versuche es noch einmal.
+  ballot:
+    registered: 'Stimme registriert: {choice}.'
+    changed: 'Stimme geändert: {choice}.'
+    unchanged: 'Bleibt bei {choice}.'
+  poll_closed: Die Abstimmung ist bereits abgeschlossen.
 
 home:
   greeting: Hallo {name}
@@ -59,10 +64,53 @@ home:
   open_empty: Zurzeit ist keine Abstimmung offen. Du bekommst einen Link, sobald es eine Bewerbung gibt.
   closed: Abgeschlossen
   closed_empty: '{days, plural, one {Noch keine abgeschlossene Abstimmung. Ergebnisse werden # Tag nach dem Abschluss automatisch gelöscht.} other {Noch keine abgeschlossene Abstimmung. Ergebnisse werden # Tage nach dem Abschluss automatisch gelöscht.}}'
+  exception: Ausnahme
+  voted: Abgestimmt
+  not_voted: Noch nicht abgestimmt
 
 poll:
   back: Alle Abstimmungen
   missing: Diese Abstimmung gibt es nicht mehr oder sie ist noch nicht freigeschaltet.
+  kicker:
+    admission: Abstimmung über die Aufnahme von
+    exception: Abstimmung über eine Ausnahme in der Probezeit von
+  date:
+    admission: Vorsingen am {date}
+    exception: Entscheidung bis {date}
+  date_open: Datum offen
+  question_missing: Frage fehlt noch.
+  status:
+    open: Offen
+    closed: Abgeschlossen
+
+ballot:
+  title: Deine Stimme
+  question:
+    admission: Soll {name} in den Chor aufgenommen werden?
+  group: Deine Wahl
+  yes: Ja
+  no: Nein
+  sub:
+    admission_yes: aufnehmen
+    admission_no: nicht aufnehmen
+    exception_yes: zustimmen
+    exception_no: ablehnen
+  yours: Deine Stimme
+  registered_yes: 'Deine Stimme ist registriert: Ja.'
+  registered_no: 'Deine Stimme ist registriert: Nein.'
+  registered_text: Du kannst sie ändern, solange die Abstimmung offen ist. Sie ist anonym, sichtbar ist nur, dass du abgestimmt hast.
+  hint: Tippe auf Ja oder Nein. Deine Stimme wird sofort registriert und ist anonym. Sichtbar ist nur, dass du abgestimmt hast.
+
+turnout:
+  title: Beteiligung
+  count: '{total, plural, one {von # Stimmrecht abgegeben} other {von # Stimmrechten abgegeben}}'
+  bar: Abgegebene Stimmrechte
+  summary: '{voted, plural, one {# Mitglied hat} other {# Mitglieder haben}} abgestimmt{missing, plural, =0 {. Alle haben mitgemacht.} one {, # fehlt noch.} other {, # fehlen noch.}}'
+  missing: Noch nicht abgestimmt
+  no_group: Ohne Gruppe
+  names_hidden: Die Namen sehen nur Vorstand und Verwaltung.
+  all_voted: Alle Mitglieder haben abgestimmt.
+  lock: Zwischenstände gibt es nicht. Das Ergebnis erscheint erst, wenn der Vorstand die Abstimmung abschließt.
 
 admin:
   polls:
