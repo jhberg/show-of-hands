@@ -40,7 +40,7 @@ final readonly class PollPage
     {
         $data = $this->data($poll, $member);
         // The flash holds only the message key. The choice it names comes from the member's own ballot.
-        $data['toast'] = $this->flash->take($this->choiceParams($data['choice']));
+        $data['toast'] = $this->flash->take($this->choiceParams($data['choice']), self::path($poll));
 
         return $this->renderer->render($request, $response, 'pages/poll.html.twig', $data);
     }
@@ -90,6 +90,12 @@ final readonly class PollPage
             'missing_by_group' => $turnout->missingByGroup($groups),
             'show_names' => $member->isBoard || $member->isAdmin || $this->settings->showOpenNames(),
         ];
+    }
+
+    /** The poll page's path, which also scopes its toasts to this poll. */
+    public static function path(Poll $poll): string
+    {
+        return '/polls/' . $poll->id;
     }
 
     /**

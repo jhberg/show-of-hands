@@ -126,7 +126,7 @@ final class PollPageTest extends HttpTestCase
         self::assertSame(303, $response->getStatusCode());
         self::assertSame("/polls/{$poll}", $response->getHeaderLine('Location'));
         // The session keeps the message key only. The page reads the choice from the ballot.
-        self::assertSame(['key' => 'toast.ballot.registered', 'params' => []], $this->session->get('flash'));
+        self::assertSame(['key' => 'toast.ballot.registered', 'params' => [], 'page' => "/polls/{$poll}"], $this->session->get('flash'));
 
         $html = $this->body($this->request('GET', "/polls/{$poll}"));
         self::assertStringContainsString('Stimme registriert: Ja.', $html);
@@ -192,6 +192,23 @@ final class PollPageTest extends HttpTestCase
         $this->service(\PDO::class)->exec("UPDATE polls SET status = 'closed' WHERE id = {$poll}");
 
         self::assertStringContainsString('Stimme registriert: Ja.', $this->body($this->request('GET', "/polls/{$poll}")));
+    }
+
+    public function testTheToastWaitsForThePollItConfirms(): void
+    {
+        $first = $this->addPoll('First Example');
+        $second = $this->addPoll('Second Example');
+        $this->signIn('kim@example.org');
+        $this->request('GET', '/');
+        $this->service(BallotRepository::class)->cast($second, $this->kim, Choice::No);
+
+        $this->vote($first, 'yes');
+        // Another tab opens the second poll and the home page before the redirect lands.
+        self::assertStringNotContainsString('Stimme registriert', $this->body($this->request('GET', "/polls/{$second}")));
+        self::assertStringNotContainsString('Stimme registriert', $this->body($this->request('GET', '/')));
+
+        self::assertStringContainsString('Stimme registriert: Ja.', $this->body($this->request('GET', "/polls/{$first}")));
+        self::assertNull($this->session->get('flash'));
     }
 
     public function testAnUnknownChoiceChangesNothing(): void

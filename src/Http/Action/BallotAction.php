@@ -41,7 +41,7 @@ final readonly class BallotAction
         }
         $body = $request->getParsedBody();
         $choice = Choice::tryFrom(is_array($body) && is_string($body['choice'] ?? null) ? $body['choice'] : '');
-        $location = '/polls/' . $poll->id;
+        $location = PollPage::path($poll);
         if ($choice === null) {
             return Redirect::to($response, $request, $location);
         }
@@ -65,7 +65,8 @@ final readonly class BallotAction
 
             return $this->page->fragment($request, $response, $poll, $member, $toastKey);
         }
-        $this->flash->toast($toastKey);
+        // Only this poll's page may show the toast, because it names the choice in this poll.
+        $this->flash->toast($toastKey, page: $location);
 
         return Redirect::to($response, $request, $location);
     }
