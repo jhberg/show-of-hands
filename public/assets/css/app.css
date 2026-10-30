@@ -124,7 +124,7 @@ section.board .help{max-width:60ch}
 .verdict .pct::before{content:"·";margin-right:8px}
 .notice,.weight{margin:0 0 14px;padding:12px 14px;border-radius:var(--r-s);background:var(--accent-soft);border:1px solid var(--accent-line);font-size:15px;display:flex;gap:10px;align-items:flex-start}
 .notice svg{flex:none;color:var(--accent-text);position:relative;top:2px}
-.notice .link{margin-top:6px;display:inline-block}
+.notice .link{margin-top:6px;display:inline-block;text-align:left}
 .weight b{color:var(--accent-text)}
 .weight .x{font-weight:700;font-size:20px;color:var(--accent-text);line-height:1;flex:none}
 .deleg{margin-top:18px;padding-top:14px;border-top:1px dashed var(--line)}

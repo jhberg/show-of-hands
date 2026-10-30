@@ -25,6 +25,8 @@
                             </span>
                             {%- if entry.voted -%}
                                 <span class="chip">{{ icon('check') }}{{ 'home.voted'|trans }}</span>
+                            {%- elseif entry.delegated_to is not null -%}
+                                <span class="chip mine">{{ 'home.delegated'|trans({name: entry.delegated_to}) }}</span>
                             {%- else -%}
                                 <span class="chip open">{{ 'home.not_voted'|trans }}</span>
                             {%- endif -%}

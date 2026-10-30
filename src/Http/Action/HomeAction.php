@@ -11,6 +11,8 @@ use ShowOfHands\Domain\VoiceGroup;
 use ShowOfHands\Http\Middleware\MemberMiddleware;
 use ShowOfHands\Http\Renderer;
 use ShowOfHands\Infrastructure\Persistence\BallotRepository;
+use ShowOfHands\Infrastructure\Persistence\DelegationRepository;
+use ShowOfHands\Infrastructure\Persistence\MemberRepository;
 use ShowOfHands\Infrastructure\Persistence\PollRepository;
 use ShowOfHands\Infrastructure\Persistence\SettingsRepository;
 use ShowOfHands\Infrastructure\Persistence\VoiceGroupRepository;
@@ -25,6 +27,8 @@ final readonly class HomeAction
         private SettingsRepository $settings,
         private PollRepository $polls,
         private BallotRepository $ballots,
+        private DelegationRepository $delegations,
+        private MemberRepository $members,
         private VoiceGroupRepository $voiceGroups,
     ) {}
 
@@ -36,6 +40,11 @@ final readonly class HomeAction
         $open = $this->polls->open();
         $openIds = array_map(static fn(Poll $poll): int => $poll->id, $open);
         $voted = array_flip($this->ballots->pollsVotedIn($member->id, $openIds));
+        $recipients = $this->delegations->recipientsOf($member->id, $openIds);
+        $firstNames = [];
+        foreach (array_unique($recipients) as $recipientId) {
+            $firstNames[$recipientId] = $this->members->find($recipientId)?->firstName();
+        }
         $groups = $this->voiceGroups->all();
 
         return $this->renderer->render($request, $response, 'pages/home.html.twig', [
@@ -44,6 +53,7 @@ final readonly class HomeAction
                 'poll' => $poll,
                 'group_label' => VoiceGroup::labelOf($groups, $poll->voiceGroupKey),
                 'voted' => isset($voted[$poll->id]),
+                'delegated_to' => $firstNames[$recipients[$poll->id] ?? 0] ?? null,
             ], $open),
             'closed_polls' => [],
             'retention_days' => $this->settings->retentionDays(),

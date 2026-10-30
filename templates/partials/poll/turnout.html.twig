@@ -7,7 +7,7 @@
     <div class="prog" role="progressbar" aria-valuenow="{{ turnout.castWeight }}" aria-valuemin="0" aria-valuemax="{{ turnout.eligible }}" aria-label="{{ 'turnout.bar'|trans }}">
         <svg aria-hidden="true" focusable="false"><rect height="100%" width="{{ turnout.percent }}%" rx="6"/></svg>
     </div>
-    <p class="help">{{ 'turnout.summary'|trans({voted: turnout.voted, missing: turnout.missing|length}) }}</p>
+    <p class="help">{{ 'turnout.summary'|trans({voted: turnout.voted, delegated: turnout.delegations|length, missing: turnout.missing|length}) }}</p>
     {% if turnout.missing is not empty %}
         <h3>{{ 'turnout.missing'|trans }} <span class="n num">{{ turnout.missing|length }}</span></h3>
         {% if show_names %}
@@ -24,6 +24,18 @@
         {% endif %}
     {% else %}
         <p class="all-done">{{ 'turnout.all_voted'|trans }}</p>
+    {% endif %}
+    {% if turnout.delegations is not empty %}
+        <h3>{{ 'turnout.delegations'|trans }} <span class="n num">{{ turnout.delegations|length }}</span></h3>
+        <ul class="dlist">
+            {% for entry in turnout.delegations %}
+                <li>
+                    <span>{{ entry.from.name }}</span>{{ icon('arrow') }}<span>{{ entry.to.name }}</span>
+                    {#- Whether the recipient voted reveals turnout, so it follows the names setting. #}
+                    {%- if show_names and not entry.to_voted %}<span class="chip">{{ 'turnout.pending'|trans }}</span>{% endif -%}
+                </li>
+            {% endfor %}
+        </ul>
     {% endif %}
     {% if poll.isOpen %}
         <div class="lock">{{ icon('lock') }}<span>{{ 'turnout.lock'|trans }}</span></div>

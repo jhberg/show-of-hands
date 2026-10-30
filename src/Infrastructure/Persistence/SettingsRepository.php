@@ -22,6 +22,18 @@ final readonly class SettingsRepository
         return $this->get('show_open_names') === '1';
     }
 
+    /** Whether members may hand their vote to another member. Switching it off keeps existing delegations. */
+    public function delegationEnabled(): bool
+    {
+        return $this->get('delegation_enabled') === '1';
+    }
+
+    /** How many extra votes one member may hold, 1 to 3. */
+    public function maxReceived(): int
+    {
+        return (int) $this->get('max_received');
+    }
+
     /**
      * Claims the maintenance run for this request when the last one is at least $interval seconds old.
      * The claim is one conditional UPDATE, so two parallel requests never both run it. A plain read

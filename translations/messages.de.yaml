@@ -55,6 +55,12 @@ toast:
     registered: 'Stimme registriert: {choice}.'
     changed: 'Stimme geändert: {choice}.'
     unchanged: 'Bleibt bei {choice}.'
+    reclaimed: 'Stimme registriert: {choice}. Die Übertragung an {name} ist aufgehoben.'
+  delegation:
+    choose: Bitte eine Person auswählen.
+    done: Stimme an {name} übertragen.
+    refused: Die Übertragung ist so nicht möglich. Die Seite zeigt jetzt den aktuellen Stand.
+    revoked: Übertragung zurückgenommen. Dein Stimmrecht liegt wieder bei dir.
   poll_closed: Die Abstimmung ist bereits abgeschlossen.
 
 home:
@@ -67,6 +73,7 @@ home:
   exception: Ausnahme
   voted: Abgestimmt
   not_voted: Noch nicht abgestimmt
+  delegated: Übertragen an {name}
 
 poll:
   back: Alle Abstimmungen
@@ -100,16 +107,38 @@ ballot:
   registered_no: 'Deine Stimme ist registriert: Nein.'
   registered_text: Du kannst sie ändern, solange die Abstimmung offen ist. Sie ist anonym, sichtbar ist nur, dass du abgestimmt hast.
   hint: Tippe auf Ja oder Nein. Deine Stimme wird sofort registriert und ist anonym. Sichtbar ist nur, dass du abgestimmt hast.
+  delegated:
+    title: Du hast deine Stimme an {name} übertragen.
+    voted: '{name} hat bereits abgestimmt. Wenn du hier selbst auf Ja oder Nein tippst, kommt dein Stimmrecht sofort zu dir zurück und das Gewicht der Stimme von {name} wird angepasst.'
+    not_voted: '{name} hat noch nicht abgestimmt. Wenn du hier selbst auf Ja oder Nein tippst, kommt dein Stimmrecht sofort zu dir zurück.'
+    back: Wenn du hier selbst auf Ja oder Nein tippst, kommt dein Stimmrecht sofort zu dir zurück.
+    revoke: Übertragung zurücknehmen, ohne abzustimmen
+  weight:
+    title: Du stimmst mit {weight} Stimmrechten.
+    text: '{count, plural, one {{names} hat dir die Stimme übertragen.} other {{names} haben dir die Stimmen übertragen.}} Deine Entscheidung zählt {weight}-fach, solange die Übertragung besteht.'
+
+delegation:
+  toggle: Stimme an ein anderes Mitglied übertragen
+  help: Wenn du keine eigene Meinung hast, kannst du deine Stimme übertragen. Sie zählt dann bei der Entscheidung dieser Person mit. Alle Mitglieder sehen, wer wem die Stimme übertragen hat.
+  withdraws: Deine eigene Stimme wird dabei zurückgezogen.
+  to: An wen?
+  choose: Bitte auswählen
+  voted: hat abgestimmt
+  submit: Stimme übertragen
+  cancel: Abbrechen
+  limit: '{max, plural, one {Eine Person kann höchstens # Stimme zusätzlich erhalten.} other {Eine Person kann höchstens # Stimmen zusätzlich erhalten.}} Wer selbst übertragen hat, steht nicht zur Auswahl. Du kannst die Übertragung jederzeit zurücknehmen oder einfach selbst abstimmen, solange die Abstimmung offen ist.'
 
 turnout:
   title: Beteiligung
   count: '{total, plural, one {von # Stimmrecht abgegeben} other {von # Stimmrechten abgegeben}}'
   bar: Abgegebene Stimmrechte
-  summary: '{voted, plural, one {# Mitglied hat} other {# Mitglieder haben}} abgestimmt{missing, plural, =0 {. Alle haben mitgemacht.} one {, # fehlt noch.} other {, # fehlen noch.}}'
+  summary: '{voted, plural, one {# Mitglied hat} other {# Mitglieder haben}} abgestimmt{delegated, plural, =0 {} one {, # hat die Stimme übertragen} other {, # haben die Stimme übertragen}}{missing, plural, =0 {. Alle haben mitgemacht.} one {, # fehlt noch.} other {, # fehlen noch.}}'
   missing: Noch nicht abgestimmt
   no_group: Ohne Gruppe
   names_hidden: Die Namen sehen nur Vorstand und Verwaltung.
   all_voted: Alle Mitglieder haben abgestimmt.
+  delegations: Übertragene Stimmen
+  pending: noch nicht abgegeben
   lock: Zwischenstände gibt es nicht. Das Ergebnis erscheint erst, wenn der Vorstand die Abstimmung abschließt.
 
 admin:
@@ -126,3 +155,6 @@ dev_login:
   other_help: Eine Adresse, die keinem Mitglied gehört, zeigt die Fehlermeldung der Anmeldeseite.
   submit: Anmelden
   empty: Noch keine Mitglieder. bin/console seed:demo legt Beispieldaten an.
+
+list:
+  and: '{names} und {last}'

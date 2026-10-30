@@ -17,7 +17,7 @@ use Twig\TwigFunction;
 
 /**
  * Twig globals for the brand and the locales, the functions asset(), icon(), and csrf_token(),
- * and the filters day_long and day_short for dates without time.
+ * the filters day_long and day_short for dates without time, and name_list.
  */
 final class TwigExtension extends AbstractExtension implements GlobalsInterface
 {
@@ -60,7 +60,22 @@ final class TwigExtension extends AbstractExtension implements GlobalsInterface
             new TwigFilter('day_long', fn(string $date): string => $this->formatDay($date, 'EEEdMMMMy')),
             // "3. Nov."
             new TwigFilter('day_short', fn(string $date): string => $this->formatDay($date, 'dMMM')),
+            // "Lina, Ida und Pia"
+            new TwigFilter('name_list', $this->nameList(...)),
         ];
+    }
+
+    /**
+     * @param list<string> $names
+     */
+    private function nameList(array $names): string
+    {
+        if (count($names) < 2) {
+            return implode('', $names);
+        }
+        $last = array_pop($names);
+
+        return $this->translator->trans('list.and', ['names' => implode(', ', $names), 'last' => $last]);
     }
 
     /**
