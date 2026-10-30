@@ -16,7 +16,7 @@ test('a member signs in through the dev login and signs out', async ({ page }) =
   await expect(page).toHaveURL('/');
   await expect(page.getByRole('heading', { name: 'Hallo Ben' })).toBeVisible();
   await expect(page.getByRole('status')).toHaveText(`Angemeldet als ${MEMBER.name}.`);
-  await expect(page.getByText('Zurzeit ist keine Abstimmung offen.')).toBeVisible();
+  await expect(page.getByRole('link', { name: /Klara Wendt/ })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Verwaltung' })).toHaveCount(0);
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
 
@@ -37,7 +37,7 @@ test('a deep link returns to the poll after sign-in', async ({ page }) => {
 
   await expect(page).toHaveURL('/polls/2');
   await expect(page.getByRole('status')).toHaveText(`Angemeldet als ${ADMIN_PRIVATE.name} über ${ADMIN_PRIVATE.email}.`);
-  await expect(page.getByText('Diese Abstimmung gibt es nicht mehr oder sie ist noch nicht freigeschaltet.')).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'Mila Sandberg' })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Verwaltung' })).toBeVisible();
 });
 

@@ -29,17 +29,20 @@ final readonly class Flash
 
     /**
      * The pending toast as text, removed from the session.
+     *
+     * @param array<string, string|int> $params placeholders the page fills in when it renders,
+     *                                         such as the member's choice, which the session never stores
      */
-    public function take(): ?string
+    public function take(array $params = []): ?string
     {
         $flash = $this->session->take(self::KEY);
         if (!is_array($flash) || !is_string($flash['key'] ?? null) || !is_array($flash['params'] ?? null)) {
             return null;
         }
 
-        /** @var array<string, string|int> $params */
-        $params = $flash['params'];
+        /** @var array<string, string|int> $stored */
+        $stored = $flash['params'];
 
-        return $this->translator->trans($flash['key'], $params);
+        return $this->translator->trans($flash['key'], $stored + $params);
     }
 }

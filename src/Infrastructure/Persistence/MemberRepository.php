@@ -43,6 +43,16 @@ final readonly class MemberRepository
     }
 
     /**
+     * Every member, in voice group order, then by name.
+     *
+     * @return list<Member>
+     */
+    public function all(string $locale): array
+    {
+        return array_column($this->allWithEmails($locale), 'member');
+    }
+
+    /**
      * Every member with their addresses, in voice group order, then by name.
      *
      * @return list<array{member: Member, emails: list<string>}>

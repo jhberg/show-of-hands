@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace ShowOfHands\Infrastructure\Config;
 
+use ShowOfHands\Domain\BallotToken;
 use ShowOfHands\Domain\EmailAddress;
 use ShowOfHands\Domain\VoiceGroup;
 use ShowOfHands\Infrastructure\I18n\Locales;
@@ -75,8 +76,8 @@ final class ConfigLoader
         }
 
         $secret = $this->string($data, 'app.secret') ?? '';
-        if ($secret !== '' && preg_match('/^[0-9a-f]{64,}$/i', $secret) !== 1) {
-            $this->errors[] = "app.secret must be at least 64 hex characters (32 random bytes). Generate one with: php -r 'echo bin2hex(random_bytes(32)), PHP_EOL;'";
+        if ($secret !== '' && preg_match(BallotToken::SECRET_PATTERN, $secret) !== 1) {
+            $this->errors[] = "app.secret must be an even number of hex characters, at least 64 (32 random bytes). Generate one with: php -r 'echo bin2hex(random_bytes(32)), PHP_EOL;'";
         }
 
         $timezone = $this->string($data, 'app.timezone') ?? '';

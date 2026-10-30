@@ -6,17 +6,32 @@ namespace ShowOfHands\Http\Action;
 
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
-use ShowOfHands\Http\Renderer;
+use ShowOfHands\Http\Middleware\MemberMiddleware;
+use ShowOfHands\Http\PollPage;
+use ShowOfHands\Infrastructure\Persistence\PollRepository;
 
 /**
- * The poll page. No poll exists yet, so every link shows the page for a missing poll.
+ * The poll page that every member reaches through the poll's link.
  */
 final readonly class PollAction
 {
-    public function __construct(private Renderer $renderer) {}
+    public function __construct(
+        private PollPage $page,
+        private PollRepository $polls,
+    ) {}
 
-    public function __invoke(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
+    /**
+     * @param array{id: string} $args
+     */
+    public function __invoke(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
     {
-        return $this->renderer->render($request, $response, 'pages/poll_missing.html.twig', status: 404);
+        $member = MemberMiddleware::member($request);
+        assert($member !== null);
+        $poll = $this->polls->findPublished((int) $args['id']);
+        if ($poll === null) {
+            return $this->page->missing($request, $response);
+        }
+
+        return $this->page->page($request, $response, $poll, $member);
     }
 }

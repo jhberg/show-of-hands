@@ -64,7 +64,7 @@ final class ConfigLoaderTest extends TestCase
         self::assertContains('google.client_id is required.', $errors);
         self::assertContains('brand.name is required.', $errors);
         self::assertContains("brand.colors.accent must be a hex colour such as '#3b6fb6'.", $errors);
-        self::assertCount(1, array_filter($errors, static fn(string $e): bool => str_starts_with($e, 'app.secret must be at least 64 hex')));
+        self::assertCount(1, array_filter($errors, static fn(string $e): bool => str_starts_with($e, 'app.secret must be an even number of hex characters')));
     }
 
     public function testReportsAnEmptyUrlOnce(): void

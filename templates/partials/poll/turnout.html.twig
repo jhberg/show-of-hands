@@ -1,0 +1,31 @@
+<section class="part">
+    <div class="part-head">
+        <h2>{{ 'turnout.title'|trans }}</h2>
+        <span class="count num"><b>{{ turnout.castWeight }}</b> {{ 'turnout.count'|trans({total: turnout.eligible}) }}</span>
+    </div>
+    {# An SVG bar, because the CSP forbids the inline style a width would need. #}
+    <div class="prog" role="progressbar" aria-valuenow="{{ turnout.castWeight }}" aria-valuemin="0" aria-valuemax="{{ turnout.eligible }}" aria-label="{{ 'turnout.bar'|trans }}">
+        <svg aria-hidden="true" focusable="false"><rect height="100%" width="{{ turnout.percent }}%" rx="6"/></svg>
+    </div>
+    <p class="help">{{ 'turnout.summary'|trans({voted: turnout.voted, missing: turnout.missing|length}) }}</p>
+    {% if turnout.missing is not empty %}
+        <h3>{{ 'turnout.missing'|trans }} <span class="n num">{{ turnout.missing|length }}</span></h3>
+        {% if show_names %}
+            <div class="grp">
+                {% for entry in missing_by_group %}
+                    <div class="g">{{ entry.group ? entry.group.label : 'turnout.no_group'|trans }}</div>
+                    <div class="names">
+                        {%- for missing_member in entry.members %}<span class="name">{{ missing_member.name }}</span>{% endfor -%}
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="help">{{ 'turnout.names_hidden'|trans }}</p>
+        {% endif %}
+    {% else %}
+        <p class="all-done">{{ 'turnout.all_voted'|trans }}</p>
+    {% endif %}
+    {% if poll.isOpen %}
+        <div class="lock">{{ icon('lock') }}<span>{{ 'turnout.lock'|trans }}</span></div>
+    {% endif %}
+</section>

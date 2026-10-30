@@ -7,6 +7,8 @@ namespace ShowOfHands\Tests\Http;
 use DI\Container;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\ResponseInterface;
+use ShowOfHands\Domain\PollKind;
+use ShowOfHands\Domain\PollStatus;
 use ShowOfHands\Http\AppFactory;
 use ShowOfHands\Http\DevLoginGuard;
 use ShowOfHands\Http\Middleware\CsrfMiddleware;
@@ -15,6 +17,7 @@ use ShowOfHands\Infrastructure\Auth\GoogleSignIn;
 use ShowOfHands\Infrastructure\Config\ConfigLoader;
 use ShowOfHands\Infrastructure\Database\Migrator;
 use ShowOfHands\Infrastructure\Persistence\MemberRepository;
+use ShowOfHands\Infrastructure\Persistence\PollRepository;
 use ShowOfHands\Infrastructure\Setup\FirstStart;
 use ShowOfHands\Paths;
 use ShowOfHands\Tests\TempDirectory;
@@ -82,6 +85,24 @@ abstract class HttpTestCase extends TestCase
         $this->service(FirstStart::class)->run();
 
         return $this->service(MemberRepository::class)->add($name, $emails, $group, $board, $admin);
+    }
+
+    /**
+     * Adds a poll straight to the database, migrating it first.
+     */
+    protected function addPoll(
+        string $subject = 'Robin Example',
+        PollStatus $status = PollStatus::Open,
+        PollKind $kind = PollKind::Admission,
+        ?string $question = null,
+        string $group = 'S1',
+        ?string $date = null,
+        string $note = '',
+    ): int {
+        $this->service(Migrator::class)->migrate();
+        $this->service(FirstStart::class)->run();
+
+        return $this->service(PollRepository::class)->add($kind, $subject, $question, $group, $date, $note, $status, '2026-01-01T00:00:00Z');
     }
 
     /**

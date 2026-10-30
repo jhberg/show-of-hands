@@ -1,0 +1,9 @@
+{# The whole <main> of the poll page. htmx swaps it after every action, so all sections stay in step. #}
+<main class="main">
+    <a class="back" href="/">{{ icon('arrow') }}{{ 'poll.back'|trans }}</a>
+    {{ include('partials/poll/head.html.twig') }}
+    {% if poll.isOpen %}
+        {{ include('partials/poll/ballot.html.twig') }}
+    {% endif %}
+    {{ include('partials/poll/turnout.html.twig') }}
+</main>

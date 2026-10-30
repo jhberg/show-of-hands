@@ -9,6 +9,30 @@
         <h2>{{ 'home.open'|trans }} <span class="chip open"><i class="dot"></i>{{ open_polls|length }}</span></h2>
         {% if open_polls is empty %}
             <div class="empty">{{ 'home.open_empty'|trans }}</div>
+        {% else %}
+            <ul class="vlist">
+                {% for entry in open_polls %}
+                    {% set poll = entry.poll %}
+                    <li>
+                        <a href="/polls/{{ poll.id }}">
+                            <span class="t">
+                                <b>{{ poll.subjectName }}</b>
+                                <span class="meta">
+                                    {%- if poll.kind.value == 'exception' %}{{ 'home.exception'|trans }} · {% endif -%}
+                                    {{ entry.group_label }}
+                                    {%- if poll.date is not null %} · {{ poll.date|day_short }}{% endif -%}
+                                </span>
+                            </span>
+                            {%- if entry.voted -%}
+                                <span class="chip">{{ icon('check') }}{{ 'home.voted'|trans }}</span>
+                            {%- else -%}
+                                <span class="chip open">{{ 'home.not_voted'|trans }}</span>
+                            {%- endif -%}
+                            <span class="chev">{{ icon('chev') }}</span>
+                        </a>
+                    </li>
+                {% endfor %}
+            </ul>
         {% endif %}
     </div>
     <div class="sec">

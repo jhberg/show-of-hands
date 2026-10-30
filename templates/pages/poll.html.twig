@@ -1,0 +1,6 @@
+{% extends 'layout.html.twig' %}
+
+{% block body %}
+{{ include('partials/header.html.twig', {active: 'home'}) }}
+{{ include('partials/poll/main.html.twig') }}
+{% endblock %}
