@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace ShowOfHands\Tests\Unit\Domain;
 
 use PHPUnit\Framework\TestCase;
+use ShowOfHands\Domain\Delegations;
 use ShowOfHands\Domain\Member;
 use ShowOfHands\Domain\Turnout;
 use ShowOfHands\Domain\VoiceGroup;
@@ -78,5 +79,28 @@ final class TurnoutTest extends TestCase
                 array_map(static fn(Member $m): int => $m->id, $entry['members']),
             ], $groups),
         );
+    }
+
+    public function testADelegatedVoteCountsOnlyOnceItsRecipientHasVoted(): void
+    {
+        // 1 and 3 handed their vote to 2, who voted; 5 handed theirs to 4, who has not.
+        $turnout = Turnout::of(self::members(), [2], new Delegations([1 => 2, 3 => 2, 5 => 4]));
+
+        self::assertSame(3, $turnout->castWeight);
+        self::assertSame(1, $turnout->voted);
+        self::assertSame([4, 6], array_map(static fn(Member $m): int => $m->id, $turnout->missing));
+        self::assertSame(
+            [[1, 2, true], [3, 2, true], [5, 4, false]],
+            array_map(static fn(array $entry): array => [$entry['from']->id, $entry['to']->id, $entry['to_voted']], $turnout->delegations),
+        );
+        self::assertSame(50, $turnout->percent());
+    }
+
+    public function testADelegationToAMemberWhoNoLongerExistsLeavesTheSenderMissing(): void
+    {
+        $turnout = Turnout::of(self::members(), [], new Delegations([1 => 99]));
+
+        self::assertSame([], $turnout->delegations);
+        self::assertCount(6, $turnout->missing);
     }
 }

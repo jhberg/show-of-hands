@@ -13,6 +13,7 @@ use ShowOfHands\Infrastructure\Config\Config;
 use ShowOfHands\Infrastructure\Database\Transaction;
 use ShowOfHands\Infrastructure\I18n\DayFormat;
 use ShowOfHands\Infrastructure\Persistence\BallotRepository;
+use ShowOfHands\Infrastructure\Persistence\DelegationRepository;
 use ShowOfHands\Infrastructure\Persistence\MemberRepository;
 use ShowOfHands\Infrastructure\Persistence\PollRepository;
 use ShowOfHands\Infrastructure\Persistence\VoiceGroupRepository;
@@ -24,7 +25,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 /**
  * Replaces all data with the sample choir of the reference mockup: 25 invented members in nine
  * voice groups, some with a second address and with board or admin roles, and the mockup's polls
- * with their ballots. Dates are relative to today, so the sample never goes stale.
+ * with their ballots and delegations. Dates are relative to today, so the sample never goes stale.
  */
 #[AsCommand('seed:demo', 'Replace all data with sample data (development only).')]
 final class SeedDemoCommand extends DatabaseCommand
@@ -155,6 +156,15 @@ final class SeedDemoCommand extends DatabaseCommand
             }
             foreach ($no as $number) {
                 $ballots->cast($poll, $ids[$number - 1], Choice::No);
+            }
+        }
+
+        // The mockup's delegations in the first poll, sender then recipient.
+        $delegations = $this->service(DelegationRepository::class);
+        foreach ([[4, 1], [23, 19], [12, 8]] as [$from, $to]) {
+            $refusal = $delegations->delegate($first, $ids[$from - 1], $ids[$to - 1]);
+            if ($refusal !== null) {
+                throw new \RuntimeException("The sample delegation {$from} → {$to} was refused: {$refusal->name}. Is delegation switched off in the settings?");
             }
         }
 

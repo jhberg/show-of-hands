@@ -55,6 +55,12 @@ toast:
     registered: 'Vote registered: {choice}.'
     changed: 'Vote changed: {choice}.'
     unchanged: 'Still {choice}.'
+    reclaimed: 'Vote registered: {choice}. Your delegation to {name} has ended.'
+  delegation:
+    choose: Please choose a person.
+    done: Vote delegated to {name}.
+    refused: The vote could not be delegated like this. The page now shows where things stand.
+    revoked: Delegation taken back. Your vote is yours again.
   poll_closed: This poll is already closed.
 
 home:
@@ -67,6 +73,7 @@ home:
   exception: Exception
   voted: Voted
   not_voted: Not voted yet
+  delegated: Delegated to {name}
 
 poll:
   back: All polls
@@ -100,16 +107,38 @@ ballot:
   registered_no: 'Your vote is registered: No.'
   registered_text: You can change it while the poll is open. It is anonymous. Others only see that you have voted.
   hint: Tap Yes or No. Your vote is registered at once and stays anonymous. Others only see that you have voted.
+  delegated:
+    title: You have delegated your vote to {name}.
+    voted: '{name} has already voted. If you tap Yes or No here yourself, your vote comes straight back to you and the weight of {name}''s vote is adjusted.'
+    not_voted: '{name} has not voted yet. If you tap Yes or No here yourself, your vote comes straight back to you.'
+    back: If you tap Yes or No here yourself, your vote comes straight back to you.
+    revoke: Take the delegation back without voting
+  weight:
+    title: You vote with {weight} voting rights.
+    text: '{count, plural, one {{names} has delegated their vote to you.} other {{names} have delegated their votes to you.}} Your decision counts {weight} times while the delegation stands.'
+
+delegation:
+  toggle: Delegate your vote to another member
+  help: If you have no opinion of your own, you can delegate your vote. It then counts with this person's decision. All members see who delegated their vote to whom.
+  withdraws: Your own vote is withdrawn.
+  to: To whom?
+  choose: Please choose
+  voted: has voted
+  submit: Delegate vote
+  cancel: Cancel
+  limit: '{max, plural, one {A person can receive at most # extra vote.} other {A person can receive at most # extra votes.}} Members who delegated their own vote are not listed. You can take the delegation back at any time, or simply vote yourself, while the poll is open.'
 
 turnout:
   title: Turnout
   count: '{total, plural, one {of # voting right cast} other {of # voting rights cast}}'
   bar: Voting rights cast
-  summary: '{voted, plural, one {# member has} other {# members have}} voted{missing, plural, =0 {. Everyone took part.} one {, # is still missing.} other {, # are still missing.}}'
+  summary: '{voted, plural, one {# member has} other {# members have}} voted{delegated, plural, =0 {} one {, # has delegated} other {, # have delegated}}{missing, plural, =0 {. Everyone took part.} one {, # is still missing.} other {, # are still missing.}}'
   missing: Not voted yet
   no_group: No group
   names_hidden: Only the board and the admins see the names.
   all_voted: All members have voted.
+  delegations: Delegated votes
+  pending: not cast yet
   lock: There are no interim results. The result appears only once the board closes the poll.
 
 admin:
@@ -126,3 +155,6 @@ dev_login:
   other_help: An address that belongs to no member shows the login page's error.
   submit: Sign in
   empty: No members yet. bin/console seed:demo adds sample data.
+
+list:
+  and: '{names} and {last}'

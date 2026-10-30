@@ -7,19 +7,22 @@ namespace ShowOfHands\Http;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use ShowOfHands\Domain\Choice;
+use ShowOfHands\Domain\Delegations;
 use ShowOfHands\Domain\Member;
 use ShowOfHands\Domain\Poll;
 use ShowOfHands\Domain\Turnout;
 use ShowOfHands\Domain\VoiceGroup;
 use ShowOfHands\Infrastructure\Persistence\BallotRepository;
+use ShowOfHands\Infrastructure\Persistence\DelegationRepository;
 use ShowOfHands\Infrastructure\Persistence\MemberRepository;
+use ShowOfHands\Infrastructure\Persistence\PollRepository;
 use ShowOfHands\Infrastructure\Persistence\SettingsRepository;
 use ShowOfHands\Infrastructure\Persistence\VoiceGroupRepository;
 use Symfony\Component\Translation\Translator;
 
 /**
- * The poll page: head, ballot, and turnout, for every role. The full page and the htmx
- * fragment render the same <main>, so ballot and turnout never disagree after a tap.
+ * The poll page: head, ballot with the vote delegation, and turnout, for every role. The full
+ * page and the htmx fragment render the same <main>, so ballot and turnout never disagree after a tap.
  */
 final readonly class PollPage
 {
@@ -27,18 +30,21 @@ final readonly class PollPage
         private Renderer $renderer,
         private Flash $flash,
         private Translator $translator,
+        private PollRepository $polls,
         private BallotRepository $ballots,
+        private DelegationRepository $delegations,
         private MemberRepository $members,
         private VoiceGroupRepository $voiceGroups,
         private SettingsRepository $settings,
     ) {}
 
     /**
-     * The whole page, with the toast a redirect left in the session.
+     * The whole page, with the toast a redirect left in the session. ?delegate=1 opens the
+     * delegation panel.
      */
     public function page(ServerRequestInterface $request, ResponseInterface $response, Poll $poll, Member $member): ResponseInterface
     {
-        $data = $this->data($poll, $member);
+        $data = $this->data($poll, $member, self::delegationOpen($request));
         // The flash holds only the message key. The choice it names comes from the member's own ballot.
         $data['toast'] = $this->flash->take($this->choiceParams($data['choice']), self::path($poll));
 
@@ -50,17 +56,56 @@ final readonly class PollPage
      * toast region lies outside <main>.
      *
      * @param string|null $toastKey a message that may name the member's choice as {choice}
+     * @param array<string, string> $toastParams the message's other placeholders
      */
-    public function fragment(ServerRequestInterface $request, ResponseInterface $response, Poll $poll, Member $member, ?string $toastKey = null): ResponseInterface
-    {
-        $data = $this->data($poll, $member);
+    public function fragment(
+        ServerRequestInterface $request,
+        ResponseInterface $response,
+        Poll $poll,
+        Member $member,
+        ?string $toastKey = null,
+        array $toastParams = [],
+        bool $delegationOpen = false,
+    ): ResponseInterface {
+        $data = $this->data($poll, $member, $delegationOpen);
         if ($toastKey !== null) {
-            $toast = $this->translator->trans($toastKey, $this->choiceParams($data['choice']));
+            $toast = $this->translator->trans($toastKey, $toastParams + $this->choiceParams($data['choice']));
             $response = $response->withHeader('HX-Trigger', json_encode(['toast' => $toast], JSON_THROW_ON_ERROR));
         }
 
         // A null toast keeps the Renderer from taking a pending flash, which this fragment cannot show.
         return $this->renderer->render($request, $response, 'partials/poll/main.html.twig', $data + ['toast' => null]);
+    }
+
+    /**
+     * The answer to a POST on the poll page: the fresh <main> for htmx, otherwise a redirect
+     * that leaves the toast for this poll's page only.
+     *
+     * @param string $toastKey a message that may name the member's choice as {choice}
+     * @param array<string, string> $toastParams the message's other placeholders, never a choice
+     * @param bool $delegationOpen whether the delegation panel stays open
+     */
+    public function answer(
+        ServerRequestInterface $request,
+        ResponseInterface $response,
+        Poll $poll,
+        Member $member,
+        string $toastKey,
+        array $toastParams = [],
+        bool $delegationOpen = false,
+    ): ResponseInterface {
+        if ($request->getHeaderLine('HX-Request') === 'true') {
+            // Re-read, because the poll may have closed in the meantime.
+            $poll = $this->polls->findPublished($poll->id);
+            if ($poll === null) {
+                return $this->missing($request, $response);
+            }
+
+            return $this->fragment($request, $response, $poll, $member, $toastKey, $toastParams, $delegationOpen);
+        }
+        $this->flash->toast($toastKey, $toastParams, page: self::path($poll));
+
+        return Redirect::to($response, $request, self::path($poll) . ($delegationOpen ? '?delegate=1' : ''));
     }
 
     /**
@@ -72,13 +117,34 @@ final readonly class PollPage
         return $this->renderer->render($request, $response, 'pages/poll_missing.html.twig', status: 404);
     }
 
+    /** Whether the request asks for the open delegation panel. */
+    public static function delegationOpen(ServerRequestInterface $request): bool
+    {
+        return ($request->getQueryParams()['delegate'] ?? null) === '1';
+    }
+
     /**
-     * @return array{poll: Poll, group_label: string, choice: Choice|null, turnout: Turnout, missing_by_group: list<array{group: VoiceGroup|null, members: non-empty-list<Member>}>, show_names: bool}
+     * @return array{poll: Poll, group_label: string, choice: Choice|null, turnout: Turnout, missing_by_group: list<array{group: VoiceGroup|null, members: non-empty-list<Member>}>, show_names: bool, recipient: Member|null, recipient_voted: bool|null, senders: list<string>, delegation: array{open: bool, max_received: int, targets: list<array{id: int, name: string, group_label: string|null, voted: bool}>}|null}
      */
-    private function data(Poll $poll, Member $member): array
+    private function data(Poll $poll, Member $member, bool $delegationOpen): array
     {
         $groups = $this->voiceGroups->all();
-        $turnout = Turnout::of($this->members->all($this->translator->getLocale()), $this->ballots->participantIds($poll->id));
+        $members = $this->members->all($this->translator->getLocale());
+        $participantIds = $this->ballots->participantIds($poll->id);
+        $delegations = $this->delegations->forPoll($poll->id);
+        $turnout = Turnout::of($members, $participantIds, $delegations);
+        $showNames = $member->isBoard || $member->isAdmin || $this->settings->showOpenNames();
+        $recipient = null;
+        $recipientVoted = false;
+        $senders = [];
+        foreach ($turnout->delegations as $entry) {
+            if ($entry['from']->id === $member->id) {
+                $recipient = $entry['to'];
+                $recipientVoted = $entry['to_voted'];
+            } elseif ($entry['to']->id === $member->id) {
+                $senders[] = $entry['from']->name;
+            }
+        }
 
         return [
             'poll' => $poll,
@@ -88,7 +154,39 @@ final readonly class PollPage
             'choice' => $this->ballots->choice($poll->id, $member->id),
             'turnout' => $turnout,
             'missing_by_group' => $turnout->missingByGroup($groups),
-            'show_names' => $member->isBoard || $member->isAdmin || $this->settings->showOpenNames(),
+            'show_names' => $showNames,
+            'recipient' => $recipient,
+            // Whether the recipient voted reveals turnout, so it follows the names setting.
+            'recipient_voted' => $showNames && $recipient !== null ? $recipientVoted : null,
+            'senders' => $senders,
+            'delegation' => $recipient === null && $senders === [] && $this->settings->delegationEnabled()
+                ? $this->delegationBlock($groups, $members, $member, $delegations, array_flip($participantIds), $showNames, $delegationOpen)
+                : null,
+        ];
+    }
+
+    /**
+     * The delegation block: closed, or open with the members the vote can go to.
+     *
+     * @param list<VoiceGroup> $groups
+     * @param list<Member> $members
+     * @param array<int, int> $voted member ids with a ballot, as keys
+     *
+     * @return array{open: bool, max_received: int, targets: list<array{id: int, name: string, group_label: string|null, voted: bool}>}
+     */
+    private function delegationBlock(array $groups, array $members, Member $member, Delegations $delegations, array $voted, bool $showNames, bool $open): array
+    {
+        $maxReceived = $this->settings->maxReceived();
+
+        return [
+            'open' => $open,
+            'max_received' => $maxReceived,
+            'targets' => $open ? array_map(static fn(Member $target): array => [
+                'id' => $target->id,
+                'name' => $target->name,
+                'group_label' => $target->voiceGroupKey === null ? null : VoiceGroup::labelOf($groups, $target->voiceGroupKey),
+                'voted' => $showNames && isset($voted[$target->id]),
+            ], $delegations->targets($members, $member->id, $maxReceived)) : [],
         ];
     }
 

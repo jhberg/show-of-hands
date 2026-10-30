@@ -73,13 +73,13 @@ final class BallotRepositoryTest extends TestCase
     {
         self::assertNull($this->ballots->choice($this->poll, $this->kim));
 
-        self::assertSame(CastOutcome::Registered, $this->ballots->cast($this->poll, $this->kim, Choice::Yes));
+        self::assertSame(CastOutcome::Registered, $this->ballots->cast($this->poll, $this->kim, Choice::Yes)->outcome);
         self::assertSame(Choice::Yes, $this->ballots->choice($this->poll, $this->kim));
 
-        self::assertSame(CastOutcome::Changed, $this->ballots->cast($this->poll, $this->kim, Choice::No));
+        self::assertSame(CastOutcome::Changed, $this->ballots->cast($this->poll, $this->kim, Choice::No)->outcome);
         self::assertSame(Choice::No, $this->ballots->choice($this->poll, $this->kim));
 
-        self::assertSame(CastOutcome::Unchanged, $this->ballots->cast($this->poll, $this->kim, Choice::No));
+        self::assertSame(CastOutcome::Unchanged, $this->ballots->cast($this->poll, $this->kim, Choice::No)->outcome);
         self::assertNull($this->ballots->choice($this->poll, $this->lou));
         self::assertSame([$this->kim], $this->ballots->participantIds($this->poll));
     }

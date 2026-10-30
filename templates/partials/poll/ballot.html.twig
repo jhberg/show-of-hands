@@ -1,6 +1,26 @@
 {% set admission = poll.kind.value == 'admission' %}
 <section class="ballot">
     <h2>{{ 'ballot.title'|trans }}</h2>
+    {% if recipient is not null %}
+        <div class="notice">{{ icon('arrow') }}<div>
+            <b>{{ 'ballot.delegated.title'|trans({name: recipient.name}) }}</b>
+            {% if recipient_voted is null -%}
+                {{ 'ballot.delegated.back'|trans }}
+            {%- elseif recipient_voted -%}
+                {{ 'ballot.delegated.voted'|trans({name: recipient.firstName}) }}
+            {%- else -%}
+                {{ 'ballot.delegated.not_voted'|trans({name: recipient.firstName}) }}
+            {%- endif %}
+            <form method="post" action="/polls/{{ poll.id }}/delegation/revoke" hx-post="/polls/{{ poll.id }}/delegation/revoke" hx-target="closest main" hx-swap="outerHTML">
+                {{ include('partials/csrf_field.html.twig') }}
+                <button class="link" id="deleg-revoke">{{ 'ballot.delegated.revoke'|trans }}</button>
+            </form>
+        </div></div>
+    {% endif %}
+    {% if senders is not empty %}
+        {% set weight = senders|length + 1 %}
+        <div class="weight"><span class="x">×{{ weight }}</span><span><b>{{ 'ballot.weight.title'|trans({weight: weight}) }}</b> {{ 'ballot.weight.text'|trans({count: senders|length, names: senders|name_list, weight: weight}) }}</span></div>
+    {% endif %}
     <p class="q">
         {%- if admission -%}
             {{ 'ballot.question.admission'|trans({name: poll.subjectName}) }}
@@ -27,7 +47,10 @@
     </form>
     {% if choice is not null %}
         <div class="reg">{{ icon('check') }}<span><b>{{ choice.value == 'yes' ? 'ballot.registered_yes'|trans : 'ballot.registered_no'|trans }}</b> {{ 'ballot.registered_text'|trans }}</span></div>
-    {% else %}
+    {% elseif recipient is null %}
         <p class="help mt-12">{{ 'ballot.hint'|trans }}</p>
+    {% endif %}
+    {% if delegation is not null %}
+        {{ include('partials/poll/delegation.html.twig') }}
     {% endif %}
 </section>

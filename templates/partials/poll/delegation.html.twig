@@ -1,0 +1,29 @@
+{# The delegation block. Whether the panel is open lives in ?delegate=1, so it works without JavaScript. #}
+<div class="deleg" id="deleg">
+    <form method="get" action="/polls/{{ poll.id }}#deleg" hx-get="/polls/{{ poll.id }}" hx-target="closest main" hx-swap="outerHTML">
+        {% if not delegation.open %}<input type="hidden" name="delegate" value="1">{% endif %}
+        {# The id lets htmx keep the focus on the toggle across the swap. #}
+        <button class="btn ghost" id="deleg-toggle" aria-expanded="{{ delegation.open ? 'true' : 'false' }}">{{ icon('arrow') }}{{ 'delegation.toggle'|trans }}</button>
+    </form>
+    {% if delegation.open %}
+        <form class="deleg-panel" method="post" action="/polls/{{ poll.id }}/delegation" hx-post="/polls/{{ poll.id }}/delegation" hx-target="closest main" hx-swap="outerHTML">
+            {{ include('partials/csrf_field.html.twig') }}
+            <p class="help">{{ 'delegation.help'|trans }}{% if choice is not null %} <b>{{ 'delegation.withdraws'|trans }}</b>{% endif %}</p>
+            <label for="deleg-to">{{ 'delegation.to'|trans }}</label>
+            <select id="deleg-to" name="to">
+                <option value="">{{ 'delegation.choose'|trans }}</option>
+                {% for target in delegation.targets %}
+                    <option value="{{ target.id }}">
+                        {{- target.name }}{% if target.group_label is not null %} ({{ target.group_label }}){% endif %}
+                        {%- if target.voted %} · {{ 'delegation.voted'|trans }}{% endif -%}
+                    </option>
+                {% endfor %}
+            </select>
+            <div class="row">
+                <button class="btn primary">{{ 'delegation.submit'|trans }}</button>
+                <a class="btn" href="/polls/{{ poll.id }}#deleg" hx-get="/polls/{{ poll.id }}" hx-target="closest main" hx-swap="outerHTML">{{ 'delegation.cancel'|trans }}</a>
+            </div>
+            <p class="help">{{ 'delegation.limit'|trans({max: delegation.max_received}) }}</p>
+        </form>
+    {% endif %}
+</div>

@@ -12,7 +12,8 @@ use ShowOfHands\Infrastructure\Persistence\BallotRepository;
 use ShowOfHands\Paths;
 
 /**
- * While a poll is open, nothing reads the ballots table except the signed-in member's own row.
+ * While a poll is open, nothing reads the ballots table except the signed-in member's own row,
+ * also when they hand their vote on, take it back, or vote again.
  */
 final class BallotSecrecyTest extends HttpTestCase
 {
@@ -24,6 +25,14 @@ final class BallotSecrecyTest extends HttpTestCase
         $database = (new Paths(dirname(__DIR__, 2), $this->dataDir))->database();
         $this->app = $this->createApp(overrides: [\PDO::class => static fn(): \PDO => ConnectionFactory::open($database, LoggingPdo::class)]);
         LoggingPdo::reset();
+    }
+
+    /**
+     * @param array{sql: string, params: list<mixed>} $entry
+     */
+    private static function isWrite(array $entry): bool
+    {
+        return preg_match('/^\s*(INSERT|DELETE)\b/', $entry['sql']) === 1;
     }
 
     public function testTheOpenPollPathReadsOnlyTheMembersOwnBallot(): void
@@ -41,18 +50,24 @@ final class BallotSecrecyTest extends HttpTestCase
         $this->request('POST', "/polls/{$poll}/ballot", [CsrfMiddleware::FIELD => $this->session->csrfToken(), 'choice' => 'yes']);
         $this->request('GET', "/polls/{$poll}");
         $this->request('POST', "/polls/{$poll}/ballot", [CsrfMiddleware::FIELD => $this->session->csrfToken(), 'choice' => 'no'], headers: ['HX-Request' => 'true']);
+        $this->request('POST', "/polls/{$poll}/delegation", [CsrfMiddleware::FIELD => $this->session->csrfToken(), 'to' => (string) $lou]);
+        $this->request('GET', "/polls/{$poll}?delegate=1");
+        $this->request('POST', "/polls/{$poll}/delegation/revoke", [CsrfMiddleware::FIELD => $this->session->csrfToken()], headers: ['HX-Request' => 'true']);
+        $this->request('POST', "/polls/{$poll}/delegation", [CsrfMiddleware::FIELD => $this->session->csrfToken(), 'to' => (string) $lou], headers: ['HX-Request' => 'true']);
+        $this->request('POST', "/polls/{$poll}/ballot", [CsrfMiddleware::FIELD => $this->session->csrfToken(), 'choice' => 'yes']);
         $this->request('GET', '/');
 
         $touching = array_values(array_filter(LoggingPdo::entries(), static fn(array $entry): bool => stripos($entry['sql'], 'ballots') !== false));
-        $reads = array_values(array_filter($touching, static fn(array $entry): bool => !str_starts_with(ltrim($entry['sql']), 'INSERT')));
+        $reads = array_values(array_filter($touching, static fn(array $entry): bool => !self::isWrite($entry)));
         self::assertNotEmpty($reads);
         foreach ($reads as $entry) {
             self::assertSame(self::OWN_BALLOT_READ, $entry['sql']);
             self::assertSame([$poll, $ownToken], $entry['params']);
         }
-        // The only writes are the member's own ballot, keyed by their token: one cast, one change.
-        $writes = array_values(array_filter($touching, static fn(array $entry): bool => str_starts_with(ltrim($entry['sql']), 'INSERT')));
-        self::assertCount(2, $writes);
+        // The only writes are the member's own ballot, keyed by their token: a cast, a change,
+        // two withdrawals by delegating, and the cast that takes the vote back.
+        $writes = array_values(array_filter($touching, self::isWrite(...)));
+        self::assertSame(['INSERT', 'INSERT', 'DELETE', 'DELETE', 'INSERT'], array_map(static fn(array $entry): string => strtok(ltrim($entry['sql']), ' ') ?: '', $writes));
         foreach ($writes as $entry) {
             self::assertSame([$poll, $ownToken], array_slice($entry['params'], 0, 2));
         }

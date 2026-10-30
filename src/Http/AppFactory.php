@@ -12,6 +12,7 @@ use Psr\Http\Message\ResponseFactoryInterface;
 use ShowOfHands\Domain\BallotToken;
 use ShowOfHands\Http\Action\AdminPollsAction;
 use ShowOfHands\Http\Action\BallotAction;
+use ShowOfHands\Http\Action\DelegationAction;
 use ShowOfHands\Http\Action\DevLoginAction;
 use ShowOfHands\Http\Action\GoogleCallbackAction;
 use ShowOfHands\Http\Action\GoogleStartAction;
@@ -20,6 +21,7 @@ use ShowOfHands\Http\Action\LocaleAction;
 use ShowOfHands\Http\Action\LoginAction;
 use ShowOfHands\Http\Action\LogoutAction;
 use ShowOfHands\Http\Action\PollAction;
+use ShowOfHands\Http\Action\RevokeDelegationAction;
 use ShowOfHands\Http\Action\ThemeAction;
 use ShowOfHands\Http\Middleware\CsrfMiddleware;
 use ShowOfHands\Http\Middleware\DatabaseMiddleware;
@@ -87,6 +89,8 @@ final class AppFactory
             $member->get('/', HomeAction::class);
             $member->get('/polls/{id:[0-9]+}', PollAction::class);
             $member->post('/polls/{id:[0-9]+}/ballot', BallotAction::class);
+            $member->post('/polls/{id:[0-9]+}/delegation', DelegationAction::class);
+            $member->post('/polls/{id:[0-9]+}/delegation/revoke', RevokeDelegationAction::class);
             $member->group('/admin', function (RouteCollectorProxy $admin): void {
                 $admin->get('/polls', AdminPollsAction::class);
             })->add(RequireRole::admin($responses));
