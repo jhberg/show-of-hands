@@ -1,6 +1,19 @@
 {% extends 'layout.html.twig' %}
 
+{# A poll's name and meta line, in both lists. #}
+{% macro title(poll, group_label) -%}
+    <span class="t">
+        <b>{{ poll.subjectName }}</b>
+        <span class="meta">
+            {%- if poll.kind.value == 'exception' %}{{ 'home.exception'|trans }} · {% endif -%}
+            {{ group_label }}
+            {%- if poll.date is not null %} · {{ poll.date|day_short }}{% endif -%}
+        </span>
+    </span>
+{%- endmacro %}
+
 {% block body %}
+{% import _self as lists %}
 {{ include('partials/header.html.twig', {active: 'home'}) }}
 <main class="main">
     <h1>{{ 'home.greeting'|trans({name: first_name}) }}</h1>
@@ -15,14 +28,7 @@
                     {% set poll = entry.poll %}
                     <li>
                         <a href="/polls/{{ poll.id }}">
-                            <span class="t">
-                                <b>{{ poll.subjectName }}</b>
-                                <span class="meta">
-                                    {%- if poll.kind.value == 'exception' %}{{ 'home.exception'|trans }} · {% endif -%}
-                                    {{ entry.group_label }}
-                                    {%- if poll.date is not null %} · {{ poll.date|day_short }}{% endif -%}
-                                </span>
-                            </span>
+                            {{- lists.title(poll, entry.group_label) -}}
                             {%- if entry.voted -%}
                                 <span class="chip">{{ icon('check') }}{{ 'home.voted'|trans }}</span>
                             {%- elseif entry.delegated_to is not null -%}
@@ -41,6 +47,21 @@
         <h2>{{ 'home.closed'|trans }}</h2>
         {% if closed_polls is empty %}
             <div class="empty">{{ 'home.closed_empty'|trans({days: retention_days}) }}</div>
+        {% else %}
+            <ul class="vlist">
+                {% for entry in closed_polls %}
+                    {% set poll = entry.poll %}
+                    <li>
+                        <a href="/polls/{{ poll.id }}">
+                            {{- lists.title(poll, entry.group_label) -}}
+                            {%- if poll.tally is not null -%}
+                                <span class="chip {{ poll.tally.isAccepted ? 'ja' : 'nein' }}">{{ icon(poll.tally.isAccepted ? 'check' : 'cross') }}{{ include('partials/poll/verdict.html.twig') }}</span>
+                            {%- endif -%}
+                            <span class="chev">{{ icon('chev') }}</span>
+                        </a>
+                    </li>
+                {% endfor %}
+            </ul>
         {% endif %}
     </div>
 </main>

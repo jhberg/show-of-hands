@@ -4,6 +4,11 @@
     {{ include('partials/poll/head.html.twig') }}
     {% if poll.isOpen %}
         {{ include('partials/poll/ballot.html.twig') }}
+    {% elseif poll.tally is not null %}
+        {{ include('partials/poll/result.html.twig') }}
     {% endif %}
     {{ include('partials/poll/turnout.html.twig') }}
+    {% if board is not null %}
+        {{ include('partials/poll/board.html.twig') }}
+    {% endif %}
 </main>

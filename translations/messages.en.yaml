@@ -62,6 +62,7 @@ toast:
     refused: The vote could not be delegated like this. The page now shows where things stand.
     revoked: Delegation taken back. Your vote is yours again.
   poll_closed: This poll is already closed.
+  close_done: Poll closed. The result is now visible.
 
 home:
   greeting: Hello {name}
@@ -140,6 +141,31 @@ turnout:
   delegations: Delegated votes
   pending: not cast yet
   lock: There are no interim results. The result appears only once the board closes the poll.
+
+board:
+  title: Closing by the board
+  help: You are on the board, so you can close this poll. After that, nobody can vote any more, and the result appears on this page for all members. Only the admins can undo a close made by mistake.
+  close: Close the poll
+  confirm_title: Close it now?
+  summary: '{cast} of {total} voting rights are cast{missing, plural, =0 {} one {, # member is still missing} other {, # members are still missing}}{pending, plural, =0 {} one {, # delegated vote is not cast yet} other {, # delegated votes are not cast yet}}.'
+  confirm: Close and show the result
+  cancel: Cancel
+
+result:
+  title: Result
+  verdict:
+    admission_yes: Admitted
+    admission_no: Not admitted
+    exception_yes: Exception approved
+    exception_no: Exception declined
+  yes_share: '{percent} yes'
+  threshold: '⅔ = {needed} yes'
+  legend:
+    yes: '{count} yes · {percent}'
+    no: '{count} no · {percent}'
+    abstained: '{count} not cast · {percent}'
+  explanation: '{yes} of {total} eligible voters voted yes, that is {percent}. {needed, plural, one {At least # yes vote is needed} other {At least # yes votes are needed}}, two thirds of all eligible voters. Votes not cast count as abstentions, not as yes. {cast} of {total} voting rights were cast{delegated, plural, =0 {} other {, # of them delegated}}.'
+  deletion: This poll and its result will be deleted automatically on {date}.
 
 admin:
   polls:

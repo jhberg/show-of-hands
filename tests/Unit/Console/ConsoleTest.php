@@ -94,6 +94,6 @@ final class ConsoleTest extends TestCase
         $tester = new CommandTester(new PurgeCommand($this->paths()));
 
         self::assertSame(Command::SUCCESS, $tester->execute([]));
-        self::assertStringContainsString('Deleted 0 expired session files and 0 old backups.', $tester->getDisplay());
+        self::assertStringContainsString('Deleted 0 expired session files, 0 old backups, and 0 ballots of closed polls.', $tester->getDisplay());
     }
 }

@@ -24,7 +24,7 @@ The app checks `config/config.php` on every request. If a value is missing or wr
 
 Members sign in with Google. The app asks Google only for the account's email address and lets in whoever is on the member list with that address. Up to two addresses per member are possible, for example the choir account and a private one.
 
-Housekeeping runs on requests, at most once an hour: it deletes expired session files and the database backup that an update made, a day after the update succeeded. Hosts with cron can run `bin/console purge` instead.
+Housekeeping runs on requests, at most once an hour. It deletes expired session files and, a day after an update succeeded, the database backup the update made. Once the closing day of a poll has ended, it deletes the poll's ballots and keeps the result. Hosts with cron can run `bin/console purge` instead.
 
 ## Branding
 

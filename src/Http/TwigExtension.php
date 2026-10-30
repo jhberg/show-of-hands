@@ -17,7 +17,7 @@ use Twig\TwigFunction;
 
 /**
  * Twig globals for the brand and the locales, the functions asset(), icon(), and csrf_token(),
- * the filters day_long and day_short for dates without time, and name_list.
+ * the filters day_long, day_date, and day_short for dates without time, percent, and name_list.
  */
 final class TwigExtension extends AbstractExtension implements GlobalsInterface
 {
@@ -58,11 +58,24 @@ final class TwigExtension extends AbstractExtension implements GlobalsInterface
         return [
             // "Di., 3. November 2026"
             new TwigFilter('day_long', fn(string $date): string => $this->formatDay($date, 'EEEdMMMMy')),
+            // "3. November 2026"
+            new TwigFilter('day_date', fn(string $date): string => $this->formatDay($date, 'dMMMMy')),
             // "3. Nov."
             new TwigFilter('day_short', fn(string $date): string => $this->formatDay($date, 'dMMM')),
+            // A share between 0 and 1 as "68,0 %"
+            new TwigFilter('percent', $this->percent(...)),
             // "Lina, Ida und Pia"
             new TwigFilter('name_list', $this->nameList(...)),
         ];
+    }
+
+    private function percent(float $share): string
+    {
+        $format = new \NumberFormatter($this->translator->getLocale(), \NumberFormatter::PERCENT);
+        $format->setAttribute(\NumberFormatter::MIN_FRACTION_DIGITS, 1);
+        $format->setAttribute(\NumberFormatter::MAX_FRACTION_DIGITS, 1);
+
+        return (string) $format->format($share);
     }
 
     /**

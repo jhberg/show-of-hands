@@ -8,12 +8,16 @@ use ShowOfHands\Domain\BallotToken;
 use ShowOfHands\Domain\CastOutcome;
 use ShowOfHands\Domain\CastResult;
 use ShowOfHands\Domain\Choice;
+use ShowOfHands\Domain\CloseDay;
+use ShowOfHands\Domain\PollStatus;
+use ShowOfHands\Domain\Tally;
 use ShowOfHands\Infrastructure\Database\Transaction;
 
 /**
  * The secret ballots and the turnout. While a poll is open, the only read of the ballots table
  * is the member's own row, found by their token. Turnout reads the participation table alone.
- * Casting a ballot also ends the member's delegation.
+ * Casting a ballot also ends the member's delegation. Only the close reads every ballot, to
+ * count them, and the day after the close the ballots are deleted.
  */
 final readonly class BallotRepository
 {
@@ -70,6 +74,58 @@ final readonly class BallotRepository
     public function choice(int $pollId, int $memberId): ?Choice
     {
         return $this->choiceByToken($pollId, $this->tokens->for($pollId, $memberId));
+    }
+
+    /**
+     * Counts the poll's ballots. The only read of all ballots, made by the close inside its
+     * transaction. A member's token finds their ballot, so the votes handed to them count
+     * for their choice.
+     *
+     * @param array<int, int> $received the votes handed to a member who voted, by member id
+     */
+    public function tally(int $pollId, int $eligible, array $received): Tally
+    {
+        $extra = [];
+        foreach ($received as $memberId => $votes) {
+            $extra[$this->tokens->for($pollId, $memberId)] = $votes;
+        }
+        $statement = $this->pdo->prepare('SELECT token, choice FROM ballots WHERE poll_id = ?');
+        $statement->execute([$pollId]);
+        $ballots = [];
+        foreach ($statement->fetchAll() as $row) {
+            assert(is_array($row));
+            $ballots[] = [Choice::from(Row::string($row, 'choice')), 1 + ($extra[Row::string($row, 'token')] ?? 0)];
+        }
+
+        return Tally::count($eligible, $ballots);
+    }
+
+    /**
+     * Deletes the ballots of every closed poll whose close day has ended. From then on, an
+     * admin can no longer reopen the poll, and its frozen tally is all that remains.
+     *
+     * @return int the number of ballots deleted
+     */
+    public function purgeClosed(\DateTimeImmutable $now, \DateTimeZone $zone): int
+    {
+        // One transaction, so a poll reopened in the meantime keeps its ballots.
+        return Transaction::immediate($this->pdo, function () use ($now, $zone): int {
+            $statement = $this->pdo->prepare(
+                'SELECT id, closed_at FROM polls p WHERE status = ? AND closed_at IS NOT NULL AND EXISTS (SELECT 1 FROM ballots b WHERE b.poll_id = p.id)',
+            );
+            $statement->execute([PollStatus::Closed->value]);
+            $delete = $this->pdo->prepare('DELETE FROM ballots WHERE poll_id = ?');
+            $deleted = 0;
+            foreach ($statement->fetchAll() as $row) {
+                assert(is_array($row));
+                if (CloseDay::hasEnded(new \DateTimeImmutable(Row::string($row, 'closed_at')), $now, $zone)) {
+                    $delete->execute([Row::int($row, 'id')]);
+                    $deleted += $delete->rowCount();
+                }
+            }
+
+            return $deleted;
+        });
     }
 
     /**

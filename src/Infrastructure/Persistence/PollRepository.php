@@ -7,13 +7,14 @@ namespace ShowOfHands\Infrastructure\Persistence;
 use ShowOfHands\Domain\Poll;
 use ShowOfHands\Domain\PollKind;
 use ShowOfHands\Domain\PollStatus;
+use ShowOfHands\Domain\Tally;
 
 /**
- * Polls without their ballots.
+ * Polls without their ballots. A closed poll carries the tally frozen at its close.
  */
 final readonly class PollRepository
 {
-    private const COLUMNS = 'id, kind, subject_name, question, voice_group_key, date, note, status';
+    private const COLUMNS = 'id, kind, subject_name, question, voice_group_key, date, note, status, closed_at, eligible, yes_weight, no_weight, delegation_count';
 
     public function __construct(private \PDO $pdo) {}
 
@@ -43,16 +44,38 @@ final readonly class PollRepository
      */
     public function open(): array
     {
-        $statement = $this->pdo->prepare('SELECT ' . self::COLUMNS . " FROM polls WHERE status = ? ORDER BY coalesce(date, ''), id");
-        $statement->execute([PollStatus::Open->value]);
+        return $this->byStatus(PollStatus::Open, "coalesce(date, ''), id");
+    }
 
-        $polls = [];
-        foreach ($statement->fetchAll() as $row) {
-            assert(is_array($row));
-            $polls[] = self::poll($row);
-        }
+    /**
+     * The closed polls, the most recently closed first.
+     *
+     * @return list<Poll>
+     */
+    public function closed(): array
+    {
+        return $this->byStatus(PollStatus::Closed, 'closed_at DESC, id DESC');
+    }
 
-        return $polls;
+    /**
+     * Closes the poll with its frozen tally. The caller runs it inside the close's transaction,
+     * after checking that the poll is open.
+     */
+    public function markClosed(int $id, \DateTimeImmutable $closedAt, Tally $tally): void
+    {
+        $this->pdo->prepare(
+            'UPDATE polls SET status = ?, closed_at = ?, eligible = ?, yes_weight = ?, no_weight = ?, cast_weight = ?, delegation_count = ?
+             WHERE id = ?',
+        )->execute([
+            PollStatus::Closed->value,
+            $closedAt->setTimezone(new \DateTimeZone('UTC'))->format('Y-m-d\\TH:i:s\\Z'),
+            $tally->eligible,
+            $tally->yes,
+            $tally->no,
+            $tally->cast(),
+            $tally->delegations,
+            $id,
+        ]);
     }
 
     /**
@@ -87,10 +110,29 @@ final readonly class PollRepository
     }
 
     /**
+     * @return list<Poll>
+     */
+    private function byStatus(PollStatus $status, string $orderBy): array
+    {
+        $statement = $this->pdo->prepare('SELECT ' . self::COLUMNS . ' FROM polls WHERE status = ? ORDER BY ' . $orderBy);
+        $statement->execute([$status->value]);
+
+        $polls = [];
+        foreach ($statement->fetchAll() as $row) {
+            assert(is_array($row));
+            $polls[] = self::poll($row);
+        }
+
+        return $polls;
+    }
+
+    /**
      * @param array<mixed> $row
      */
     private static function poll(array $row): Poll
     {
+        $status = PollStatus::from(Row::string($row, 'status'));
+
         return new Poll(
             id: Row::int($row, 'id'),
             kind: PollKind::from(Row::string($row, 'kind')),
@@ -99,7 +141,14 @@ final readonly class PollRepository
             voiceGroupKey: Row::string($row, 'voice_group_key'),
             date: Row::nullableString($row, 'date'),
             note: Row::string($row, 'note'),
-            status: PollStatus::from(Row::string($row, 'status')),
+            status: $status,
+            closedAt: $status === PollStatus::Closed ? Row::nullableString($row, 'closed_at') : null,
+            tally: $status === PollStatus::Closed && $row['eligible'] !== null ? new Tally(
+                Row::int($row, 'eligible'),
+                Row::int($row, 'yes_weight'),
+                Row::int($row, 'no_weight'),
+                Row::int($row, 'delegation_count'),
+            ) : null,
         );
     }
 }
