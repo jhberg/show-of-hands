@@ -1,0 +1,11 @@
+{% extends 'layout.html.twig' %}
+
+{% block title %}{{ 'admin.members.title'|trans }} · {{ 'nav.admin'|trans }} · {{ parent() }}{% endblock %}
+
+{% block body %}
+{{ include('partials/header.html.twig', {active: 'admin'}) }}
+<main class="main wide">
+    {{ include('partials/admin/tabs.html.twig', {section: 'members'}) }}
+    {{ include('partials/admin/members.html.twig') }}
+</main>
+{% endblock %}

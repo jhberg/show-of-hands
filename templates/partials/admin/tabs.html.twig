@@ -1,0 +1,9 @@
+{# The admin area's sections. section names the one that shows. #}
+<nav class="tabs" aria-label="{{ 'nav.admin'|trans }}">
+    {%- for tab in [
+        {key: 'polls', path: '/admin/polls', label: 'admin.polls.title'|trans},
+        {key: 'members', path: '/admin/members', label: 'admin.members.title'|trans},
+    ] %}
+        <a href="{{ tab.path }}"{% if section == tab.key %} class="on" aria-current="page"{% endif %}>{{ tab.label }}</a>
+    {%- endfor %}
+</nav>

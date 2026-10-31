@@ -17,13 +17,17 @@ use ShowOfHands\Infrastructure\Persistence\MemberRepository;
 use Symfony\Component\Translation\Translator;
 
 /**
- * Loads the signed-in member on every request, so a changed role or a removed member
- * takes effect at once. The member's saved language replaces the cookie's.
+ * Loads the signed-in member on every request, so a changed role or a removed member takes effect
+ * at once. The address they signed in with must still be theirs: an admin who removes it, or moves
+ * it to another member, ends the session. The member's saved language replaces the cookie's.
  */
 final readonly class MemberMiddleware implements MiddlewareInterface
 {
     public const ATTRIBUTE = 'member';
     public const SESSION_KEY = 'member_id';
+
+    /** The address the member signed in with. */
+    public const EMAIL_KEY = 'member_email';
 
     public function __construct(
         private ContainerInterface $container,
@@ -50,8 +54,9 @@ final readonly class MemberMiddleware implements MiddlewareInterface
         }
         $members = $this->container->get(MemberRepository::class);
         assert($members instanceof MemberRepository);
-        $member = $members->find($id);
-        if ($member === null) {
+        $email = $this->session->get(self::EMAIL_KEY);
+        $member = is_string($email) ? $members->findByEmail($email)[0] ?? null : null;
+        if ($member === null || $member->id !== $id) {
             $this->session->clear();
 
             return $handler->handle($request);

@@ -1,0 +1,45 @@
+{# The inline add or edit form. After a refused save, the message sits at its field, which takes the focus. #}
+{% set action = form.memberId is null ? '/admin/members' : '/admin/members/' ~ form.memberId %}
+{% set focus = form.errorField ?? 'name' %}
+<form class="panel form mb-16" id="member-form" method="post" action="{{ action }}" hx-post="{{ action }}" novalidate>
+    {{ include('partials/csrf_field.html.twig') }}
+    <h2>{{ form.memberId is null ? 'admin.members.add'|trans : 'admin.members.form.edit_title'|trans }}</h2>
+    {% for field in [
+        {name: 'name', type: 'text', label: 'admin.members.form.name'|trans, placeholder: 'admin.members.form.name_placeholder'|trans, value: form.name},
+        {name: 'email', type: 'email', label: 'admin.members.form.email'|trans({brand: brand.name}), placeholder: email_domain is null ? '' : 'admin.members.form.email_placeholder'|trans({domain: email_domain}), value: form.email},
+        {name: 'email2', type: 'email', label: 'admin.members.form.email2'|trans, placeholder: 'admin.members.form.email2_placeholder'|trans, value: form.email2, help: 'admin.members.form.email_help'|trans},
+    ] %}
+        {% set invalid = form.errorField == field.name %}
+        <div class="field">
+            <label for="mf-{{ field.name }}">{{ field.label }}</label>
+            <input id="mf-{{ field.name }}" name="{{ field.name }}" type="{{ field.type }}" value="{{ field.value }}"
+                {%- if field.placeholder is not empty %} placeholder="{{ field.placeholder }}"{% endif %} autocomplete="off"
+                {%- if focus == field.name %} autofocus{% endif %}
+                {%- if invalid %} aria-invalid="true" aria-describedby="mf-{{ field.name }}-error"{% endif %}>
+            {% if invalid %}<p class="field-error" id="mf-{{ field.name }}-error">{{ form.errorKey|trans(form.errorParams) }}</p>{% endif %}
+            {% if field.help is defined %}<p class="help">{{ field.help }}</p>{% endif %}
+        </div>
+    {% endfor %}
+    <div class="field">
+        <label for="mf-group">{{ 'admin.members.form.group'|trans }}</label>
+        <select id="mf-group" name="group">
+            {# Only a member who has no group yet, such as the first admin, is offered none. #}
+            {% if form.group is null %}<option value="" selected>{{ 'turnout.no_group'|trans }}</option>{% endif %}
+            {% for group in groups %}
+                <option value="{{ group.key }}"{% if group.key == form.group %} selected{% endif %}>{{ group.label }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <label class="check">
+        <input type="checkbox" name="board" value="1"{% if form.board %} checked{% endif %}>
+        <span><b>{{ 'admin.members.form.board'|trans }}</b><br><span class="help">{{ 'admin.members.form.board_help'|trans }}</span></span>
+    </label>
+    <label class="check">
+        <input type="checkbox" name="admin" value="1"{% if form.admin %} checked{% endif %}>
+        <span><b>{{ 'admin.members.form.admin'|trans }}</b><br><span class="help">{{ 'admin.members.form.admin_help'|trans }}</span></span>
+    </label>
+    <div class="row">
+        <button class="btn primary">{{ form.memberId is null ? 'admin.members.form.submit_add'|trans : 'admin.members.form.submit_edit'|trans }}</button>
+        <a class="btn" href="/admin/members" hx-get="/admin/members" hx-replace-url="true">{{ 'admin.members.cancel'|trans }}</a>
+    </div>
+</form>

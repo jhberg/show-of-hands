@@ -63,6 +63,17 @@ toast:
     revoked: Delegation taken back. Your vote is yours again.
   poll_closed: This poll is already closed.
   close_done: Poll closed. The result is now visible.
+  member:
+    invalid: A name and at least one valid email address are needed.
+    same: The two addresses are the same.
+    taken: 'One of these addresses is already registered: {name}.'
+    own_admin: You cannot remove your own admin access.
+    own_address: You cannot remove the address you are signed in with.
+    added: '{name} added.'
+    saved: Member saved.
+    removed: '{name} removed.'
+    remove_tomorrow: '{name} took part in a poll closed today. You can remove them from tomorrow.'
+    remove_after_reopened: '{name} took part in a reopened poll. You can remove them from the day after it closes.'
 
 home:
   greeting: Hello {name}
@@ -168,6 +179,40 @@ result:
   deletion: This poll and its result will be deleted automatically on {date}.
 
 admin:
+  members:
+    title: Members
+    lead: This list is also the access list. Only the addresses registered here can sign in.
+    add: Add member
+    count:
+      eligible: '{count, plural, one {eligible voter} other {eligible voters}}'
+      board: on the board
+      admin: with admin access
+    search_label: Search members
+    search_placeholder: Search by name or email
+    you: you
+    edit: Edit
+    remove: Remove
+    remove_question: 'Remove {name}?'
+    remove_text: They will no longer be able to sign in. Their vote drops out of open polls.
+    remove_confirm: Yes, remove
+    cancel: Cancel
+    no_match: No matches.
+    form:
+      edit_title: Edit member
+      name: Name
+      name_placeholder: First and last name
+      email: Email address ({brand} account)
+      email_placeholder: 'first.last@{domain}'
+      email2: Another email address (optional)
+      email2_placeholder: private Google account
+      email_help: Both addresses lead to the same person and the same vote. Each address must match the Google account exactly.
+      group: Voice group
+      board: Board
+      board_help: Can close polls on the poll page and always sees who has not voted yet.
+      admin: Admin access
+      admin_help: Can create, publish, and reopen polls, and maintain members, roles, and voice groups.
+      submit_add: Add
+      submit_edit: Save
   polls:
     title: Polls
     lead: Create and publish. Each poll gets its own link. The board closes it on the poll page.

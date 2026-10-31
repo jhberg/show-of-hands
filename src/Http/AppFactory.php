@@ -10,6 +10,9 @@ use DI\Container;
 use DI\ContainerBuilder;
 use Psr\Http\Message\ResponseFactoryInterface;
 use ShowOfHands\Domain\BallotToken;
+use ShowOfHands\Http\Action\AdminMemberDeleteAction;
+use ShowOfHands\Http\Action\AdminMembersAction;
+use ShowOfHands\Http\Action\AdminMemberSaveAction;
 use ShowOfHands\Http\Action\AdminPollsAction;
 use ShowOfHands\Http\Action\BallotAction;
 use ShowOfHands\Http\Action\CloseAction;
@@ -95,6 +98,10 @@ final class AppFactory
             $member->post('/polls/{id:[0-9]+}/close', CloseAction::class)->add(RequireRole::board($responses));
             $member->group('/admin', function (RouteCollectorProxy $admin): void {
                 $admin->get('/polls', AdminPollsAction::class);
+                $admin->get('/members', AdminMembersAction::class);
+                $admin->post('/members', AdminMemberSaveAction::class);
+                $admin->post('/members/{id:[0-9]+}', AdminMemberSaveAction::class);
+                $admin->post('/members/{id:[0-9]+}/delete', AdminMemberDeleteAction::class);
             })->add(RequireRole::admin($responses));
         })->add(new RequireMember($responses));
 

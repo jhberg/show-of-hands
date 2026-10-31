@@ -191,7 +191,7 @@ section.board .help{max-width:60ch}
 .empty{padding:22px;border:1px dashed var(--line);border-radius:var(--r);color:var(--ink-2);text-align:center;font-size:15px;margin-top:10px}
 
 /* admin */
-.tabs{display:flex;gap:2px;border-bottom:1px solid var(--line);margin:-6px 0 22px;overflow-x:auto}
+.tabs{display:flex;gap:2px;border-bottom:1px solid var(--line);margin:-6px 0 22px;overflow-x:auto;overflow-y:hidden}
 .tabs a{padding:10px 14px;text-decoration:none;color:var(--ink-2);font-weight:500;font-size:15px;white-space:nowrap;border-bottom:3px solid transparent;margin-bottom:-1px;transition:color var(--t) var(--ease)}
 .tabs a:hover{color:var(--ink)}
 .tabs a.on{color:var(--ink);border-bottom-color:var(--accent)}
@@ -216,6 +216,8 @@ section.board .help{max-width:60ch}
 .alist .side{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
 .alist .full{grid-column:1 / -1}
 .alist .drow{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:10px 12px;border-radius:var(--r-s);background:var(--nein-soft);border:1px solid var(--nein-line);font-size:15px}
+/* The mockup's .alist resets the panel's padding, so names touched the border. */
+.alist.panel{padding:4px 18px}
 @media (max-width:520px){.alist li{grid-template-columns:1fr}.alist .side{justify-content:flex-start}}
 .stat{font-size:15px;color:var(--ink-2)}
 .stat b{color:var(--ink)}
@@ -293,6 +295,11 @@ a.gbtn{color:var(--ink);text-decoration:none}
 .logout{display:contents}
 .mt-6{margin-top:6px}
 .mt-12{margin-top:12px}
+.mb-10{margin-bottom:10px}
+.mb-16{margin-bottom:16px}
+/* A refused save names the problem at its field, beside the toast. */
+.field-error{font-size:14px;color:var(--nein);font-weight:500}
+input[aria-invalid=true]{border-color:var(--nein)}
 /* Tap targets reach 44 px on touch screens. */
 @media (pointer:coarse){
   .btn.sm,.btn.icon,.nav a,.lang-btn{min-height:44px}

@@ -1,0 +1,37 @@
+{# The member list, swapped alone while the admin types a search. #}
+{% set search = query is empty ? {} : {q: query} %}
+<ul class="alist panel" id="member-list">
+    {% for row in rows %}
+        {% set listed = row.member %}
+        {% set is_self = listed.id == member.id %}
+        <li id="m-{{ listed.id }}">
+            <div class="who">
+                <b>{{ listed.name }}{% if is_self %} <span class="chip mine">{{ 'admin.members.you'|trans }}</span>{% endif %}</b>
+                {%- for email in row.emails %}<span class="meta"><code>{{ email }}</code></span>{% endfor -%}
+            </div>
+            <div class="side">
+                {%- if row.group_label is not null %}<span class="chip">{{ row.group_label }}</span>{% endif %}
+                {%- if listed.isBoard %}<span class="chip open">{{ 'role.board'|trans }}</span>{% endif %}
+                {%- if listed.isAdmin %}<span class="chip closed">{{ 'role.admin'|trans }}</span>{% endif %}
+                {%- set edit_url = '/admin/members?' ~ search|merge({edit: listed.id})|url_encode %}
+                <a class="btn sm" href="{{ edit_url }}#member-form" hx-get="{{ edit_url }}" hx-replace-url="true">{{ 'admin.members.edit'|trans }}</a>
+                {%- if not is_self %}
+                    {%- set delete_url = '/admin/members?' ~ search|merge({delete: listed.id})|url_encode %}
+                    <a class="btn sm ghost" href="{{ delete_url }}#m-{{ listed.id }}" hx-get="{{ delete_url }}" hx-replace-url="true">{{ 'admin.members.remove'|trans }}</a>
+                {%- endif %}
+            </div>
+            {% if deleting == listed.id %}
+                <form class="full drow" method="post" action="/admin/members/{{ listed.id }}/delete" hx-post="/admin/members/{{ listed.id }}/delete">
+                    {{ include('partials/csrf_field.html.twig') }}
+                    <input type="hidden" name="q" value="{{ query }}">
+                    <span><b>{{ 'admin.members.remove_question'|trans({name: listed.name}) }}</b> {{ 'admin.members.remove_text'|trans }}</span>
+                    {# htmx moves the focus here after the swap, so the second tap is one key away. #}
+                    <button class="btn sm danger" autofocus>{{ 'admin.members.remove_confirm'|trans }}</button>
+                    <a class="btn sm" href="{{ list_url }}#m-{{ listed.id }}" hx-get="{{ list_url }}" hx-replace-url="true">{{ 'admin.members.cancel'|trans }}</a>
+                </form>
+            {% endif %}
+        </li>
+    {% else %}
+        <li><div class="who muted">{{ 'admin.members.no_match'|trans }}</div></li>
+    {% endfor %}
+</ul>

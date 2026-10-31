@@ -5,6 +5,7 @@
 {% block body %}
 {{ include('partials/header.html.twig', {active: 'admin'}) }}
 <main class="main wide">
+    {{ include('partials/admin/tabs.html.twig', {section: 'polls'}) }}
     <div class="page-head">
         <div>
             <h1>{{ 'admin.polls.title'|trans }}</h1>
