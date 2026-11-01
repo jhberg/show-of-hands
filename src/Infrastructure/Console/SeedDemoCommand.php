@@ -7,6 +7,7 @@ namespace ShowOfHands\Infrastructure\Console;
 use ShowOfHands\Domain\Choice;
 use ShowOfHands\Domain\PollKind;
 use ShowOfHands\Domain\PollStatus;
+use ShowOfHands\Domain\Settings;
 use ShowOfHands\Domain\VoiceGroup;
 use ShowOfHands\Infrastructure\Clock\Clock;
 use ShowOfHands\Infrastructure\Config\Config;
@@ -17,6 +18,7 @@ use ShowOfHands\Infrastructure\Persistence\DelegationRepository;
 use ShowOfHands\Infrastructure\Persistence\MemberRepository;
 use ShowOfHands\Infrastructure\Persistence\PollCloser;
 use ShowOfHands\Infrastructure\Persistence\PollRepository;
+use ShowOfHands\Infrastructure\Persistence\SettingsRepository;
 use ShowOfHands\Infrastructure\Persistence\VoiceGroupRepository;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -26,7 +28,8 @@ use Symfony\Component\Console\Output\OutputInterface;
 /**
  * Replaces all data with the sample choir of the reference mockup: 25 invented members in nine
  * voice groups, some with a second address and with board or admin roles, and the mockup's polls
- * with their ballots and delegations. Dates are relative to today, so the sample never goes stale.
+ * with their ballots and delegations. The settings return to their defaults. Dates are relative
+ * to today, so the sample never goes stale.
  */
 #[AsCommand('seed:demo', 'Replace all data with sample data (development only).')]
 final class SeedDemoCommand extends DatabaseCommand
@@ -94,6 +97,7 @@ final class SeedDemoCommand extends DatabaseCommand
             return Command::FAILURE;
         }
 
+        $this->service(SettingsRepository::class)->save(Settings::defaults());
         $groups = VoiceGroup::defaults($config->defaultLocale);
         $members = $this->service(MemberRepository::class);
         $polls = $this->service(PollRepository::class);

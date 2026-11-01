@@ -44,6 +44,7 @@ final class ConsoleTest extends TestCase
         $tester = new CommandTester(new SeedDemoCommand($paths));
 
         self::assertSame(Command::SUCCESS, $tester->execute([]));
+        $this->value($paths, "UPDATE settings SET value = '30' WHERE key = 'retention_days'");
         self::assertSame(Command::SUCCESS, (new CommandTester(new SeedDemoCommand($paths)))->execute([]), 'Seeding twice replaces the data.');
 
         self::assertSame(25, $this->value($paths, 'SELECT count(*) FROM members'));
@@ -53,6 +54,7 @@ final class ConsoleTest extends TestCase
         self::assertSame(3, $this->value($paths, 'SELECT count(*) FROM members WHERE is_board = 1'));
         self::assertSame('rosa.kuehn@example.org', $this->value($paths, "SELECT e.email FROM member_emails e JOIN members m ON m.id = e.member_id WHERE m.name = 'Rosa Kühn'"));
         self::assertSame('L', $this->value($paths, "SELECT voice_group_key FROM members WHERE name = 'Carla Mertens'"));
+        self::assertSame('14', $this->value($paths, "SELECT value FROM settings WHERE key = 'retention_days'"), 'Seeding resets the settings.');
     }
 
     public function testRefusesToSeedOutsideDevelopment(): void

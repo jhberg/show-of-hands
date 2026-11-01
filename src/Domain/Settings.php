@@ -16,6 +16,12 @@ final readonly class Settings
     /** How many days a closed poll is kept, with its result and turnout. */
     public const RETENTION_DAYS_CHOICES = [7, 14, 30];
 
+    /** The values a new installation starts with, as the first migration writes them. */
+    public static function defaults(): self
+    {
+        return new self(true, 2, true, 14);
+    }
+
     /**
      * @param bool $delegationEnabled whether members may hand their vote to another member
      * @param int $maxReceived one of MAX_RECEIVED_CHOICES
