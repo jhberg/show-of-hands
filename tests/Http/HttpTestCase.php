@@ -155,13 +155,13 @@ abstract class HttpTestCase extends TestCase
     }
 
     /**
-     * A form POST that carries the session's CSRF token.
+     * A form POST that carries the session's CSRF token, sent by htmx if $htmx is true.
      *
      * @param array<string, string> $body
      */
-    protected function post(string $uri, array $body = []): ResponseInterface
+    protected function post(string $uri, array $body = [], bool $htmx = false): ResponseInterface
     {
-        return $this->request('POST', $uri, [CsrfMiddleware::FIELD => $this->session->csrfToken()] + $body);
+        return $this->request('POST', $uri, [CsrfMiddleware::FIELD => $this->session->csrfToken()] + $body, headers: $htmx ? ['HX-Request' => 'true'] : []);
     }
 
     protected function body(ResponseInterface $response): string

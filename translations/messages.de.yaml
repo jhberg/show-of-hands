@@ -63,6 +63,17 @@ toast:
     revoked: Übertragung zurückgenommen. Dein Stimmrecht liegt wieder bei dir.
   poll_closed: Die Abstimmung ist bereits abgeschlossen.
   close_done: Abstimmung abgeschlossen. Das Ergebnis ist jetzt sichtbar.
+  member:
+    invalid: Name und mindestens eine gültige E-Mail-Adresse sind nötig.
+    same: Die beiden Adressen sind gleich.
+    taken: 'Eine dieser Adressen ist schon hinterlegt: {name}.'
+    own_admin: Den eigenen Verwaltungszugang kannst du nicht entfernen.
+    own_address: Die Adresse, mit der du gerade angemeldet bist, kannst du nicht entfernen.
+    added: '{name} hinzugefügt.'
+    saved: Mitglied gespeichert.
+    removed: '{name} entfernt.'
+    remove_tomorrow: '{name} hat an einer heute abgeschlossenen Abstimmung teilgenommen und kann erst ab morgen entfernt werden.'
+    remove_after_reopened: '{name} hat an einer wieder geöffneten Abstimmung teilgenommen und kann erst ab dem Tag nach ihrem Abschluss entfernt werden.'
 
 home:
   greeting: Hallo {name}
@@ -168,6 +179,40 @@ result:
   deletion: Diese Abstimmung wird samt Ergebnis am {date} automatisch gelöscht.
 
 admin:
+  members:
+    title: Mitglieder
+    lead: Diese Liste ist zugleich die Zugangsliste. Nur die hinterlegten E-Mail-Adressen können sich anmelden.
+    add: Mitglied hinzufügen
+    count:
+      eligible: Stimmberechtigte
+      board: im Vorstand
+      admin: mit Verwaltungszugang
+    search_label: Mitglieder durchsuchen
+    search_placeholder: Name oder E-Mail suchen
+    you: du
+    edit: Bearbeiten
+    remove: Entfernen
+    remove_question: '{name} entfernen?'
+    remove_text: Die Person kann sich danach nicht mehr anmelden. In offenen Abstimmungen fällt ihre Stimme weg.
+    remove_confirm: Ja, entfernen
+    cancel: Abbrechen
+    no_match: Keine Treffer.
+    form:
+      edit_title: Mitglied bearbeiten
+      name: Name
+      name_placeholder: Vor- und Nachname
+      email: E-Mail-Adresse ({brand}-Konto)
+      email_placeholder: 'vorname.nachname@{domain}'
+      email2: Weitere E-Mail-Adresse (optional)
+      email2_placeholder: privates Google-Konto
+      email_help: Beide Adressen führen zur selben Person und zur selben Stimme. Jede Adresse muss genau dem Google-Konto entsprechen.
+      group: Stimmgruppe
+      board: Vorstand
+      board_help: Darf Abstimmungen auf der Abstimmungsseite abschließen und sieht immer, wer noch fehlt.
+      admin: Verwaltungszugang
+      admin_help: Darf Abstimmungen anlegen, freischalten und wieder öffnen sowie Mitglieder, Rollen und Stimmgruppen pflegen.
+      submit_add: Hinzufügen
+      submit_edit: Speichern
   polls:
     title: Abstimmungen
     lead: Anlegen und freischalten. Jede Abstimmung bekommt einen eigenen Link. Abgeschlossen wird vom Vorstand auf der Abstimmungsseite.

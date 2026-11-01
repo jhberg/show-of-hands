@@ -43,6 +43,25 @@ final readonly class MemberRepository
     }
 
     /**
+     * The member's addresses, the first one first.
+     *
+     * @return list<string>
+     */
+    public function emailsOf(int $id): array
+    {
+        $statement = $this->pdo->prepare('SELECT email FROM member_emails WHERE member_id = ? ORDER BY position');
+        $statement->execute([$id]);
+
+        $emails = [];
+        foreach ($statement->fetchAll() as $row) {
+            assert(is_array($row));
+            $emails[] = Row::string($row, 'email');
+        }
+
+        return $emails;
+    }
+
+    /**
      * Every member, in voice group order, then by name.
      *
      * @return list<Member>
@@ -97,27 +116,53 @@ final readonly class MemberRepository
      */
     public function add(string $name, array $emails, ?string $voiceGroupKey, bool $isBoard, bool $isAdmin): int
     {
-        if ($emails === [] || count($emails) > EmailAddress::MAX_PER_MEMBER) {
-            throw new \InvalidArgumentException('A member needs one or two addresses.');
-        }
+        self::assertAddressCount($emails);
+
         return Transaction::immediate($this->pdo, function () use ($name, $emails, $voiceGroupKey, $isBoard, $isAdmin): int {
-            $taken = $this->pdo->prepare('SELECT email FROM member_emails WHERE email = ?');
-            foreach ($emails as $email) {
-                $taken->execute([$email]);
-                if ($taken->fetchColumn() !== false) {
-                    throw new DuplicateEmailException($email);
-                }
-            }
+            $this->assertAddressesFree($emails, null);
             $this->pdo->prepare('INSERT INTO members (name, voice_group_key, is_board, is_admin) VALUES (?, ?, ?, ?)')
                 ->execute([$name, $voiceGroupKey, (int) $isBoard, (int) $isAdmin]);
             $id = (int) $this->pdo->lastInsertId();
-            $insert = $this->pdo->prepare('INSERT INTO member_emails (email, member_id, position) VALUES (?, ?, ?)');
-            foreach ($emails as $position => $email) {
-                $insert->execute([$email, $id, $position]);
-            }
+            $this->insertEmails($id, $emails);
 
             return $id;
         });
+    }
+
+    /**
+     * Replaces the member's name, addresses, group, and roles.
+     *
+     * @param list<string> $emails normalized addresses, the first one first
+     *
+     * @return bool false when the member no longer exists
+     *
+     * @throws DuplicateEmailException when another member already uses one of the addresses
+     */
+    public function update(int $id, string $name, array $emails, ?string $voiceGroupKey, bool $isBoard, bool $isAdmin): bool
+    {
+        self::assertAddressCount($emails);
+
+        return Transaction::immediate($this->pdo, function () use ($id, $name, $emails, $voiceGroupKey, $isBoard, $isAdmin): bool {
+            $update = $this->pdo->prepare('UPDATE members SET name = ?, voice_group_key = ?, is_board = ?, is_admin = ? WHERE id = ?');
+            $update->execute([$name, $voiceGroupKey, (int) $isBoard, (int) $isAdmin, $id]);
+            if ($update->rowCount() === 0) {
+                return false;
+            }
+            $this->assertAddressesFree($emails, $id);
+            $this->pdo->prepare('DELETE FROM member_emails WHERE member_id = ?')->execute([$id]);
+            $this->insertEmails($id, $emails);
+
+            return true;
+        });
+    }
+
+    /**
+     * Deletes the member with their addresses. Their turnout marks and the delegations to and
+     * from them go with them. The caller removes their ballots first, inside one transaction.
+     */
+    public function delete(int $id): void
+    {
+        $this->pdo->prepare('DELETE FROM members WHERE id = ?')->execute([$id]);
     }
 
     /**
@@ -132,6 +177,42 @@ final readonly class MemberRepository
     public function setLocale(int $id, string $locale): void
     {
         $this->pdo->prepare('UPDATE members SET locale = ? WHERE id = ?')->execute([$locale, $id]);
+    }
+
+    /**
+     * @param list<string> $emails
+     */
+    private static function assertAddressCount(array $emails): void
+    {
+        if ($emails === [] || count($emails) > EmailAddress::MAX_PER_MEMBER) {
+            throw new \InvalidArgumentException('A member needs one or two addresses.');
+        }
+    }
+
+    /**
+     * @param list<string> $emails
+     *
+     * @throws DuplicateEmailException
+     */
+    private function assertAddressesFree(array $emails, ?int $exceptMemberId): void
+    {
+        foreach ($emails as $email) {
+            $owner = $this->findByEmail($email);
+            if ($owner !== null && $owner[0]->id !== $exceptMemberId) {
+                throw new DuplicateEmailException($email);
+            }
+        }
+    }
+
+    /**
+     * @param list<string> $emails
+     */
+    private function insertEmails(int $memberId, array $emails): void
+    {
+        $insert = $this->pdo->prepare('INSERT INTO member_emails (email, member_id, position) VALUES (?, ?, ?)');
+        foreach ($emails as $position => $email) {
+            $insert->execute([$email, $memberId, $position]);
+        }
     }
 
     /**

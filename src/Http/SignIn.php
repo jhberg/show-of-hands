@@ -39,9 +39,12 @@ final readonly class SignIn
         [$member, $secondAddress] = $match;
         // A session id that existed before sign-in must not carry the signed-in member.
         $this->session->regenerate();
+        // The address as well as the member, so an admin who removes or moves the address ends the session.
+        $address = (string) EmailAddress::normalize($email);
         $this->session->set(MemberMiddleware::SESSION_KEY, $member->id);
+        $this->session->set(MemberMiddleware::EMAIL_KEY, $address);
         if ($secondAddress) {
-            $this->flash->toast('toast.signed_in_via', ['name' => $member->name, 'address' => (string) EmailAddress::normalize($email)]);
+            $this->flash->toast('toast.signed_in_via', ['name' => $member->name, 'address' => $address]);
         } else {
             $this->flash->toast('toast.signed_in', ['name' => $member->name]);
         }
