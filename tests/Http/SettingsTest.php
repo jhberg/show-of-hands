@@ -5,14 +5,18 @@ declare(strict_types=1);
 namespace ShowOfHands\Tests\Http;
 
 use Psr\Http\Message\ResponseInterface;
+use ShowOfHands\Domain\Majority;
+use ShowOfHands\Domain\MajorityBase;
+use ShowOfHands\Domain\MajorityShare;
 use ShowOfHands\Domain\PollStatus;
 use ShowOfHands\Domain\VoiceGroup;
+use ShowOfHands\Infrastructure\Persistence\PollRepository;
 use ShowOfHands\Infrastructure\Persistence\SettingsRepository;
 use ShowOfHands\Infrastructure\Persistence\VoiceGroupRepository;
 
 final class SettingsTest extends HttpTestCase
 {
-    private const CHECKBOXES_OFF = ['max_received' => '3', 'retention_days' => '30'];
+    private const CHECKBOXES_OFF = ['max_received' => '3', 'retention_days' => '30', 'majority' => 'half', 'majority_base' => 'cast'];
 
     protected function setUp(): void
     {
@@ -64,7 +68,9 @@ final class SettingsTest extends HttpTestCase
         $html = $this->page();
 
         self::assertStringContainsString('<a href="/admin/settings" class="on" aria-current="page">Einstellungen</a>', $html);
-        self::assertStringContainsString('Bei 2 Mitgliedern sind 2 Ja-Stimmen nötig.', $html);
+        self::assertStringContainsString('Bei 2 Mitgliedern sind 2 Ja-Stimmen nötig. Wer nicht abstimmt, gilt als Enthaltung', $html);
+        self::assertStringContainsString('<option value="two_thirds" selected>zwei Dritteln</option>', $html);
+        self::assertStringContainsString('<option value="eligible" selected>aller Stimmberechtigten</option>', $html);
         self::assertMatchesRegularExpression('/name="delegation" value="1" checked/', $html);
         self::assertStringContainsString('<option value="2" selected>2</option>', $html);
         self::assertStringContainsString('also bis zu 3 Stimmrechte.', $html);
@@ -92,14 +98,17 @@ final class SettingsTest extends HttpTestCase
         self::assertSame(3, $settings->maxReceived);
         self::assertFalse($settings->showOpenNames);
         self::assertSame(30, $settings->retentionDays);
+        self::assertEquals(new Majority(MajorityShare::Half, MajorityBase::Cast), $settings->majority);
         $html = $this->page();
         self::assertStringContainsString('Einstellungen gespeichert.', $html);
         self::assertStringContainsString('also bis zu 4 Stimmrechte.', $html);
+        self::assertStringContainsString('<option value="half" selected>mehr als der Hälfte</option>', $html);
+        self::assertStringContainsString('Bei 2 abgegebenen Stimmen sind 2 Ja-Stimmen nötig. Wer nicht abstimmt, zählt nicht mit.', $html);
     }
 
     public function testSavingWithHtmxSwapsTheSettingsPanel(): void
     {
-        $response = $this->post('/admin/settings', ['delegation' => '1', 'show_open_names' => '1', 'max_received' => '1', 'retention_days' => '7'], htmx: true);
+        $response = $this->post('/admin/settings', ['delegation' => '1', 'show_open_names' => '1', 'max_received' => '1', 'retention_days' => '7', 'majority' => 'two_thirds', 'majority_base' => 'eligible'], htmx: true);
 
         self::assertSame(200, $response->getStatusCode());
         self::assertStringStartsWith('<form class="panel form narrow mt-18" id="settings"', trim($this->body($response)));
@@ -110,7 +119,9 @@ final class SettingsTest extends HttpTestCase
 
     public function testRefusesValuesTheFormDoesNotOffer(): void
     {
-        foreach ([['max_received' => '4', 'retention_days' => '14'], ['max_received' => '2', 'retention_days' => '1'], ['max_received' => 'x', 'retention_days' => '14']] as $body) {
+        $valid = ['max_received' => '2', 'retention_days' => '14', 'majority' => 'two_thirds', 'majority_base' => 'eligible'];
+        foreach ([['max_received' => '4'], ['retention_days' => '1'], ['max_received' => 'x'], ['majority' => 'simple'], ['majority_base' => 'members'], ['majority' => '']] as $change) {
+            $body = $change + $valid;
             self::assertSame(400, $this->post('/admin/settings', $body)->getStatusCode());
         }
         self::assertSame(2, $this->settings()->maxReceived());
@@ -215,5 +226,16 @@ final class SettingsTest extends HttpTestCase
         $this->group('/B2/delete');
 
         self::assertContains('B2', $this->keys());
+    }
+
+    public function testAPollKeepsTheMajorityItWasCreatedWith(): void
+    {
+        $before = $this->addPoll(subject: 'Before Example');
+        $this->post('/admin/settings', self::CHECKBOXES_OFF);
+        $after = $this->addPoll(subject: 'After Example');
+
+        $polls = $this->service(PollRepository::class);
+        self::assertEquals(Majority::default(), $polls->find($before)?->majority);
+        self::assertEquals(new Majority(MajorityShare::Half, MajorityBase::Cast), $polls->find($after)?->majority);
     }
 }

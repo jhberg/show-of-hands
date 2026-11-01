@@ -9,6 +9,7 @@ use ShowOfHands\Domain\CastOutcome;
 use ShowOfHands\Domain\CastResult;
 use ShowOfHands\Domain\Choice;
 use ShowOfHands\Domain\CloseDay;
+use ShowOfHands\Domain\Majority;
 use ShowOfHands\Domain\PollStatus;
 use ShowOfHands\Domain\Tally;
 use ShowOfHands\Infrastructure\Database\Transaction;
@@ -83,7 +84,7 @@ final readonly class BallotRepository
      *
      * @param array<int, int> $received the votes handed to a member who voted, by member id
      */
-    public function tally(int $pollId, int $eligible, array $received): Tally
+    public function tally(int $pollId, int $eligible, array $received, Majority $majority): Tally
     {
         $extra = [];
         foreach ($received as $memberId => $votes) {
@@ -97,7 +98,7 @@ final readonly class BallotRepository
             $ballots[] = [Choice::from(Row::string($row, 'choice')), 1 + ($extra[Row::string($row, 'token')] ?? 0)];
         }
 
-        return Tally::count($eligible, $ballots);
+        return Tally::count($eligible, $ballots, $majority);
     }
 
     /**

@@ -182,13 +182,14 @@ result:
     admission_no: Not admitted
     exception_yes: Exception approved
     exception_no: Exception declined
-  yes_share: '{percent} yes'
-  threshold: '⅔ = {needed} yes'
+  yes_share: '{base, select, cast {{percent} of votes yes} other {{percent} yes}}'
+  threshold: '{share, select, half {> ½} two_thirds {⅔} other {¾}} = {needed} yes'
+  rule: '{share, select, half {more than half} two_thirds {two thirds} other {three quarters}} {base, select, cast {of the votes cast} other {of all eligible voters}}'
   legend:
     yes: '{count} yes · {percent}'
     no: '{count} no · {percent}'
     abstained: '{count} not cast · {percent}'
-  explanation: '{yes} of {total} eligible voters voted yes, that is {percent}. {needed, plural, one {At least # yes vote is needed} other {At least # yes votes are needed}}, two thirds of all eligible voters. Votes not cast count as abstentions, not as yes. {cast} of {total} voting rights were cast{delegated, plural, =0 {} other {, # of them delegated}}.'
+  explanation: '{base, select, cast {{yes} of {cast} votes cast were yes} other {{yes} of {total} eligible voters voted yes}}, that is {percent}. {needed, plural, one {At least # yes vote is needed} other {At least # yes votes are needed}}, {rule}. {base, select, cast {Votes not cast do not count.} other {Votes not cast count as abstentions, not as yes.}} {cast} of {total} voting rights were cast{delegated, plural, =0 {} other {, # of them delegated}}.'
   deletion: This poll and its result will be deleted automatically on {date}.
 
 admin:
@@ -232,10 +233,19 @@ admin:
   settings:
     title: Settings
     majority:
-      legend: Majority for admission
-      rule: Two thirds of all eligible voters.
-      example: 'With {eligible, plural, one {# member} other {# members}}, {needed, plural, one {# yes vote is} other {# yes votes are}} needed.'
-      text: Whoever does not vote counts as an abstention, not as yes. The rule applies to admissions and to probation exceptions and cannot be changed.
+      legend: Majority
+      before: A poll needs yes votes from
+      share:
+        half: more than half
+        two_thirds: two thirds
+        three_quarters: three quarters
+      base_label: What the majority counts from
+      base:
+        eligible: of all eligible voters
+        cast: of the votes cast
+      example: '{base, select, cast {With {eligible, plural, one {# vote cast} other {# votes cast}}} other {With {eligible, plural, one {# member} other {# members}}}}, {needed, plural, one {# yes vote is} other {# yes votes are}} needed.'
+      abstention: '{base, select, cast {Whoever does not vote does not count.} other {Whoever does not vote counts as an abstention, not as yes.}}'
+      text: The rule applies to admissions and to probation exceptions. A change applies to polls created afterwards.
     delegation:
       legend: Vote delegation
       enabled: Members may hand their vote to another member

@@ -6,8 +6,12 @@ namespace ShowOfHands\Tests\Http;
 
 use Psr\Http\Message\ResponseInterface;
 use ShowOfHands\Domain\Choice;
+use ShowOfHands\Domain\Majority;
+use ShowOfHands\Domain\MajorityBase;
+use ShowOfHands\Domain\MajorityShare;
 use ShowOfHands\Domain\PollKind;
 use ShowOfHands\Domain\PollStatus;
+use ShowOfHands\Domain\Settings;
 use ShowOfHands\Http\Middleware\CsrfMiddleware;
 use ShowOfHands\Infrastructure\Clock\Clock;
 use ShowOfHands\Infrastructure\Persistence\BallotRepository;
@@ -15,6 +19,7 @@ use ShowOfHands\Infrastructure\Persistence\DelegationRepository;
 use ShowOfHands\Infrastructure\Persistence\MemberRepository;
 use ShowOfHands\Infrastructure\Persistence\PollCloser;
 use ShowOfHands\Infrastructure\Persistence\PollRepository;
+use ShowOfHands\Infrastructure\Persistence\SettingsRepository;
 use ShowOfHands\Tests\FixedClock;
 
 final class CloseTest extends HttpTestCase
@@ -109,6 +114,39 @@ final class CloseTest extends HttpTestCase
 
         self::assertStringStartsWith('<main class="main">', ltrim(preg_replace('/\{#.*?#\}/s', '', $html) ?? ''));
         self::assertStringContainsString('Wirklich abschließen?', $html);
+    }
+
+    public function testAResultCountedFromTheVotesCastSaysSo(): void
+    {
+        $this->service(SettingsRepository::class)->save(new Settings(true, 2, true, 14, new Majority(MajorityShare::Half, MajorityBase::Cast)));
+        $poll = $this->addPoll(subject: 'Sam Example');
+        $this->cast($this->kim, Choice::Yes, $poll);
+        $this->cast($this->lou, Choice::Yes, $poll);
+        $this->cast($this->ned, Choice::No, $poll);
+        $this->signIn('max@example.org');
+        $this->close(poll: $poll);
+
+        $html = $this->page(poll: $poll);
+        // Two of three votes cast is more than half; the missing member does not count.
+        self::assertMatchesRegularExpression('#<p class="verdict ja">.*?Aufgenommen<span class="pct num">66,7 % der Stimmen Ja</span>#s', $html);
+        self::assertStringContainsString('<text x="50%" y="11" dx="6" text-anchor="start">&gt; ½ = 2 Ja</text>', $html);
+        self::assertStringContainsString('<span class="r"><i></i>1 nicht abgegeben · 25,0 %</span>', $html);
+        self::assertStringContainsString('2 von 3 abgegebenen Stimmen lauten Ja, das sind 66,7 %. Nötig sind mindestens 2 Ja-Stimmen, also mehr als die Hälfte der abgegebenen Stimmen. Nicht abgegebene Stimmen zählen nicht mit. 3 von 4 Stimmrechten wurden abgegeben.', $html);
+    }
+
+    public function testARunningPollKeepsItsMajorityWhenTheSettingChanges(): void
+    {
+        $this->service(SettingsRepository::class)->save(new Settings(true, 2, true, 14, new Majority(MajorityShare::Half, MajorityBase::Cast)));
+        $this->cast($this->kim, Choice::Yes);
+        $this->cast($this->lou, Choice::Yes);
+        $this->cast($this->ned, Choice::No);
+        $this->signIn('max@example.org');
+        $this->close();
+
+        // Under the new rule two Yes would pass; the poll was created under two thirds of all four.
+        $html = $this->page();
+        self::assertStringContainsString('Nicht aufgenommen', $html);
+        self::assertStringContainsString('⅔ = 3 Ja', $html);
     }
 
     public function testClosingShowsTheResultInPlaceOfTheBallot(): void

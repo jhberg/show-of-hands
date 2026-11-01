@@ -13,6 +13,7 @@ final readonly class Poll
      * @param string|null $question the admin's question, only for exception polls
      * @param string|null $date the audition or decision date as Y-m-d, null while it is open
      * @param string|null $closedAt when the poll closed, as UTC ISO 8601, only while it is closed
+     * @param Majority $majority the rule in force when the poll was created
      * @param Tally|null $tally the count frozen at the close, only while the poll is closed
      */
     public function __construct(
@@ -24,6 +25,7 @@ final readonly class Poll
         public ?string $date,
         public string $note,
         public PollStatus $status,
+        public Majority $majority,
         public ?string $closedAt = null,
         public ?Tally $tally = null,
     ) {}

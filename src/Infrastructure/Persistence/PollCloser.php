@@ -29,6 +29,8 @@ final readonly class PollCloser
     {
         Transaction::immediate($this->pdo, function () use ($pollId, $at): void {
             OpenPoll::require($this->pdo, $pollId);
+            $poll = $this->polls->find($pollId);
+            assert($poll !== null);
             // The order is irrelevant here: the snapshot is sorted when it is read.
             $members = $this->members->all('root');
             $turnout = Turnout::of($members, $this->ballots->participantIds($pollId), $this->delegations->forPoll($pollId));
@@ -38,7 +40,7 @@ final readonly class PollCloser
                     $received[$entry['to']->id] = ($received[$entry['to']->id] ?? 0) + 1;
                 }
             }
-            $this->polls->markClosed($pollId, $at, $this->ballots->tally($pollId, $turnout->eligible, $received));
+            $this->polls->markClosed($pollId, $at, $this->ballots->tally($pollId, $turnout->eligible, $received, $poll->majority));
             $this->roll->write($pollId, $members, $turnout);
         });
     }

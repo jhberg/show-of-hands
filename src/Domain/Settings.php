@@ -5,8 +5,7 @@ declare(strict_types=1);
 namespace ShowOfHands\Domain;
 
 /**
- * The settings admins change in the admin area. The majority is not among them: it is fixed at
- * two thirds of all eligible voters.
+ * The settings admins change in the admin area.
  */
 final readonly class Settings
 {
@@ -16,10 +15,10 @@ final readonly class Settings
     /** How many days a closed poll is kept, with its result and turnout. */
     public const RETENTION_DAYS_CHOICES = [7, 14, 30];
 
-    /** The values a new installation starts with, as the first migration writes them. */
+    /** The values a new installation starts with, as the migrations write them. */
     public static function defaults(): self
     {
-        return new self(true, 2, true, 14);
+        return new self(true, 2, true, 14, Majority::default());
     }
 
     /**
@@ -27,6 +26,7 @@ final readonly class Settings
      * @param int $maxReceived one of MAX_RECEIVED_CHOICES
      * @param bool $showOpenNames whether ordinary members see who has not voted yet
      * @param int $retentionDays one of RETENTION_DAYS_CHOICES
+     * @param Majority $majority the rule for polls created from now on
      *
      * @throws \InvalidArgumentException for a value outside its choices
      */
@@ -35,6 +35,7 @@ final readonly class Settings
         public int $maxReceived,
         public bool $showOpenNames,
         public int $retentionDays,
+        public Majority $majority,
     ) {
         if (!in_array($maxReceived, self::MAX_RECEIVED_CHOICES, true)) {
             throw new \InvalidArgumentException("max_received {$maxReceived} is not allowed.");

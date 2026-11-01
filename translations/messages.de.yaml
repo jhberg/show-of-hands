@@ -182,13 +182,14 @@ result:
     admission_no: Nicht aufgenommen
     exception_yes: Ausnahme genehmigt
     exception_no: Ausnahme abgelehnt
-  yes_share: '{percent} Ja'
-  threshold: '⅔ = {needed} Ja'
+  yes_share: '{base, select, cast {{percent} der Stimmen Ja} other {{percent} Ja}}'
+  threshold: '{share, select, half {> ½} two_thirds {⅔} other {¾}} = {needed} Ja'
+  rule: '{share, select, half {mehr als die Hälfte} two_thirds {zwei Drittel} other {drei Viertel}} {base, select, cast {der abgegebenen Stimmen} other {aller Stimmberechtigten}}'
   legend:
     yes: '{count} Ja · {percent}'
     no: '{count} Nein · {percent}'
     abstained: '{count} nicht abgegeben · {percent}'
-  explanation: '{yes, plural, one {# von {total} Stimmberechtigten hat mit Ja gestimmt} other {# von {total} Stimmberechtigten haben mit Ja gestimmt}}, das sind {percent}. {needed, plural, one {Nötig ist mindestens # Ja-Stimme} other {Nötig sind mindestens # Ja-Stimmen}}, also zwei Drittel aller Stimmberechtigten. Nicht abgegebene Stimmen gelten als Enthaltung und zählen nicht als Ja. {cast} von {total} Stimmrechten wurden abgegeben{delegated, plural, =0 {} other {, # davon übertragen}}.'
+  explanation: '{base, select, cast {{yes, plural, one {# von {cast} abgegebenen Stimmen lautet Ja} other {# von {cast} abgegebenen Stimmen lauten Ja}}} other {{yes, plural, one {# von {total} Stimmberechtigten hat mit Ja gestimmt} other {# von {total} Stimmberechtigten haben mit Ja gestimmt}}}}, das sind {percent}. {needed, plural, one {Nötig ist mindestens # Ja-Stimme} other {Nötig sind mindestens # Ja-Stimmen}}, also {rule}. {base, select, cast {Nicht abgegebene Stimmen zählen nicht mit.} other {Nicht abgegebene Stimmen gelten als Enthaltung und zählen nicht als Ja.}} {cast} von {total} Stimmrechten wurden abgegeben{delegated, plural, =0 {} other {, # davon übertragen}}.'
   deletion: Diese Abstimmung wird samt Ergebnis am {date} automatisch gelöscht.
 
 admin:
@@ -232,10 +233,19 @@ admin:
   settings:
     title: Einstellungen
     majority:
-      legend: Mehrheit für die Aufnahme
-      rule: Zwei Drittel aller Stimmberechtigten.
-      example: 'Bei {eligible, plural, one {# Mitglied} other {# Mitgliedern}} {needed, plural, one {ist # Ja-Stimme} other {sind # Ja-Stimmen}} nötig.'
-      text: Wer nicht abstimmt, gilt als Enthaltung und zählt nicht als Ja. Die Regel gilt für Aufnahmen und für Ausnahmen in der Probezeit und ist nicht einstellbar.
+      legend: Mehrheit
+      before: Eine Abstimmung braucht Ja-Stimmen von
+      share:
+        half: mehr als der Hälfte
+        two_thirds: zwei Dritteln
+        three_quarters: drei Vierteln
+      base_label: Bezugsgröße der Mehrheit
+      base:
+        eligible: aller Stimmberechtigten
+        cast: der abgegebenen Stimmen
+      example: '{base, select, cast {Bei {eligible, plural, one {# abgegebenen Stimme} other {# abgegebenen Stimmen}}} other {Bei {eligible, plural, one {# Mitglied} other {# Mitgliedern}}}} {needed, plural, one {ist # Ja-Stimme} other {sind # Ja-Stimmen}} nötig.'
+      abstention: '{base, select, cast {Wer nicht abstimmt, zählt nicht mit.} other {Wer nicht abstimmt, gilt als Enthaltung und zählt nicht als Ja.}}'
+      text: Die Regel gilt für Aufnahmen und für Ausnahmen in der Probezeit. Eine Änderung gilt für Abstimmungen, die danach angelegt werden.
     delegation:
       legend: Stimmübertragung
       enabled: Mitglieder dürfen ihre Stimme übertragen

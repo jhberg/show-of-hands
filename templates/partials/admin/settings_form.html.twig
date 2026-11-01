@@ -1,9 +1,33 @@
-{# The settings form. The majority is fixed, so its box only explains it with today's member count. #}
+{# The settings form. The majority's example counts with today's member count, as if every member voted. #}
 <form class="panel form narrow mt-18" id="settings" method="post" action="/admin/settings" hx-post="/admin/settings" hx-target="this" hx-swap="outerHTML">
     {{ include('partials/csrf_field.html.twig') }}
     <fieldset>
         <legend>{{ 'admin.settings.majority.legend'|trans }}</legend>
-        <div class="fixed"><b>{{ 'admin.settings.majority.rule'|trans }}</b> {{ 'admin.settings.majority.example'|trans({eligible: eligible, needed: needed}) }} {{ 'admin.settings.majority.text'|trans }}</div>
+        {# Literal keys, so the translation check sees every one of them. #}
+        {% set share_labels = {
+            half: 'admin.settings.majority.share.half'|trans,
+            two_thirds: 'admin.settings.majority.share.two_thirds'|trans,
+            three_quarters: 'admin.settings.majority.share.three_quarters'|trans,
+        } %}
+        {% set base_labels = {
+            eligible: 'admin.settings.majority.base.eligible'|trans,
+            cast: 'admin.settings.majority.base.cast'|trans,
+        } %}
+        {% set base = settings.majority.base.value %}
+        <div class="inline-sel">
+            <label for="s-share">{{ 'admin.settings.majority.before'|trans }}</label>
+            <select id="s-share" name="majority">
+                {% for share in majority_shares %}
+                    <option value="{{ share.value }}"{% if share == settings.majority.share %} selected{% endif %}>{{ share_labels[share.value] }}</option>
+                {% endfor %}
+            </select>
+            <select id="s-base" name="majority_base" aria-label="{{ 'admin.settings.majority.base_label'|trans }}">
+                {% for choice in majority_bases %}
+                    <option value="{{ choice.value }}"{% if choice.value == base %} selected{% endif %}>{{ base_labels[choice.value] }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <p class="help">{{ 'admin.settings.majority.example'|trans({base: base, eligible: eligible, needed: needed}) }} {{ 'admin.settings.majority.abstention'|trans({base: base}) }} {{ 'admin.settings.majority.text'|trans }}</p>
     </fieldset>
     <fieldset>
         <legend>{{ 'admin.settings.delegation.legend'|trans }}</legend>

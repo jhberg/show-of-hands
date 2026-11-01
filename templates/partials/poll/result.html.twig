@@ -1,6 +1,10 @@
-{# The result of a closed poll, in the place where the ballot was. Shares are of all eligible voters. #}
+{#
+    The result of a closed poll, in the place where the ballot was. The bar and the legend show
+    shares of all eligible voters; the verdict's share is of what the poll's majority counts from.
+#}
 {% set tally = poll.tally %}
 {% set accepted = tally.isAccepted %}
+{% set rule = {share: tally.majority.share.value, base: tally.majority.base.value} %}
 {% set yes_share = tally.share(tally.yes) %}
 {% set no_share = tally.share(tally.no) %}
 {% set yes_pct = (yes_share * 100)|round(3) %}
@@ -12,13 +16,13 @@
     <p class="verdict {{ accepted ? 'ja' : 'nein' }}">
         <span class="ok-ic">{{ icon(accepted ? 'check' : 'cross') }}</span>
         {{- include('partials/poll/verdict.html.twig') -}}
-        <span class="pct num">{{ 'result.yes_share'|trans({percent: yes_share|percent}) }}</span>
+        <span class="pct num">{{ 'result.yes_share'|trans({base: rule.base, percent: tally.yesShareOfBase|percent}) }}</span>
     </p>
     {# SVG, because the CSP forbids the inline styles that widths and positions would need. The legend and the text below say the same. #}
     <div class="rwrap" aria-hidden="true">
         <svg class="thr" focusable="false">
             <line x1="{{ threshold }}%" x2="{{ threshold }}%" y1="0" y2="100%"/>
-            <text x="{{ threshold }}%" y="11" dx="{{ label_left ? -6 : 6 }}" text-anchor="{{ label_left ? 'end' : 'start' }}">{{ 'result.threshold'|trans({needed: tally.needed}) }}</text>
+            <text x="{{ threshold }}%" y="11" dx="{{ label_left ? -6 : 6 }}" text-anchor="{{ label_left ? 'end' : 'start' }}">{{ 'result.threshold'|trans({share: rule.share, needed: tally.needed}) }}</text>
         </svg>
         <div class="rbar">
             <svg focusable="false">
@@ -32,7 +36,7 @@
         <span class="n"><i></i>{{ 'result.legend.no'|trans({count: tally.no, percent: no_share|percent}) }}</span>
         <span class="r"><i></i>{{ 'result.legend.abstained'|trans({count: tally.abstained, percent: tally.share(tally.abstained)|percent}) }}</span>
     </div>
-    <p class="help">{{ 'result.explanation'|trans({yes: tally.yes, total: tally.eligible, percent: yes_share|percent, needed: tally.needed, cast: tally.cast, delegated: tally.delegations}) }}</p>
+    <p class="help">{{ 'result.explanation'|trans({base: rule.base, yes: tally.yes, total: tally.eligible, percent: tally.yesShareOfBase|percent, needed: tally.needed, rule: 'result.rule'|trans(rule), cast: tally.cast, delegated: tally.delegations}) }}</p>
     {% if deletion_day is not null %}
         <p class="help">{{ 'result.deletion'|trans({date: deletion_day|day_date}) }}</p>
     {% endif %}

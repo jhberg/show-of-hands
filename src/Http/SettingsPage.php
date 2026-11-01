@@ -6,8 +6,9 @@ namespace ShowOfHands\Http;
 
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
+use ShowOfHands\Domain\MajorityBase;
+use ShowOfHands\Domain\MajorityShare;
 use ShowOfHands\Domain\Settings;
-use ShowOfHands\Domain\Tally;
 use ShowOfHands\Infrastructure\Config\Config;
 use ShowOfHands\Infrastructure\Persistence\MemberRepository;
 use ShowOfHands\Infrastructure\Persistence\SettingsRepository;
@@ -91,13 +92,17 @@ final readonly class SettingsPage
     private function data(VoiceGroupForm $form): array
     {
         $eligible = $this->members->count();
+        $settings = $this->settings->all();
 
         return [
-            'settings' => $this->settings->all(),
+            'settings' => $settings,
+            'majority_shares' => MajorityShare::cases(),
+            'majority_bases' => MajorityBase::cases(),
             'max_received_choices' => Settings::MAX_RECEIVED_CHOICES,
             'retention_days_choices' => Settings::RETENTION_DAYS_CHOICES,
             'eligible' => $eligible,
-            'needed' => (new Tally($eligible, 0, 0, 0))->needed(),
+            // The example counts as if every member voted, which is the same for either base.
+            'needed' => $settings->majority->share->needed($eligible),
             'groups' => $this->voiceGroups->all(),
             'groups_in_use' => $this->voiceGroups->keysInUse(),
             'group_form' => $form,

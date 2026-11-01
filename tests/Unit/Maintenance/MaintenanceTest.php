@@ -7,6 +7,7 @@ namespace ShowOfHands\Tests\Unit\Maintenance;
 use PHPUnit\Framework\TestCase;
 use ShowOfHands\Domain\BallotToken;
 use ShowOfHands\Domain\Choice;
+use ShowOfHands\Domain\Majority;
 use ShowOfHands\Domain\PollKind;
 use ShowOfHands\Domain\PollStatus;
 use ShowOfHands\Domain\Tally;
@@ -65,7 +66,7 @@ final class MaintenanceTest extends TestCase
         $poll = $polls->add(PollKind::Admission, 'Robin Example', null, 'S1', null, '', PollStatus::Open, '2027-01-01T00:00:00Z');
         $this->ballots()->cast($poll, 1, Choice::Yes);
         if ($closedAt !== null) {
-            $polls->markClosed($poll, new \DateTimeImmutable($closedAt), new Tally(1, 1, 0, 0));
+            $polls->markClosed($poll, new \DateTimeImmutable($closedAt), new Tally(1, 1, 0, 0, Majority::default()));
         }
 
         return $poll;
