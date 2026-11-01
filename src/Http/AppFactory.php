@@ -14,6 +14,12 @@ use ShowOfHands\Http\Action\AdminMemberDeleteAction;
 use ShowOfHands\Http\Action\AdminMembersAction;
 use ShowOfHands\Http\Action\AdminMemberSaveAction;
 use ShowOfHands\Http\Action\AdminPollsAction;
+use ShowOfHands\Http\Action\AdminSettingsAction;
+use ShowOfHands\Http\Action\AdminSettingsSaveAction;
+use ShowOfHands\Http\Action\AdminVoiceGroupAddAction;
+use ShowOfHands\Http\Action\AdminVoiceGroupDeleteAction;
+use ShowOfHands\Http\Action\AdminVoiceGroupMoveAction;
+use ShowOfHands\Http\Action\AdminVoiceGroupRenameAction;
 use ShowOfHands\Http\Action\BallotAction;
 use ShowOfHands\Http\Action\CloseAction;
 use ShowOfHands\Http\Action\DelegationAction;
@@ -102,6 +108,13 @@ final class AppFactory
                 $admin->post('/members', AdminMemberSaveAction::class);
                 $admin->post('/members/{id:[0-9]+}', AdminMemberSaveAction::class);
                 $admin->post('/members/{id:[0-9]+}/delete', AdminMemberDeleteAction::class);
+                $admin->get('/settings', AdminSettingsAction::class);
+                $admin->post('/settings', AdminSettingsSaveAction::class);
+                $admin->post('/voice-groups', AdminVoiceGroupAddAction::class);
+                $voiceGroup = '/voice-groups/{key:[A-Z0-9]{1,4}}';
+                $admin->post($voiceGroup, AdminVoiceGroupRenameAction::class);
+                $admin->post($voiceGroup . '/move', AdminVoiceGroupMoveAction::class);
+                $admin->post($voiceGroup . '/delete', AdminVoiceGroupDeleteAction::class);
             })->add(RequireRole::admin($responses));
         })->add(new RequireMember($responses));
 

@@ -1,0 +1,51 @@
+{#
+    The voice groups. Each row's name is a form of its own: Enter saves it, and with htmx leaving
+    the field does too. Every control has an id, so htmx puts the focus back after the swap.
+    hx-sync drops a second request while one is under way, such as the click on "up" right after
+    leaving a changed name, so the panel never shows an older state than the database.
+#}
+{% set sync = '#voice-groups:drop' %}
+<section class="panel narrow" id="voice-groups" aria-labelledby="voice-groups-title" hx-target="this" hx-swap="outerHTML">
+    <h2 id="voice-groups-title">{{ 'admin.settings.groups.title'|trans }}</h2>
+    <p class="help">{{ 'admin.settings.groups.lead'|trans }}</p>
+    <ul class="glist mt-12">
+        {% for group in groups %}
+            {% set path = '/admin/voice-groups/' ~ group.key %}
+            <li>
+                <form method="post" action="{{ path }}" hx-post="{{ path }}" hx-trigger="change, submit" hx-sync="{{ sync }}">
+                    {{ include('partials/csrf_field.html.twig') }}
+                    <span class="key">{{ group.key }}</span>
+                    <input type="text" id="g-label-{{ group.key }}" name="label" value="{{ group.label }}" aria-label="{{ 'admin.settings.groups.label_of'|trans({key: group.key}) }}" autocomplete="off">
+                </form>
+                <span class="ctl">
+                    {% for move in [
+                        {direction: 'up', label: 'admin.settings.groups.up'|trans, disabled: loop.first},
+                        {direction: 'down', label: 'admin.settings.groups.down'|trans, disabled: loop.last},
+                    ] %}
+                        <form method="post" action="{{ path }}/move" hx-post="{{ path }}/move" hx-sync="{{ sync }}">
+                            {{ include('partials/csrf_field.html.twig') }}
+                            <input type="hidden" name="direction" value="{{ move.direction }}">
+                            <button class="btn icon" id="g-{{ move.direction }}-{{ group.key }}" aria-label="{{ move.label }}"{% if move.disabled %} disabled{% endif %}>{{ icon(move.direction) }}</button>
+                        </form>
+                    {% endfor %}
+                    <form method="post" action="{{ path }}/delete" hx-post="{{ path }}/delete" hx-sync="{{ sync }}">
+                        {{ include('partials/csrf_field.html.twig') }}
+                        <button class="btn sm ghost" id="g-remove-{{ group.key }}"
+                            {%- if group.key in groups_in_use %} disabled title="{{ 'admin.settings.groups.in_use'|trans }}"{% endif %}>{{ 'admin.settings.groups.remove'|trans }}</button>
+                    </form>
+                </span>
+            </li>
+        {% endfor %}
+    </ul>
+    {% set error = group_form.errorField %}
+    <form class="gadd" method="post" action="/admin/voice-groups" hx-post="/admin/voice-groups" hx-sync="{{ sync }}" novalidate>
+        {{ include('partials/csrf_field.html.twig') }}
+        <input type="text" id="g-key" name="key" value="{{ group_form.key }}" placeholder="{{ 'admin.settings.groups.key_placeholder'|trans }}" maxlength="4" aria-label="{{ 'admin.settings.groups.key_label'|trans }}" autocomplete="off"
+            {%- if error == 'key' %} autofocus aria-invalid="true" aria-describedby="g-error"{% endif %}>
+        <input type="text" id="g-label" name="label" value="{{ group_form.label }}" placeholder="{{ 'admin.settings.groups.label_placeholder'|trans }}" aria-label="{{ 'admin.settings.groups.label_label'|trans }}" autocomplete="off"
+            {%- if error == 'label' %} autofocus aria-invalid="true" aria-describedby="g-error"{% endif %}>
+        <button class="btn" id="g-add">{{ 'admin.settings.groups.add'|trans }}</button>
+        {% if error is not null %}<p class="field-error" id="g-error">{{ group_form.errorKey|trans }}</p>{% endif %}
+    </form>
+    <p class="help mt-10">{{ 'admin.settings.groups.help'|trans }}</p>
+</section>

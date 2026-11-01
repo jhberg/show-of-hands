@@ -2,12 +2,14 @@
 
 {# Literal keys, so the translation check sees every one of them. #}
 {% set title = {
+    bad_request: 'error.bad_request.title'|trans,
     not_found: 'error.not_found.title'|trans,
     forbidden: 'error.forbidden.title'|trans,
     csrf: 'error.csrf.title'|trans,
     server: 'error.server.title'|trans,
 }[kind] %}
 {% set text = {
+    bad_request: 'error.bad_request.text'|trans,
     not_found: 'error.not_found.text'|trans,
     forbidden: 'error.forbidden.text'|trans,
     csrf: 'error.csrf.text'|trans,

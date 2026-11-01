@@ -8,12 +8,13 @@ use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use ShowOfHands\Infrastructure\Log\ErrorLog;
+use Slim\Exception\HttpBadRequestException;
 use Slim\Exception\HttpForbiddenException;
 use Slim\Exception\HttpMethodNotAllowedException;
 use Slim\Exception\HttpNotFoundException;
 
 /**
- * Renders 404, 403, and 500 as pages in the app's style, and logs unexpected errors.
+ * Renders 400, 403, 404, and 500 as pages in the app's style, and logs unexpected errors.
  */
 final readonly class ErrorHandler
 {
@@ -27,6 +28,7 @@ final readonly class ErrorHandler
     public function __invoke(ServerRequestInterface $request, \Throwable $error): ResponseInterface
     {
         [$status, $kind] = match (true) {
+            $error instanceof HttpBadRequestException => [400, 'bad_request'],
             $error instanceof CsrfException => [403, 'csrf'],
             $error instanceof HttpForbiddenException => [403, 'forbidden'],
             $error instanceof HttpNotFoundException, $error instanceof HttpMethodNotAllowedException => [404, 'not_found'],

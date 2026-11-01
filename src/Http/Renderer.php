@@ -48,4 +48,31 @@ final readonly class Renderer
 
         return $response->withStatus($status)->withHeader('Content-Type', 'text/html; charset=utf-8');
     }
+
+    /**
+     * An admin page or, for htmx, one of its panels. The toast goes into the page, or into
+     * HX-Trigger for a panel, because the toast region lies outside it.
+     *
+     * @param array<string, mixed> $data
+     */
+    public function panel(
+        ServerRequestInterface $request,
+        ResponseInterface $response,
+        string $page,
+        string $fragment,
+        array $data,
+        ?string $toast,
+        int $status = 200,
+    ): ResponseInterface {
+        if (!Htmx::isRequest($request)) {
+            // Without a toast of its own, the page takes the flash.
+            return $this->render($request, $response, $page, $data + ($toast === null ? [] : ['toast' => $toast]), $status);
+        }
+        if ($toast !== null) {
+            $response = $response->withHeader('HX-Trigger', json_encode(['toast' => $toast], JSON_THROW_ON_ERROR));
+        }
+
+        // A null toast keeps a pending flash, which a fragment cannot show.
+        return $this->render($request, $response, $fragment, $data + ['toast' => null], $status);
+    }
 }

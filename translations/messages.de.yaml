@@ -24,6 +24,9 @@ login:
 
 error:
   home: Zur Startseite
+  bad_request:
+    title: Ungültige Anfrage
+    text: Das Formular enthielt einen Wert, den es so nicht gibt. Lade die Seite neu und versuche es noch einmal.
   not_found:
     title: Seite nicht gefunden
     text: Diese Seite gibt es nicht. Vielleicht ist der Link veraltet.
@@ -74,6 +77,16 @@ toast:
     removed: '{name} entfernt.'
     remove_tomorrow: '{name} hat an einer heute abgeschlossenen Abstimmung teilgenommen und kann erst ab morgen entfernt werden.'
     remove_after_reopened: '{name} hat an einer wieder geöffneten Abstimmung teilgenommen und kann erst ab dem Tag nach ihrem Abschluss entfernt werden.'
+  settings:
+    saved: Einstellungen gespeichert.
+  group:
+    added: 'Gruppe {label} hinzugefügt.'
+    renamed: 'Gruppe umbenannt: {label}.'
+    removed: Gruppe entfernt.
+    in_use: Diese Gruppe wird noch verwendet.
+    missing: Kürzel und Name sind nötig.
+    taken: Dieses Kürzel gibt es schon.
+    key_invalid: Das Kürzel besteht aus höchstens 4 Buchstaben von A bis Z oder Ziffern.
 
 home:
   greeting: Hallo {name}
@@ -216,6 +229,48 @@ admin:
   polls:
     title: Abstimmungen
     lead: Anlegen und freischalten. Jede Abstimmung bekommt einen eigenen Link. Abgeschlossen wird vom Vorstand auf der Abstimmungsseite.
+  settings:
+    title: Einstellungen
+    majority:
+      legend: Mehrheit für die Aufnahme
+      rule: Zwei Drittel aller Stimmberechtigten.
+      example: 'Bei {eligible, plural, one {# Mitglied} other {# Mitgliedern}} {needed, plural, one {ist # Ja-Stimme} other {sind # Ja-Stimmen}} nötig.'
+      text: Wer nicht abstimmt, gilt als Enthaltung und zählt nicht als Ja. Die Regel gilt für Aufnahmen und für Ausnahmen in der Probezeit und ist nicht einstellbar.
+    delegation:
+      legend: Stimmübertragung
+      enabled: Mitglieder dürfen ihre Stimme übertragen
+      help: Übertragungen sind für alle sichtbar und lassen sich nicht weiterreichen. Wer selbst abstimmt, holt die Stimme automatisch zurück.
+      max_before: Eine Person kann höchstens
+      max_after: 'Stimmen zusätzlich erhalten, also bis zu {weight} Stimmrechte.'
+    visibility:
+      legend: Sichtbarkeit
+      show_open_names: Alle Mitglieder sehen, wer noch nicht abgestimmt hat
+      help: Sonst sehen Mitglieder nur die Anzahl. Vorstand und Verwaltung sehen die Namen immer.
+    retention:
+      legend: Aufbewahrung
+      before: Abgeschlossene Abstimmungen werden
+      after: Tage nach dem Abschluss samt Ergebnis automatisch gelöscht.
+      help: Danach gibt es weder Ergebnis noch Beteiligung noch den Namen der Person, über die abgestimmt wurde. Entwürfe und offene Abstimmungen bleiben.
+    save: Speichern
+    groups:
+      title: Stimmgruppen
+      lead: Die Reihenfolge hier bestimmt die Sortierung in der Mitgliederliste und in der Ansicht „Noch nicht abgestimmt“. Das Kürzel ist fest, der Name lässt sich ändern.
+      label_of: Name der Gruppe {key}
+      up: nach oben
+      down: nach unten
+      remove: Entfernen
+      in_use: Wird noch verwendet
+      key_placeholder: Kürzel
+      key_label: Kürzel der neuen Gruppe
+      label_placeholder: Name der Gruppe, zum Beispiel Sopran 3
+      label_label: Name der neuen Gruppe
+      add: Hinzufügen
+      help: Gruppen, die noch Mitgliedern oder Abstimmungen zugeordnet sind, lassen sich nicht entfernen. Namensänderungen werden sofort übernommen.
+    sign_in:
+      title: Anmeldung
+      domain: Google-Workspace-Domain
+      client_id: OAuth-Client-ID
+      help: Nur in config.php änderbar. Wird einmalig in der Google Cloud Console angelegt. Private Google-Konten funktionieren, wenn die Adresse beim Mitglied hinterlegt ist.
 
 dev_login:
   kicker: Nur in der Entwicklung

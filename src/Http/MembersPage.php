@@ -68,7 +68,7 @@ final readonly class MembersPage
         string $toastKey,
         array $toastParams = [],
     ): ResponseInterface {
-        if (!self::isHtmx($request)) {
+        if (!Htmx::isRequest($request)) {
             $this->flash->toast($toastKey, $toastParams);
 
             return Redirect::to($response, $request, self::listUrl($query));
@@ -118,30 +118,16 @@ final readonly class MembersPage
         return self::PATH . ($query === '' ? '' : '?' . http_build_query(['q' => $query]));
     }
 
-    private static function isHtmx(ServerRequestInterface $request): bool
-    {
-        return $request->getHeaderLine('HX-Request') === 'true' && $request->getHeaderLine('HX-History-Restore-Request') !== 'true';
-    }
-
     /**
-     * The whole page with the toast, or the part htmx asked for with the toast in HX-Trigger,
-     * because the toast region lies outside the panel.
+     * The page, or the part htmx asked for: the list while the admin types a search, else the panel.
      *
      * @param array<string, mixed> $data
      */
     private function respond(ServerRequestInterface $request, ResponseInterface $response, array $data, ?string $toast, int $status = 200): ResponseInterface
     {
-        if (!self::isHtmx($request)) {
-            // Without a toast of its own, the Renderer takes the flash.
-            return $this->renderer->render($request, $response, 'pages/admin/members.html.twig', $data + ($toast === null ? [] : ['toast' => $toast]), $status);
-        }
-        if ($toast !== null) {
-            $response = $response->withHeader('HX-Trigger', json_encode(['toast' => $toast], JSON_THROW_ON_ERROR));
-        }
-        $template = $request->getHeaderLine('HX-Target') === self::LIST_TARGET ? 'partials/admin/member_list.html.twig' : 'partials/admin/members.html.twig';
+        $fragment = $request->getHeaderLine('HX-Target') === self::LIST_TARGET ? 'partials/admin/member_list.html.twig' : 'partials/admin/members.html.twig';
 
-        // A null toast keeps the Renderer from taking a pending flash, which a fragment cannot show.
-        return $this->renderer->render($request, $response, $template, $data + ['toast' => null], $status);
+        return $this->renderer->panel($request, $response, 'pages/admin/members.html.twig', $fragment, $data, $toast, $status);
     }
 
     /**

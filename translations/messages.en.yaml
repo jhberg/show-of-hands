@@ -24,6 +24,9 @@ login:
 
 error:
   home: Go to the start page
+  bad_request:
+    title: Invalid request
+    text: The form contained a value that does not exist. Reload the page and try again.
   not_found:
     title: Page not found
     text: This page does not exist. The link may be out of date.
@@ -74,6 +77,16 @@ toast:
     removed: '{name} removed.'
     remove_tomorrow: '{name} took part in a poll closed today. You can remove them from tomorrow.'
     remove_after_reopened: '{name} took part in a reopened poll. You can remove them from the day after it closes.'
+  settings:
+    saved: Settings saved.
+  group:
+    added: 'Group {label} added.'
+    renamed: 'Group renamed: {label}.'
+    removed: Group removed.
+    in_use: This group is still in use.
+    missing: A key and a name are needed.
+    taken: This key already exists.
+    key_invalid: The key has at most 4 characters, letters A to Z or digits.
 
 home:
   greeting: Hello {name}
@@ -216,6 +229,48 @@ admin:
   polls:
     title: Polls
     lead: Create and publish. Each poll gets its own link. The board closes it on the poll page.
+  settings:
+    title: Settings
+    majority:
+      legend: Majority for admission
+      rule: Two thirds of all eligible voters.
+      example: 'With {eligible, plural, one {# member} other {# members}}, {needed, plural, one {# yes vote is} other {# yes votes are}} needed.'
+      text: Whoever does not vote counts as an abstention, not as yes. The rule applies to admissions and to probation exceptions and cannot be changed.
+    delegation:
+      legend: Vote delegation
+      enabled: Members may hand their vote to another member
+      help: Delegations are visible to everyone and cannot be passed on. Whoever votes themselves takes their vote back automatically.
+      max_before: One person can receive at most
+      max_after: 'extra votes, so up to {weight} voting rights.'
+    visibility:
+      legend: Visibility
+      show_open_names: All members see who has not voted yet
+      help: Otherwise members only see the number. The board and admins always see the names.
+    retention:
+      legend: Retention
+      before: Closed polls are deleted automatically, with their result,
+      after: days after closing.
+      help: After that, neither the result nor the turnout nor the name of the person voted on remains. Drafts and open polls stay.
+    save: Save
+    groups:
+      title: Voice groups
+      lead: This order sorts the member list and the “Not voted yet” view. The key is fixed, the name can be changed.
+      label_of: Name of group {key}
+      up: move up
+      down: move down
+      remove: Remove
+      in_use: Still in use
+      key_placeholder: Key
+      key_label: Key of the new group
+      label_placeholder: Name of the group, for example Soprano 3
+      label_label: Name of the new group
+      add: Add
+      help: Groups that members or polls still use cannot be removed. Name changes take effect at once.
+    sign_in:
+      title: Sign-in
+      domain: Google Workspace domain
+      client_id: OAuth client ID
+      help: Can only be changed in config.php. It is created once in the Google Cloud Console. Private Google accounts work when the address is registered for the member.
 
 dev_login:
   kicker: Development only

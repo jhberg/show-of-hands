@@ -6,6 +6,7 @@ namespace ShowOfHands\Http\Action;
 
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
+use ShowOfHands\Http\Htmx;
 use ShowOfHands\Http\Middleware\MemberMiddleware;
 use ShowOfHands\Http\PollPage;
 use ShowOfHands\Infrastructure\Persistence\PollRepository;
@@ -33,7 +34,7 @@ final readonly class PollAction
             return $this->page->missing($request, $response);
         }
 
-        if ($request->getHeaderLine('HX-Request') === 'true' && $request->getHeaderLine('HX-History-Restore-Request') !== 'true') {
+        if (Htmx::isRequest($request)) {
             return $this->page->fragment(
                 $request,
                 $response,

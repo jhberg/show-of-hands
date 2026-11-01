@@ -1,0 +1,28 @@
+{% extends 'layout.html.twig' %}
+
+{% block title %}{{ 'admin.settings.title'|trans }} · {{ 'nav.admin'|trans }} · {{ parent() }}{% endblock %}
+
+{% block body %}
+{{ include('partials/header.html.twig', {active: 'admin'}) }}
+<main class="main wide">
+    {{ include('partials/admin/tabs.html.twig', {section: 'settings'}) }}
+    <h1>{{ 'admin.settings.title'|trans }}</h1>
+    {{ include('partials/admin/settings_form.html.twig') }}
+    {{ include('partials/admin/voice_groups.html.twig') }}
+    {# Read-only: these values come from config.php. #}
+    <section class="panel soft narrow" aria-labelledby="sign-in-title">
+        <h2 id="sign-in-title">{{ 'admin.settings.sign_in.title'|trans }}</h2>
+        <div class="form mt-6">
+            <div class="field">
+                <label for="s-domain">{{ 'admin.settings.sign_in.domain'|trans }}</label>
+                <input id="s-domain" type="text" value="{{ workspace_domain }}" readonly>
+            </div>
+            <div class="field">
+                <label for="s-client">{{ 'admin.settings.sign_in.client_id'|trans }}</label>
+                <input id="s-client" type="text" value="{{ client_id }}" readonly>
+                <p class="help">{{ 'admin.settings.sign_in.help'|trans }}</p>
+            </div>
+        </div>
+    </section>
+</main>
+{% endblock %}
