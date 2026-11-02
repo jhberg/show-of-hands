@@ -83,7 +83,7 @@ final class CloseTest extends HttpTestCase
         $html = $this->page();
         self::assertStringContainsString('<h2>Abschluss durch den Vorstand</h2>', $html);
         self::assertStringContainsString('Du bist als Vorstand hinterlegt und kannst diese Abstimmung abschließen.', $html);
-        self::assertMatchesRegularExpression('#<form class="actions mt-12" method="get" action="/polls/' . $this->poll . '\#board"[^>]*>\s*<input type="hidden" name="confirm" value="close">\s*<button class="btn">Abstimmung abschließen</button>#', $html);
+        self::assertMatchesRegularExpression('#<form class="actions mt-12" method="get" action="/polls/' . $this->poll . '\#board"[^>]*>\s*<input type="hidden" name="confirm" value="close">\s*<button class="btn" id="board-close">Abstimmung abschließen</button>#', $html);
         self::assertStringNotContainsString('Wirklich abschließen?', $html);
     }
 
@@ -97,8 +97,8 @@ final class CloseTest extends HttpTestCase
 
         self::assertStringContainsString('<p><b>Wirklich abschließen?</b> 1 von 4 Stimmrechten sind abgegeben, 2 Mitglieder fehlen noch, 1 übertragene Stimme ist noch nicht abgegeben.</p>', $html);
         self::assertStringContainsString('<form class="row" method="post" action="/polls/' . $this->poll . '/close"', $html);
-        self::assertStringContainsString('<button class="btn primary" autofocus>Abschließen und Ergebnis anzeigen</button>', $html);
-        self::assertStringContainsString('<a class="btn" href="/polls/' . $this->poll . '#board" hx-get="/polls/' . $this->poll . '"', $html);
+        self::assertStringContainsString('<button class="btn primary" id="board-confirm" autofocus>Abschließen und Ergebnis anzeigen</button>', $html);
+        self::assertStringContainsString('<a class="btn" id="board-cancel" href="/polls/' . $this->poll . '#board" hx-get="/polls/' . $this->poll . '"', $html);
         self::assertStringNotContainsString('Abstimmung abschließen</button>', $html);
 
         $this->cast($this->lou, Choice::No);
@@ -112,7 +112,7 @@ final class CloseTest extends HttpTestCase
 
         $html = $this->body($this->request('GET', "/polls/{$this->poll}?confirm=close", headers: ['HX-Request' => 'true']));
 
-        self::assertStringStartsWith('<main class="main">', ltrim(preg_replace('/\{#.*?#\}/s', '', $html) ?? ''));
+        self::assertStringStartsWith('<main class="main"', ltrim(preg_replace('/\{#.*?#\}/s', '', $html) ?? ''));
         self::assertStringContainsString('Wirklich abschließen?', $html);
     }
 
@@ -198,7 +198,7 @@ final class CloseTest extends HttpTestCase
 
         self::assertSame(200, $response->getStatusCode());
         self::assertSame('{"toast":"Abstimmung abgeschlossen. Das Ergebnis ist jetzt sichtbar."}', $response->getHeaderLine('HX-Trigger'));
-        self::assertStringStartsWith('<main class="main">', ltrim(preg_replace('/\{#.*?#\}/s', '', $html) ?? ''));
+        self::assertStringStartsWith('<main class="main"', ltrim(preg_replace('/\{#.*?#\}/s', '', $html) ?? ''));
         self::assertMatchesRegularExpression('#<p class="verdict nein">.*?Nicht aufgenommen<span class="pct num">0,0 % Ja</span>#s', $html);
         self::assertStringNotContainsString('Abschluss durch den Vorstand', $html);
     }

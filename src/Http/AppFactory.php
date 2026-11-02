@@ -31,6 +31,7 @@ use ShowOfHands\Http\Action\LocaleAction;
 use ShowOfHands\Http\Action\LoginAction;
 use ShowOfHands\Http\Action\LogoutAction;
 use ShowOfHands\Http\Action\PollAction;
+use ShowOfHands\Http\Action\PollLiveAction;
 use ShowOfHands\Http\Action\RevokeDelegationAction;
 use ShowOfHands\Http\Action\ThemeAction;
 use ShowOfHands\Http\Middleware\CsrfMiddleware;
@@ -98,6 +99,7 @@ final class AppFactory
         $app->group('', function (RouteCollectorProxy $member) use ($responses): void {
             $member->get('/', HomeAction::class);
             $member->get('/polls/{id:[0-9]+}', PollAction::class);
+            $member->get('/polls/{id:[0-9]+}/live', PollLiveAction::class);
             $member->post('/polls/{id:[0-9]+}/ballot', BallotAction::class);
             $member->post('/polls/{id:[0-9]+}/delegation', DelegationAction::class);
             $member->post('/polls/{id:[0-9]+}/delegation/revoke', RevokeDelegationAction::class);

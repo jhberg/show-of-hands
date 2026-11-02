@@ -7,11 +7,13 @@ namespace ShowOfHands\Http;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use ShowOfHands\Domain\Choice;
+use ShowOfHands\Domain\CloseDay;
 use ShowOfHands\Domain\Delegations;
 use ShowOfHands\Domain\Member;
 use ShowOfHands\Domain\Poll;
 use ShowOfHands\Domain\Turnout;
 use ShowOfHands\Domain\VoiceGroup;
+use ShowOfHands\Infrastructure\Clock\Clock;
 use ShowOfHands\Infrastructure\Config\Config;
 use ShowOfHands\Infrastructure\Persistence\BallotRepository;
 use ShowOfHands\Infrastructure\Persistence\DelegationRepository;
@@ -41,6 +43,7 @@ final readonly class PollPage
         private SettingsRepository $settings,
         private RollRepository $roll,
         private Config $config,
+        private Clock $clock,
     ) {}
 
     /**
@@ -49,7 +52,7 @@ final readonly class PollPage
      */
     public function page(ServerRequestInterface $request, ResponseInterface $response, Poll $poll, Member $member): ResponseInterface
     {
-        $data = $this->data($poll, $member, self::delegationOpen($request), self::confirmClose($request));
+        $data = $this->data($poll, $member, self::delegationOpen($request), self::confirmClose($request)) + ['live' => false];
         // The flash holds only the message key. The choice it names comes from the member's own ballot.
         $data['toast'] = $this->flash->take($this->choiceParams($data['choice']), self::path($poll));
 
@@ -62,6 +65,7 @@ final readonly class PollPage
      *
      * @param string|null $toastKey a message that may name the member's choice as {choice}
      * @param array<string, string> $toastParams the message's other placeholders
+     * @param bool $live whether the page's own refresh asks, which must not move the focus
      */
     public function fragment(
         ServerRequestInterface $request,
@@ -72,8 +76,9 @@ final readonly class PollPage
         array $toastParams = [],
         bool $delegationOpen = false,
         bool $confirmClose = false,
+        bool $live = false,
     ): ResponseInterface {
-        $data = $this->data($poll, $member, $delegationOpen, $confirmClose);
+        $data = $this->data($poll, $member, $delegationOpen, $confirmClose) + ['live' => $live];
         if ($toastKey !== null) {
             $toast = $this->translator->trans($toastKey, $toastParams + $this->choiceParams($data['choice']));
             $response = $response->withHeader('HX-Trigger', json_encode(['toast' => $toast], JSON_THROW_ON_ERROR));
@@ -136,7 +141,7 @@ final readonly class PollPage
     }
 
     /**
-     * @return array{poll: Poll, group_label: string, choice: Choice|null, turnout: Turnout, missing_by_group: list<array{group: VoiceGroup|null, members: non-empty-list<Member>}>, show_names: bool, recipient: Member|null, recipient_voted: bool|null, senders: list<string>, delegation: array{open: bool, max_received: int, targets: list<array{id: int, name: string, group_label: string|null, voted: bool}>}|null, board: array{confirm: bool, pending: int}|null, deletion_day: string|null}
+     * @return array{poll: Poll, group_label: string, choice: Choice|null, turnout: Turnout, missing_by_group: list<array{group: VoiceGroup|null, members: non-empty-list<Member>}>, show_names: bool, recipient: Member|null, recipient_voted: bool|null, senders: list<string>, delegation: array{open: bool, max_received: int, targets: list<array{id: int, name: string, group_label: string|null, voted: bool}>}|null, board: array{confirm: bool, pending: int}|null, deletion_day: string|null, live_url: string|null}
      */
     private function data(Poll $poll, Member $member, bool $delegationOpen, bool $confirmClose): array
     {
@@ -190,7 +195,23 @@ final readonly class PollPage
             'delegation' => $delegation,
             'board' => $poll->isOpen() && $member->isBoard ? ['confirm' => $confirmClose, 'pending' => $pendingDelegations] : null,
             'deletion_day' => $this->deletionDay($poll),
+            'live_url' => $this->liveUrl($poll, $delegationOpen, $confirmClose),
         ];
+    }
+
+    /**
+     * Where the page fetches its fresh <main>, keeping the open panels, or null once nothing can
+     * change it any more. A closed poll keeps refreshing through its close day, because an admin
+     * may reopen it until then.
+     */
+    private function liveUrl(Poll $poll, bool $delegationOpen, bool $confirmClose): ?string
+    {
+        if ($poll->closedAt !== null && CloseDay::hasEnded(new \DateTimeImmutable($poll->closedAt), $this->clock->now(), new \DateTimeZone($this->config->timezone))) {
+            return null;
+        }
+        $query = http_build_query(array_filter(['delegate' => $delegationOpen ? '1' : null, 'confirm' => $confirmClose ? 'close' : null]));
+
+        return self::path($poll) . '/live' . ($query === '' ? '' : '?' . $query);
     }
 
     /** The day retention deletes the closed poll, as Y-m-d in the choir's time zone. */

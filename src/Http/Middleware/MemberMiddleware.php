@@ -10,6 +10,7 @@ use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use ShowOfHands\Domain\Member;
+use ShowOfHands\Http\Action\PollLiveAction;
 use ShowOfHands\Http\Action\ThemeAction;
 use ShowOfHands\Http\Session;
 use ShowOfHands\Infrastructure\I18n\Locales;
@@ -47,6 +48,10 @@ final readonly class MemberMiddleware implements MiddlewareInterface
         // The stylesheet is public and cached, so it must not open a session.
         if ($request->getUri()->getPath() === ThemeAction::PATH) {
             return $handler->handle($request);
+        }
+        // The poll page's refresh only reads, so it must not hold the session lock a ballot waits for.
+        if (PollLiveAction::matches($request->getUri()->getPath())) {
+            $this->session->readAndClose();
         }
         $id = $this->session->get(self::SESSION_KEY);
         if (!is_int($id)) {

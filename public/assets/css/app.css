@@ -256,6 +256,8 @@ legend{font-weight:700;font-size:17px;padding:0;margin-bottom:6px}
 .toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(8px);background:var(--ink);color:var(--bg);padding:11px 18px;border-radius:999px;font-size:15px;font-weight:500;z-index:var(--z-toast);box-shadow:var(--shadow);opacity:0;pointer-events:none;transition:opacity var(--t) var(--ease),transform var(--t) var(--ease);max-width:calc(100% - 32px);text-align:center;width:max-content}
 .toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
 
+/* A refresh of the poll page shows these again; they rose into view when they first appeared. */
+.still .reg,.still .deleg-panel,.still .warnbox{animation:none}
 @keyframes rise{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 @keyframes fade{from{opacity:0}to{opacity:1}}
 @media (prefers-reduced-motion: reduce){

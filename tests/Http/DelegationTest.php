@@ -56,11 +56,6 @@ final class DelegationTest extends HttpTestCase
         return $this->service(DelegationRepository::class);
     }
 
-    private function hideOpenNames(): void
-    {
-        $this->service(\PDO::class)->exec("UPDATE settings SET value = '0' WHERE key = 'show_open_names'");
-    }
-
     public function testTheToggleOpensThePanelWithTheMembersTheVoteCanGoTo(): void
     {
         $this->service(BallotRepository::class)->cast($this->poll, $this->lou, Choice::Yes);
@@ -92,7 +87,7 @@ final class DelegationTest extends HttpTestCase
         $response = $this->request('GET', "/polls/{$this->poll}?delegate=1", headers: ['HX-Request' => 'true']);
         $html = $this->body($response);
 
-        self::assertStringStartsWith('<main class="main">', ltrim(preg_replace('/^\s*\{#.*?#\}/s', '', $html) ?? ''));
+        self::assertStringStartsWith('<main class="main"', ltrim(preg_replace('/^\s*\{#.*?#\}/s', '', $html) ?? ''));
         self::assertStringNotContainsString('<header', $html);
         self::assertStringContainsString('aria-expanded="true"', $html);
     }
