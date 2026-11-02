@@ -1,0 +1,15 @@
+{% extends 'layout.html.twig' %}
+
+{% set title = form.poll is null ? 'admin.polls.form.new_title'|trans : 'admin.polls.form.edit_title'|trans %}
+
+{% block title %}{{ title }} · {{ 'nav.admin'|trans }} · {{ parent() }}{% endblock %}
+
+{% block body %}
+{{ include('partials/header.html.twig', {active: 'admin'}) }}
+<main class="main wide">
+    {{ include('partials/admin/tabs.html.twig', {section: 'polls'}) }}
+    <a class="back" href="{{ form.url }}">{{ icon('arrow') }}{{ 'admin.polls.form.back'|trans }}</a>
+    <h1>{{ title }}</h1>
+    {{ include('partials/admin/poll_form.html.twig') }}
+</main>
+{% endblock %}

@@ -1,7 +1,10 @@
 // Toasts: the server renders one into #toast, or an htmx response names one in HX-Trigger.
+// The poll form's kind switch and the copy button of the poll link live here too.
 (function () {
   'use strict';
   var timer;
+
+  document.documentElement.classList.add('js');
 
   function hideLater(toast) {
     clearTimeout(timer);
@@ -23,5 +26,47 @@
 
   document.body.addEventListener('toast', function (event) {
     show(event.detail && event.detail.value);
+  });
+
+  // The poll form's labels, placeholders, and question field follow the chosen kind. The server
+  // renders them for the kind it knows; the other kind's words wait in data attributes.
+  document.addEventListener('change', function (event) {
+    var radio = event.target;
+    if (!(radio instanceof HTMLInputElement) || radio.name !== 'kind' || !radio.form || radio.form.id !== 'poll-form') return;
+    var kind = radio.value;
+    radio.form.querySelectorAll('[data-' + kind + ']').forEach(function (el) {
+      el.textContent = el.getAttribute('data-' + kind);
+    });
+    radio.form.querySelectorAll('[data-placeholder-' + kind + ']').forEach(function (el) {
+      el.setAttribute('placeholder', el.getAttribute('data-placeholder-' + kind));
+    });
+    radio.form.querySelectorAll('[data-kind-only]').forEach(function (el) {
+      el.hidden = el.getAttribute('data-kind-only') !== kind;
+    });
+  });
+
+  // Copies the poll link. Where the browser refuses, the link is selected for copying by hand.
+  document.addEventListener('click', function (event) {
+    var button = event.target instanceof Element ? event.target.closest('[data-copy]') : null;
+    if (!button) return;
+    var source = document.getElementById(button.getAttribute('data-copy'));
+    if (!source) return;
+    var selectByHand = function () {
+      var range = document.createRange();
+      range.selectNodeContents(source);
+      var selection = window.getSelection();
+      if (selection) {
+        selection.removeAllRanges();
+        selection.addRange(range);
+      }
+      show(button.getAttribute('data-copy-failed'));
+    };
+    if (!navigator.clipboard || !navigator.clipboard.writeText) {
+      selectByHand();
+      return;
+    }
+    navigator.clipboard.writeText(source.textContent.trim()).then(function () {
+      show(button.getAttribute('data-copied'));
+    }, selectByHand);
   });
 })();

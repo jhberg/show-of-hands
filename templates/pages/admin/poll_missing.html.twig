@@ -1,0 +1,12 @@
+{% extends 'layout.html.twig' %}
+
+{% block title %}{{ 'admin.polls.title'|trans }} · {{ 'nav.admin'|trans }} · {{ parent() }}{% endblock %}
+
+{% block body %}
+{{ include('partials/header.html.twig', {active: 'admin'}) }}
+<main class="main wide">
+    {{ include('partials/admin/tabs.html.twig', {section: 'polls'}) }}
+    <a class="back" href="/admin/polls">{{ icon('arrow') }}{{ 'poll.back'|trans }}</a>
+    <div class="empty">{{ 'admin.polls.missing'|trans({days: retention_days}) }}</div>
+</main>
+{% endblock %}

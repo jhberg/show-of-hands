@@ -66,6 +66,18 @@ toast:
     revoked: Delegation taken back. Your vote is yours again.
   poll_closed: This poll is already closed.
   close_done: Poll closed. The result is now visible.
+  poll:
+    name_missing: Please enter the name.
+    question_missing: Please write the question to vote on.
+    created: Draft saved. Publish it when voting should start.
+    saved: Saved.
+    published: Published. Members can vote now.
+    deleted: Draft deleted.
+    reopened: Poll reopened. All members see the notice.
+    reopen_too_late: A poll can be reopened only on the day it closed.
+    stale: The poll changed in the meantime. The page now shows where things stand.
+    copied: Link copied.
+    copy_failed: Copying did not work. Please select the link.
   member:
     invalid: A name and at least one valid email address are needed.
     same: The two addresses are the same.
@@ -112,8 +124,13 @@ poll:
   date_open: Date to be set
   question_missing: The question is still missing.
   status:
+    draft: Draft
     open: Open
     closed: Closed
+    reopened: reopened
+  reopened:
+    title: Reopened on {moment}.
+    text: The admins took back the close. The earlier result was already visible. You can check your vote, change it, or cast it now.
 
 ballot:
   title: Your vote
@@ -191,6 +208,7 @@ result:
     abstained: '{count} not cast · {percent}'
   explanation: '{base, select, cast {{yes} of {cast} votes cast were yes} other {{yes} of {total} eligible voters voted yes}}, that is {percent}. {needed, plural, one {At least # yes vote is needed} other {At least # yes votes are needed}}, {rule}. {base, select, cast {Votes not cast do not count.} other {Votes not cast count as abstentions, not as yes.}} {cast} of {total} voting rights were cast{delegated, plural, =0 {} other {, # of them delegated}}.'
   deletion: This poll and its result will be deleted automatically on {date}.
+  reopened: '{count, plural, one {The poll was reopened once in between.} other {The poll was reopened # times in between.}}'
 
 admin:
   members:
@@ -230,6 +248,73 @@ admin:
   polls:
     title: Polls
     lead: Create and publish. Each poll gets its own link. The board closes it on the poll page.
+    new: New poll
+    details: Details
+    empty: No polls yet.
+    deletion: Deleted on {date}
+    turnout: Voting rights cast
+    missing: '{days, plural, one {Poll not found. Closed polls are deleted automatically after # day.} other {Poll not found. Closed polls are deleted automatically after # days.}}'
+    kind:
+      admission: Admission
+      exception: Probation exception
+    draft:
+      help: Members cannot see this poll yet. Once it is published, they can vote right away, even before the audition.
+      publish: Publish poll
+      edit: Edit
+      delete: Delete
+      delete_question: Really delete this draft?
+      delete_text: This cannot be undone.
+      delete_confirm: Yes, delete
+    open:
+      title: Open since {moment}
+      help: Members can vote and change their vote until the poll closes. The board closes it, not here but right on the poll page. Only then is the result visible.
+      help_board: Members can vote and change their vote until the poll closes. The board closes it, not here but right on the poll page ({names}). Only then is the result visible.
+      reopened: This poll was reopened on {moment}.
+      edit: Edit note
+      lock_label: 'Result:'
+      lock: calculated only after the close. The admins see no interim counts either, so the running poll influences nobody.
+    closed:
+      title: Closed on {moment}
+      help: The result is on the poll page and visible to all members. The number of eligible voters ({eligible}) was recorded at the close.
+      deletion: The poll and its result will be deleted automatically on {date}.
+      reopen: Reopen
+      reopen_today: A poll closed by mistake can be reopened only today, on the day it closed.
+      reopen_over: Reopening was possible only on the day the poll closed. The result has been final since.
+      reopen_question: Really reopen?
+      reopen_text: The result was already visible to everyone. Once reopened, members can change their vote or cast it late, and everyone sees a notice on the poll page that the poll was reopened. Meant only for a poll closed by mistake.
+      reopen_confirm: Yes, reopen
+    to_poll: Go to the poll page
+    cancel: Cancel
+    share:
+      label: Link for the members
+      copy: Copy
+      help: The link leads straight to this poll. With several polls on the same evening, each has its own link.
+    form:
+      new_title: New poll
+      edit_title: Edit poll
+      back: Back
+      kind: Kind of poll
+      admission: Admission to the choir
+      admission_help: After the audition. The question is always “Should … be admitted to the choir?”
+      exception: Probation exception
+      exception_help: A concert or a rehearsal weekend before admission. You write the question, the answer is Yes or No.
+      name_admission: Name of the applicant
+      name_exception: Name of the person on probation
+      name_placeholder: First and last name
+      question: Question to vote on
+      question_placeholder: May Leon sing bass at the concert on 18 October, although his probation is still running?
+      group: Voice group
+      date_admission: Audition date
+      date_exception: Decision by
+      note: Note for the members (optional)
+      note_placeholder_admission: 'For example: Nora auditions at the rehearsal on 8 September. The poll stays open until the discussion and the vote after the audition.'
+      note_placeholder_exception: 'For example: Leon has been on probation for three weeks. The bass section is two people short for the concert.'
+      fixed: Kind, name, question, and voice group are fixed since voting opened.
+      help_new: The poll is saved as a draft. Members see it only once it is published.
+      help_draft: Members see the poll only once it is published.
+      help_open: Changes are visible to everyone at once.
+      submit_new: Save as draft
+      submit_edit: Save
   settings:
     title: Settings
     majority:
@@ -294,3 +379,6 @@ dev_login:
 
 list:
   and: '{names} and {last}'
+
+format:
+  moment: '{moment}'

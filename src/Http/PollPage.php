@@ -189,21 +189,8 @@ final readonly class PollPage
             'senders' => $senders,
             'delegation' => $delegation,
             'board' => $poll->isOpen() && $member->isBoard ? ['confirm' => $confirmClose, 'pending' => $pendingDelegations] : null,
-            'deletion_day' => $this->deletionDay($poll),
+            'deletion_day' => $poll->deletionDay($this->settings->retentionDays(), new \DateTimeZone($this->config->timezone)),
         ];
-    }
-
-    /** The day retention deletes the closed poll, as Y-m-d in the choir's time zone. */
-    private function deletionDay(Poll $poll): ?string
-    {
-        if ($poll->closedAt === null) {
-            return null;
-        }
-
-        return (new \DateTimeImmutable($poll->closedAt))
-            ->modify('+' . $this->settings->retentionDays() . ' days')
-            ->setTimezone(new \DateTimeZone($this->config->timezone))
-            ->format('Y-m-d');
     }
 
     /**

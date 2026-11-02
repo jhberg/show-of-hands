@@ -66,6 +66,18 @@ toast:
     revoked: Übertragung zurückgenommen. Dein Stimmrecht liegt wieder bei dir.
   poll_closed: Die Abstimmung ist bereits abgeschlossen.
   close_done: Abstimmung abgeschlossen. Das Ergebnis ist jetzt sichtbar.
+  poll:
+    name_missing: Bitte den Namen eintragen.
+    question_missing: Bitte die Frage formulieren, über die abgestimmt wird.
+    created: Entwurf gespeichert. Jetzt freischalten, wenn es losgehen soll.
+    saved: Gespeichert.
+    published: Freigeschaltet. Mitglieder können jetzt abstimmen.
+    deleted: Entwurf gelöscht.
+    reopened: Abstimmung wieder geöffnet. Alle Mitglieder sehen den Hinweis.
+    reopen_too_late: Wieder öffnen ist nur am Tag des Abschlusses möglich.
+    stale: Die Abstimmung wurde inzwischen geändert. Die Seite zeigt jetzt den aktuellen Stand.
+    copied: Link kopiert.
+    copy_failed: Kopieren nicht möglich. Bitte den Link markieren.
   member:
     invalid: Name und mindestens eine gültige E-Mail-Adresse sind nötig.
     same: Die beiden Adressen sind gleich.
@@ -112,8 +124,13 @@ poll:
   date_open: Datum offen
   question_missing: Frage fehlt noch.
   status:
+    draft: Entwurf
     open: Offen
     closed: Abgeschlossen
+    reopened: wieder geöffnet
+  reopened:
+    title: Wieder geöffnet am {moment}.
+    text: Die Verwaltung hat den Abschluss zurückgenommen. Das vorherige Ergebnis war bereits sichtbar. Du kannst deine Stimme prüfen, ändern oder nachholen.
 
 ballot:
   title: Deine Stimme
@@ -191,6 +208,7 @@ result:
     abstained: '{count} nicht abgegeben · {percent}'
   explanation: '{base, select, cast {{yes, plural, one {# von {cast} abgegebenen Stimmen lautet Ja} other {# von {cast} abgegebenen Stimmen lauten Ja}}} other {{yes, plural, one {# von {total} Stimmberechtigten hat mit Ja gestimmt} other {# von {total} Stimmberechtigten haben mit Ja gestimmt}}}}, das sind {percent}. {needed, plural, one {Nötig ist mindestens # Ja-Stimme} other {Nötig sind mindestens # Ja-Stimmen}}, also {rule}. {base, select, cast {Nicht abgegebene Stimmen zählen nicht mit.} other {Nicht abgegebene Stimmen gelten als Enthaltung und zählen nicht als Ja.}} {cast} von {total} Stimmrechten wurden abgegeben{delegated, plural, =0 {} other {, # davon übertragen}}.'
   deletion: Diese Abstimmung wird samt Ergebnis am {date} automatisch gelöscht.
+  reopened: '{count, plural, one {Die Abstimmung wurde zwischendurch einmal wieder geöffnet.} other {Die Abstimmung wurde zwischendurch #-mal wieder geöffnet.}}'
 
 admin:
   members:
@@ -230,6 +248,73 @@ admin:
   polls:
     title: Abstimmungen
     lead: Anlegen und freischalten. Jede Abstimmung bekommt einen eigenen Link. Abgeschlossen wird vom Vorstand auf der Abstimmungsseite.
+    new: Neue Abstimmung
+    details: Details
+    empty: Noch keine Abstimmungen.
+    deletion: Löschung am {date}
+    turnout: Abgegebene Stimmrechte
+    missing: '{days, plural, one {Abstimmung nicht gefunden. Abgeschlossene Abstimmungen werden nach # Tag automatisch gelöscht.} other {Abstimmung nicht gefunden. Abgeschlossene Abstimmungen werden nach # Tagen automatisch gelöscht.}}'
+    kind:
+      admission: Aufnahme
+      exception: Ausnahme in der Probezeit
+    draft:
+      help: Mitglieder sehen diese Abstimmung noch nicht. Nach dem Freischalten kann sofort abgestimmt werden, auch schon vor dem Vorsingen.
+      publish: Abstimmung freischalten
+      edit: Bearbeiten
+      delete: Löschen
+      delete_question: Entwurf wirklich löschen?
+      delete_text: Das lässt sich nicht rückgängig machen.
+      delete_confirm: Ja, löschen
+    open:
+      title: Offen seit {moment}
+      help: Mitglieder können abstimmen und ihre Stimme bis zum Abschluss ändern. Abgeschlossen wird nicht hier, sondern vom Vorstand direkt auf der Abstimmungsseite. Erst danach ist das Ergebnis sichtbar.
+      help_board: Mitglieder können abstimmen und ihre Stimme bis zum Abschluss ändern. Abgeschlossen wird nicht hier, sondern vom Vorstand direkt auf der Abstimmungsseite ({names}). Erst danach ist das Ergebnis sichtbar.
+      reopened: Diese Abstimmung wurde am {moment} wieder geöffnet.
+      edit: Hinweis bearbeiten
+      lock_label: 'Ergebnis:'
+      lock: wird erst nach dem Abschluss berechnet. Auch die Verwaltung sieht keine Zwischenstände, damit die laufende Abstimmung niemanden beeinflusst.
+    closed:
+      title: Abgeschlossen am {moment}
+      help: Das Ergebnis steht auf der Abstimmungsseite und ist für alle Mitglieder sichtbar. Die Zahl der Stimmberechtigten ({eligible}) wurde beim Abschluss festgehalten.
+      deletion: Die Abstimmung wird am {date} samt Ergebnis automatisch gelöscht.
+      reopen: Wieder öffnen
+      reopen_today: Ein versehentlicher Abschluss lässt sich nur heute, am Tag des Abschlusses, zurücknehmen.
+      reopen_over: Wieder öffnen war nur am Tag des Abschlusses möglich. Seitdem ist das Ergebnis endgültig.
+      reopen_question: Wirklich wieder öffnen?
+      reopen_text: Das Ergebnis war bereits für alle sichtbar. Nach dem Öffnen können Mitglieder ihre Stimme ändern oder nachholen, und alle sehen auf der Abstimmungsseite den Hinweis, dass die Abstimmung wieder geöffnet wurde. Gedacht nur für einen versehentlichen Abschluss.
+      reopen_confirm: Ja, wieder öffnen
+    to_poll: Zur Abstimmungsseite
+    cancel: Abbrechen
+    share:
+      label: Link für die Mitglieder
+      copy: Kopieren
+      help: Der Link führt direkt zu dieser Abstimmung. Bei mehreren Abstimmungen am selben Abend hat jede ihren eigenen Link.
+    form:
+      new_title: Neue Abstimmung
+      edit_title: Abstimmung bearbeiten
+      back: Zurück
+      kind: Art der Abstimmung
+      admission: Aufnahme in den Chor
+      admission_help: Nach dem Vorsingen. Die Frage lautet immer „Soll … in den Chor aufgenommen werden?“
+      exception: Ausnahme in der Probezeit
+      exception_help: Auftritt oder Probenwochenende vor der Aufnahme. Die Frage formulierst du selbst, die Antwort ist Ja oder Nein.
+      name_admission: Name der Person, die sich bewirbt
+      name_exception: Name der Person in der Probezeit
+      name_placeholder: Vor- und Nachname
+      question: Frage, über die abgestimmt wird
+      question_placeholder: Darf Leon beim Konzert am 18. Oktober im Bass mitsingen, obwohl seine Probezeit noch läuft?
+      group: Stimmgruppe
+      date_admission: Datum des Vorsingens
+      date_exception: Entscheidung bis
+      note: Hinweis für die Mitglieder (optional)
+      note_placeholder_admission: 'Zum Beispiel: Nora hat in der Probe am 8. September ihr Vorsingen. Die Abstimmung bleibt bis zur Besprechung und Stimmabgabe nach dem Vorsingen offen.'
+      note_placeholder_exception: 'Zum Beispiel: Leon ist seit drei Wochen in der Probezeit. Im Bass fehlen beim Konzert zwei Personen.'
+      fixed: Art, Name, Frage und Stimmgruppe stehen fest, seit abgestimmt werden kann.
+      help_new: Die Abstimmung wird als Entwurf gespeichert. Mitglieder sehen sie erst nach dem Freischalten.
+      help_draft: Mitglieder sehen die Abstimmung erst nach dem Freischalten.
+      help_open: Änderungen sind sofort für alle sichtbar.
+      submit_new: Als Entwurf speichern
+      submit_edit: Speichern
   settings:
     title: Einstellungen
     majority:
@@ -294,3 +379,6 @@ dev_login:
 
 list:
   and: '{names} und {last}'
+
+format:
+  moment: '{moment} Uhr'

@@ -13,7 +13,13 @@ use ShowOfHands\Domain\BallotToken;
 use ShowOfHands\Http\Action\AdminMemberDeleteAction;
 use ShowOfHands\Http\Action\AdminMembersAction;
 use ShowOfHands\Http\Action\AdminMemberSaveAction;
+use ShowOfHands\Http\Action\AdminPollAction;
+use ShowOfHands\Http\Action\AdminPollDeleteAction;
+use ShowOfHands\Http\Action\AdminPollFormAction;
+use ShowOfHands\Http\Action\AdminPollPublishAction;
+use ShowOfHands\Http\Action\AdminPollReopenAction;
 use ShowOfHands\Http\Action\AdminPollsAction;
+use ShowOfHands\Http\Action\AdminPollSaveAction;
 use ShowOfHands\Http\Action\AdminSettingsAction;
 use ShowOfHands\Http\Action\AdminSettingsSaveAction;
 use ShowOfHands\Http\Action\AdminVoiceGroupAddAction;
@@ -104,6 +110,15 @@ final class AppFactory
             $member->post('/polls/{id:[0-9]+}/close', CloseAction::class)->add(RequireRole::board($responses));
             $member->group('/admin', function (RouteCollectorProxy $admin): void {
                 $admin->get('/polls', AdminPollsAction::class);
+                $admin->get('/polls/new', AdminPollFormAction::class);
+                $admin->post('/polls', AdminPollSaveAction::class);
+                $poll = '/polls/{id:[0-9]+}';
+                $admin->get($poll, AdminPollAction::class);
+                $admin->get($poll . '/edit', AdminPollFormAction::class);
+                $admin->post($poll, AdminPollSaveAction::class);
+                $admin->post($poll . '/publish', AdminPollPublishAction::class);
+                $admin->post($poll . '/delete', AdminPollDeleteAction::class);
+                $admin->post($poll . '/reopen', AdminPollReopenAction::class);
                 $admin->get('/members', AdminMembersAction::class);
                 $admin->post('/members', AdminMemberSaveAction::class);
                 $admin->post('/members/{id:[0-9]+}', AdminMemberSaveAction::class);
@@ -183,7 +198,7 @@ final class AppFactory
                     'strict_variables' => $config->isDev(),
                 ]);
                 $twig->addExtension(new TranslationExtension($translator));
-                $twig->addExtension(new TwigExtension($config->brand, $assets, $themeVersion, $paths->templates() . '/icons', $session, $translator));
+                $twig->addExtension(new TwigExtension($config->brand, $assets, $themeVersion, $paths->templates() . '/icons', $session, $translator, $config->timezone));
 
                 return $twig;
             },

@@ -1,0 +1,8 @@
+{#- The poll's status as a chip: draft, open, or closed. -#}
+{%- if poll.isOpen -%}
+    <span class="chip open"><i class="dot"></i>{{ 'poll.status.open'|trans }}</span>
+{%- elseif poll.isDraft -%}
+    <span class="chip">{{ 'poll.status.draft'|trans }}</span>
+{%- else -%}
+    <span class="chip closed">{{ 'poll.status.closed'|trans }}</span>
+{%- endif -%}

@@ -36,7 +36,9 @@
         <span class="n"><i></i>{{ 'result.legend.no'|trans({count: tally.no, percent: no_share|percent}) }}</span>
         <span class="r"><i></i>{{ 'result.legend.abstained'|trans({count: tally.abstained, percent: tally.share(tally.abstained)|percent}) }}</span>
     </div>
-    <p class="help">{{ 'result.explanation'|trans({base: rule.base, yes: tally.yes, total: tally.eligible, percent: tally.yesShareOfBase|percent, needed: tally.needed, rule: 'result.rule'|trans(rule), cast: tally.cast, delegated: tally.delegations}) }}</p>
+    <p class="help">{{ 'result.explanation'|trans({base: rule.base, yes: tally.yes, total: tally.eligible, percent: tally.yesShareOfBase|percent, needed: tally.needed, rule: 'result.rule'|trans(rule), cast: tally.cast, delegated: tally.delegations}) }}
+        {%- if poll.reopenCount > 0 %} {{ 'result.reopened'|trans({count: poll.reopenCount}) }}{% endif -%}
+    </p>
     {% if deletion_day is not null %}
         <p class="help">{{ 'result.deletion'|trans({date: deletion_day|day_date}) }}</p>
     {% endif %}

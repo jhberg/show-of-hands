@@ -1,0 +1,82 @@
+{#
+    The form that creates or edits a poll. Labels, placeholders, and the question field follow the
+    kind: app.js switches them in place when the radio changes, and without JavaScript the page shows
+    them for the kind the form was rendered with, for example after a save refused for a missing question.
+    An open poll offers only note and date. After a refused save, the message sits at its field.
+#}
+{% set exception = form.kind.value == 'exception' %}
+{% set focus = form.errorField ?? (form.editsAll ? 'subject_name' : 'date') %}
+{% macro error(form, field) -%}
+    {%- if form.errorField == field %} aria-invalid="true" aria-describedby="pf-{{ field }}-error"{% endif -%}
+{%- endmacro %}
+{% import _self as f %}
+<form class="panel form poll-form" id="poll-form" method="post" action="{{ form.url }}" hx-post="{{ form.url }}" hx-target="this" hx-swap="outerHTML" novalidate>
+    {{ include('partials/csrf_field.html.twig') }}
+    {% if form.editsAll %}
+        <fieldset>
+            <legend>{{ 'admin.polls.form.kind'|trans }}</legend>
+            <div class="radio">
+                {% for option in [
+                    {kind: 'admission', label: 'admin.polls.form.admission'|trans, help: 'admin.polls.form.admission_help'|trans},
+                    {kind: 'exception', label: 'admin.polls.form.exception'|trans, help: 'admin.polls.form.exception_help'|trans},
+                ] %}
+                    <label>
+                        <input type="radio" name="kind" value="{{ option.kind }}"{% if form.kind.value == option.kind %} checked{% endif %}>
+                        <span><b>{{ option.label }}</b><br><span class="help">{{ option.help }}</span></span>
+                    </label>
+                {% endfor %}
+            </div>
+        </fieldset>
+        <div class="field">
+            <label for="pf-subject_name" data-admission="{{ 'admin.polls.form.name_admission'|trans }}" data-exception="{{ 'admin.polls.form.name_exception'|trans }}">
+                {{- exception ? 'admin.polls.form.name_exception'|trans : 'admin.polls.form.name_admission'|trans -}}
+            </label>
+            <input id="pf-subject_name" name="subject_name" type="text" value="{{ form.subjectName }}" placeholder="{{ 'admin.polls.form.name_placeholder'|trans }}" autocomplete="off"
+                {%- if focus == 'subject_name' %} autofocus{% endif %}{{ f.error(form, 'subject_name') }}>
+            {% if form.errorField == 'subject_name' %}<p class="field-error" id="pf-subject_name-error">{{ form.errorKey|trans }}</p>{% endif %}
+        </div>
+        <div class="field" data-kind-only="exception"{% if not exception %} hidden{% endif %}>
+            <label for="pf-question">{{ 'admin.polls.form.question'|trans }}</label>
+            <textarea id="pf-question" name="question" rows="2" placeholder="{{ 'admin.polls.form.question_placeholder'|trans }}"
+                {%- if focus == 'question' %} autofocus{% endif %}{{ f.error(form, 'question') }}>{{ form.question }}</textarea>
+            {% if form.errorField == 'question' %}<p class="field-error" id="pf-question-error">{{ form.errorKey|trans }}</p>{% endif %}
+        </div>
+        <div class="field">
+            <label for="pf-group">{{ 'admin.polls.form.group'|trans }}</label>
+            <select id="pf-group" name="group">
+                {% for group in groups %}
+                    <option value="{{ group.key }}"{% if group.key == form.group %} selected{% endif %}>{{ group.label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    {% else %}
+        <div class="fixed">
+            <b>{{ form.poll.subjectName }}</b> · {{ exception ? 'admin.polls.kind.exception'|trans : 'admin.polls.kind.admission'|trans }}
+            <p class="help mt-6">{{ 'admin.polls.form.fixed'|trans }}</p>
+        </div>
+    {% endif %}
+    <div class="field">
+        <label for="pf-date" data-admission="{{ 'admin.polls.form.date_admission'|trans }}" data-exception="{{ 'admin.polls.form.date_exception'|trans }}">
+            {{- exception ? 'admin.polls.form.date_exception'|trans : 'admin.polls.form.date_admission'|trans -}}
+        </label>
+        <input id="pf-date" name="date" type="date" value="{{ form.date }}"{% if focus == 'date' %} autofocus{% endif %}>
+    </div>
+    <div class="field">
+        <label for="pf-note">{{ 'admin.polls.form.note'|trans }}</label>
+        <textarea id="pf-note" name="note" rows="3" data-placeholder-admission="{{ 'admin.polls.form.note_placeholder_admission'|trans }}" data-placeholder-exception="{{ 'admin.polls.form.note_placeholder_exception'|trans }}"
+            placeholder="{{ exception ? 'admin.polls.form.note_placeholder_exception'|trans : 'admin.polls.form.note_placeholder_admission'|trans }}">{{ form.note }}</textarea>
+    </div>
+    <p class="help">
+        {%- if form.poll is null -%}
+            {{ 'admin.polls.form.help_new'|trans }}
+        {%- elseif form.editsAll -%}
+            {{ 'admin.polls.form.help_draft'|trans }}
+        {%- else -%}
+            {{ 'admin.polls.form.help_open'|trans }}
+        {%- endif -%}
+    </p>
+    <div class="row">
+        <button class="btn primary">{{ form.poll is null ? 'admin.polls.form.submit_new'|trans : 'admin.polls.form.submit_edit'|trans }}</button>
+        <a class="btn" href="{{ form.url }}">{{ 'admin.polls.cancel'|trans }}</a>
+    </div>
+</form>

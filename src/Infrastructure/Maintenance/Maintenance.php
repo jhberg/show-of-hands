@@ -7,6 +7,7 @@ namespace ShowOfHands\Infrastructure\Maintenance;
 use ShowOfHands\Infrastructure\Clock\Clock;
 use ShowOfHands\Infrastructure\Database\Migrator;
 use ShowOfHands\Infrastructure\Persistence\BallotRepository;
+use ShowOfHands\Infrastructure\Persistence\PollRepository;
 use ShowOfHands\Infrastructure\Persistence\SettingsRepository;
 
 /**
@@ -18,6 +19,7 @@ use ShowOfHands\Infrastructure\Persistence\SettingsRepository;
  *   copy of the database the app makes, and later ballots must not live on in it.
  * - Deletes the ballots of closed polls once their close day has ended in the choir's time
  *   zone. Until then an admin may reopen the poll; afterwards the frozen tally is all it needs.
+ * - Deletes closed polls once their retention period has passed, with result, turnout, and names.
  */
 final readonly class Maintenance
 {
@@ -30,6 +32,7 @@ final readonly class Maintenance
         private SettingsRepository $settings,
         private Migrator $migrator,
         private BallotRepository $ballots,
+        private PollRepository $polls,
         private Clock $clock,
         private string $sessionsDir,
         private string $backupDir,
@@ -48,11 +51,12 @@ final readonly class Maintenance
     }
 
     /**
-     * @return array{sessions: int, backups: int, ballots: int} how many files and ballots it deleted
+     * @return array{sessions: int, backups: int, ballots: int, polls: int} how many files, ballots, and polls it deleted
      */
     public function run(): array
     {
         $now = $this->clock->now();
+        $polls = $this->polls->purgeExpired($now, $this->settings->retentionDays());
         $ballots = $this->ballots->purgeClosed($now, new \DateTimeZone($this->timezone));
         $sessions = $this->deleteOlderThan(
             $this->sessionsDir . '/sess_*',
@@ -63,7 +67,7 @@ final readonly class Maintenance
             ? $this->deleteOlderThan($this->backupDir . '/' . Migrator::BACKUP_GLOB, $now->getTimestamp() - self::BACKUP_KEEP_SECONDS)
             : 0;
 
-        return ['sessions' => $sessions, 'backups' => $backups, 'ballots' => $ballots];
+        return ['sessions' => $sessions, 'backups' => $backups, 'ballots' => $ballots, 'polls' => $polls];
     }
 
     private function deleteOlderThan(string $pattern, int $cutoff): int
