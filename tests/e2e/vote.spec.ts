@@ -50,6 +50,22 @@ test('a member votes, changes the vote, and sees the turnout', async ({ page }, 
   await no.click();
   await expect(page.getByRole('status')).toHaveText('Bleibt bei Nein.');
 
+  // A second tap while the first is still on its way is dropped, so the page shows the stored vote.
+  let held = false;
+  await page.route('**/polls/2/ballot', async (route) => {
+    if (!held) {
+      held = true;
+      await new Promise((resolve) => setTimeout(resolve, 500));
+    }
+    await route.continue();
+  });
+  await yes.click();
+  await no.click();
+  await expect(page.getByRole('status')).toHaveText('Stimme geändert: Ja.');
+  await page.unrouteAll({ behavior: 'wait' });
+  await page.reload();
+  await expect(yes).toHaveAttribute('aria-pressed', 'true');
+
   await page.getByRole('link', { name: 'Alle Abstimmungen' }).click();
   await expect(page.getByRole('link', { name: /Mila Sandberg/ })).toContainText('Abgestimmt');
 });

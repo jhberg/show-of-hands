@@ -20,8 +20,8 @@
                 {% endfor %}
             </select>
             <div class="row">
-                <button class="btn primary">{{ 'delegation.submit'|trans }}</button>
-                <a class="btn" href="/polls/{{ poll.id }}#deleg" hx-get="/polls/{{ poll.id }}" hx-target="closest main" hx-swap="outerHTML">{{ 'delegation.cancel'|trans }}</a>
+                <button class="btn primary" id="deleg-submit">{{ 'delegation.submit'|trans }}</button>
+                <a class="btn" id="deleg-cancel" href="/polls/{{ poll.id }}#deleg" hx-get="/polls/{{ poll.id }}" hx-target="closest main" hx-swap="outerHTML">{{ 'delegation.cancel'|trans }}</a>
             </div>
             <p class="help">{{ 'delegation.limit'|trans({max: delegation.max_received}) }}</p>
         </form>

@@ -5,6 +5,8 @@ import AxeBuilder from '@axe-core/playwright';
 // project closes "Jakob Lenz" (poll 3), which no other journey uses.
 const BOARD = 'max.seidel@example.org';
 const MEMBER = 'rosa.kuehn@example.org';
+// Watches poll 3 while the board closes it, and takes no part in it.
+const WATCHER = 'tilda.ebert@example.org';
 
 async function signIn(page: Page, email: string) {
   await page.goto('/dev-login');
@@ -12,8 +14,14 @@ async function signIn(page: Page, email: string) {
   await expect(page).toHaveURL('/');
 }
 
-test('a board member closes a poll and the result replaces the ballot', async ({ page }, testInfo) => {
+test('a board member closes a poll and the result replaces the ballot', async ({ page, browser }, testInfo) => {
   test.skip(testInfo.project.name !== 'phone', 'A poll closes only once.');
+  const watcher = await (await browser.newContext(testInfo.project.use)).newPage();
+  await watcher.clock.install();
+  await signIn(watcher, WATCHER);
+  await watcher.goto('/polls/3');
+  await expect(watcher.getByRole('heading', { name: 'Deine Stimme' })).toBeVisible();
+
   await signIn(page, BOARD);
   await page.goto('/polls/3');
 
@@ -36,6 +44,13 @@ test('a board member closes a poll and the result replaces the ballot', async ({
 
   await page.getByRole('link', { name: 'Alle Abstimmungen' }).click();
   await expect(page.getByRole('link', { name: /Jakob Lenz.*Ausnahme abgelehnt/ })).toBeVisible();
+
+  // Within 15 seconds, the member who watches sees the result too, without reloading.
+  await watcher.clock.runFor(15_000);
+  await expect(watcher.locator('.verdict')).toContainText('Ausnahme abgelehnt');
+  await expect(watcher.getByRole('heading', { name: 'Deine Stimme' })).toHaveCount(0);
+  await expect(watcher).toHaveURL('/polls/3');
+  await watcher.context().close();
 });
 
 test('a member sees the result of a closed poll and its verdict on the home page', async ({ page }) => {

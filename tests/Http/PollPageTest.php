@@ -38,11 +38,6 @@ final class PollPageTest extends HttpTestCase
         );
     }
 
-    private function hideOpenNames(): void
-    {
-        $this->service(\PDO::class)->exec("UPDATE settings SET value = '0' WHERE key = 'show_open_names'");
-    }
-
     public function testAnOpenAdmissionPollShowsHeadBallotAndTurnout(): void
     {
         $poll = $this->addPoll(date: '2026-11-03', note: 'Robin sings after the break.');
@@ -159,7 +154,7 @@ final class PollPageTest extends HttpTestCase
 
         self::assertSame(200, $response->getStatusCode());
         self::assertSame('{"toast":"Stimme registriert: Ja."}', $response->getHeaderLine('HX-Trigger'));
-        self::assertStringStartsWith('<main class="main">', ltrim(preg_replace('/\{#.*?#\}/s', '', $html) ?? ''));
+        self::assertStringStartsWith('<main class="main"', ltrim(preg_replace('/\{#.*?#\}/s', '', $html) ?? ''));
         self::assertStringNotContainsString('<header', $html);
         self::assertStringNotContainsString('id="toast"', $html);
         self::assertStringContainsString('aria-pressed="true"', $html);
