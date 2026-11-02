@@ -37,13 +37,8 @@ test('an admin adds, finds, edits, and removes a member', async ({ page }, testI
   await expect(page.getByRole('status')).toHaveText(`${name} hinzugefügt.`);
   await expect(page.getByRole('heading', { name: 'Mitglied hinzufügen' })).toHaveCount(0);
 
-  // The toast arrives before htmx has set up the swapped panel, so the first keystrokes may come too early.
-  const search = page.getByLabel('Mitglieder durchsuchen');
-  await expect(async () => {
-    await search.fill('');
-    await search.fill(email);
-    await expect(page).toHaveURL(`/admin/members?q=${encodeURIComponent(email)}`, { timeout: 1000 });
-  }).toPass();
+  await page.getByLabel('Mitglieder durchsuchen').fill(email);
+  await expect(page).toHaveURL(`/admin/members?q=${encodeURIComponent(email)}`);
   await expect(page.locator('#member-list > li')).toHaveCount(1);
   const row = page.locator('#member-list > li', { hasText: email });
   await expect(row).toContainText(name);

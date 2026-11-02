@@ -3,8 +3,13 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-    {# 422 answers a refused form: htmx swaps it in, so the message shows at its field. #}
-    <meta name="htmx-config" content='{"allowEval":false,"allowScriptTags":false,"includeIndicatorStyles":false,"historyCacheSize":0,"responseHandling":[{"code":"204","swap":false},{"code":"422","swap":true},{"code":"[23]..","swap":true},{"code":"[45]..","swap":false,"error":true}]}'>
+    {#
+        422 answers a refused form: htmx swaps it in, so the message shows at its field.
+        A settle delay of 0 sets up the swapped content (its htmx attributes, autofocus) in the same
+        task as the swap. With the default 20 ms, the delayed autofocus could pull the caret away
+        from a field being typed into, and a click in that gap submitted the form without htmx.
+    #}
+    <meta name="htmx-config" content='{"allowEval":false,"allowScriptTags":false,"includeIndicatorStyles":false,"historyCacheSize":0,"defaultSettleDelay":0,"responseHandling":[{"code":"204","swap":false},{"code":"422","swap":true},{"code":"[23]..","swap":true},{"code":"[45]..","swap":false,"error":true}]}'>
     <title>{% block title %}{{ 'app.page_title'|trans({brand: brand.name}) }}{% endblock %}</title>
     <link rel="icon" href="{{ brand_assets.favicon }}">
     <link rel="stylesheet" href="{{ theme_url }}">
