@@ -102,11 +102,16 @@ final readonly class MemberRepository
         return array_map(static fn(array $entry): array => ['member' => $entry['member'], 'emails' => $entry['emails']], $members);
     }
 
+    public function count(): int
+    {
+        $statement = $this->pdo->query('SELECT COUNT(*) FROM members');
+
+        return $statement === false ? 0 : (int) $statement->fetchColumn();
+    }
+
     public function isEmpty(): bool
     {
-        $statement = $this->pdo->query('SELECT EXISTS (SELECT 1 FROM members)');
-
-        return $statement === false || $statement->fetchColumn() === 0;
+        return $this->count() === 0;
     }
 
     /**

@@ -5,8 +5,9 @@ declare(strict_types=1);
 namespace ShowOfHands\Domain;
 
 /**
- * The count of a closed poll. A poll needs two thirds of all eligible voters, not of the votes
- * cast: a member who does not vote counts as an abstention, which works like a No.
+ * The count of a closed poll, judged by the poll's majority. Counted from all eligible voters,
+ * a member who does not vote counts as an abstention, which works like a No; counted from the
+ * votes cast, they do not count at all.
  */
 final readonly class Tally
 {
@@ -21,6 +22,7 @@ final readonly class Tally
         public int $yes,
         public int $no,
         public int $delegations,
+        public Majority $majority,
     ) {}
 
     /**
@@ -28,7 +30,7 @@ final readonly class Tally
      *
      * @param iterable<array{Choice, int}> $ballots choice and weight of each ballot
      */
-    public static function count(int $eligible, iterable $ballots): self
+    public static function count(int $eligible, iterable $ballots, Majority $majority): self
     {
         $yes = 0;
         $no = 0;
@@ -42,18 +44,30 @@ final readonly class Tally
             $delegations += $weight - 1;
         }
 
-        return new self($eligible, $yes, $no, $delegations);
+        return new self($eligible, $yes, $no, $delegations, $majority);
     }
 
-    /** The Yes votes the poll needs: two thirds of the eligible voters, rounded up. */
+    /** The voting rights the majority counts from: all eligible ones, or those cast. */
+    public function base(): int
+    {
+        return $this->majority->base === MajorityBase::Eligible ? $this->eligible : $this->cast();
+    }
+
+    /** The Yes votes the poll needs, at least one. */
     public function needed(): int
     {
-        return intdiv(2 * $this->eligible + 2, 3);
+        return $this->majority->share->needed($this->base());
     }
 
     public function isAccepted(): bool
     {
-        return $this->eligible > 0 && $this->yes >= $this->needed();
+        return $this->base() > 0 && $this->yes >= $this->needed();
+    }
+
+    /** The Yes votes as a share of what the majority counts from, between 0 and 1. */
+    public function yesShareOfBase(): float
+    {
+        return $this->base() === 0 ? 0.0 : $this->yes / $this->base();
     }
 
     /** The voting rights cast, delegated ones included. */

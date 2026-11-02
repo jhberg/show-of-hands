@@ -1,6 +1,6 @@
 # show-of-hands
 
-Anonymous, self-hosted voting for choirs. Members vote on admitting a new singer after an audition, and on exceptions during probation. The result needs a two-thirds majority of all members and stays hidden until the board closes the poll.
+Anonymous, self-hosted voting for choirs. Members vote on admitting a new singer after an audition, and on exceptions during probation. The result needs the majority the admins configure (by default two thirds of all members) and stays hidden until the board closes the poll.
 
 Each choir runs its own copy on an ordinary PHP web space, with its own name, logo, colours, and wording, in German and English.
 

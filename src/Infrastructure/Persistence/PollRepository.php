@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace ShowOfHands\Infrastructure\Persistence;
 
+use ShowOfHands\Domain\Majority;
+use ShowOfHands\Domain\MajorityBase;
+use ShowOfHands\Domain\MajorityShare;
 use ShowOfHands\Domain\Poll;
 use ShowOfHands\Domain\PollKind;
 use ShowOfHands\Domain\PollStatus;
@@ -14,7 +17,7 @@ use ShowOfHands\Domain\Tally;
  */
 final readonly class PollRepository
 {
-    private const COLUMNS = 'id, kind, subject_name, question, voice_group_key, date, note, status, closed_at, eligible, yes_weight, no_weight, delegation_count';
+    private const COLUMNS = 'id, kind, subject_name, question, voice_group_key, date, note, status, closed_at, eligible, yes_weight, no_weight, delegation_count, majority, majority_base';
 
     public function __construct(private \PDO $pdo) {}
 
@@ -79,7 +82,7 @@ final readonly class PollRepository
     }
 
     /**
-     * Stores a new poll and returns its id.
+     * Stores a new poll and returns its id. The poll takes the majority the settings name now.
      */
     public function add(
         PollKind $kind,
@@ -93,8 +96,9 @@ final readonly class PollRepository
         ?string $openedAt = null,
     ): int {
         $this->pdo->prepare(
-            'INSERT INTO polls (kind, subject_name, question, voice_group_key, date, note, status, created_at, opened_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            "INSERT INTO polls (kind, subject_name, question, voice_group_key, date, note, status, created_at, opened_at, majority, majority_base)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?,
+                 (SELECT value FROM settings WHERE key = 'majority'), (SELECT value FROM settings WHERE key = 'majority_base'))",
         )->execute([$kind->value, $subjectName, $question, $voiceGroupKey, $date, $note, $status->value, $createdAt, $openedAt]);
 
         return (int) $this->pdo->lastInsertId();
@@ -132,6 +136,7 @@ final readonly class PollRepository
     private static function poll(array $row): Poll
     {
         $status = PollStatus::from(Row::string($row, 'status'));
+        $majority = new Majority(MajorityShare::from(Row::string($row, 'majority')), MajorityBase::from(Row::string($row, 'majority_base')));
 
         return new Poll(
             id: Row::int($row, 'id'),
@@ -142,12 +147,14 @@ final readonly class PollRepository
             date: Row::nullableString($row, 'date'),
             note: Row::string($row, 'note'),
             status: $status,
+            majority: $majority,
             closedAt: $status === PollStatus::Closed ? Row::nullableString($row, 'closed_at') : null,
             tally: $status === PollStatus::Closed && $row['eligible'] !== null ? new Tally(
                 Row::int($row, 'eligible'),
                 Row::int($row, 'yes_weight'),
                 Row::int($row, 'no_weight'),
                 Row::int($row, 'delegation_count'),
+                $majority,
             ) : null,
         );
     }

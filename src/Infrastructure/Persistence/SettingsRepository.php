@@ -4,6 +4,12 @@ declare(strict_types=1);
 
 namespace ShowOfHands\Infrastructure\Persistence;
 
+use ShowOfHands\Domain\Majority;
+use ShowOfHands\Domain\MajorityBase;
+use ShowOfHands\Domain\MajorityShare;
+use ShowOfHands\Domain\Settings;
+use ShowOfHands\Infrastructure\Database\Transaction;
+
 /**
  * The settings admins change in the admin area, stored as key and value.
  */
@@ -32,6 +38,31 @@ final readonly class SettingsRepository
     public function maxReceived(): int
     {
         return (int) $this->get('max_received');
+    }
+
+    public function all(): Settings
+    {
+        return new Settings(
+            $this->delegationEnabled(),
+            $this->maxReceived(),
+            $this->showOpenNames(),
+            $this->retentionDays(),
+            new Majority(MajorityShare::from($this->get('majority')), MajorityBase::from($this->get('majority_base'))),
+        );
+    }
+
+    /** Saves all of them at once, so no request reads half of a save. */
+    public function save(Settings $settings): void
+    {
+        Transaction::immediate($this->pdo, function () use ($settings): void {
+            $update = $this->pdo->prepare('UPDATE settings SET value = ? WHERE key = ?');
+            $update->execute([$settings->delegationEnabled ? '1' : '0', 'delegation_enabled']);
+            $update->execute([(string) $settings->maxReceived, 'max_received']);
+            $update->execute([$settings->showOpenNames ? '1' : '0', 'show_open_names']);
+            $update->execute([(string) $settings->retentionDays, 'retention_days']);
+            $update->execute([$settings->majority->share->value, 'majority']);
+            $update->execute([$settings->majority->base->value, 'majority_base']);
+        });
     }
 
     /**

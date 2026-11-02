@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace ShowOfHands\Tests\Unit\Domain;
 
 use PHPUnit\Framework\TestCase;
+use ShowOfHands\Domain\Majority;
 use ShowOfHands\Domain\Poll;
 use ShowOfHands\Domain\PollKind;
 use ShowOfHands\Domain\PollStatus;
@@ -13,7 +14,7 @@ final class PollTest extends TestCase
 {
     private static function poll(PollKind $kind, PollStatus $status): Poll
     {
-        return new Poll(1, $kind, 'Robin Example', $kind === PollKind::Exception ? 'May Robin sing?' : null, 'S1', null, '', $status);
+        return new Poll(1, $kind, 'Robin Example', $kind === PollKind::Exception ? 'May Robin sing?' : null, 'S1', null, '', $status, Majority::default());
     }
 
     public function testMembersSeeOnlyPublishedPolls(): void

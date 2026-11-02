@@ -17,6 +17,27 @@ final readonly class VoiceGroup
     ) {}
 
     /**
+     * A new group from what an admin typed: the key trimmed and upper-cased, the label trimmed.
+     * Whether the key is still free is the repository's to check.
+     */
+    public static function parse(string $key, string $label): self|VoiceGroupError
+    {
+        $key = mb_strtoupper(trim($key));
+        $label = trim($label);
+        if ($key === '') {
+            return VoiceGroupError::KeyMissing;
+        }
+        if ($label === '') {
+            return VoiceGroupError::LabelMissing;
+        }
+        if (preg_match(self::KEY_PATTERN, $key) !== 1) {
+            return VoiceGroupError::KeyInvalid;
+        }
+
+        return new self($key, $label);
+    }
+
+    /**
      * The label of the group with this key, or the key when the group no longer exists.
      *
      * @param list<self> $groups
