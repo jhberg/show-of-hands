@@ -11,7 +11,8 @@ use ShowOfHands\Http\Middleware\MemberMiddleware;
 
 /**
  * The member list. ?q= searches, ?add=1 and ?edit={id} open the inline form, ?delete={id} the
- * confirmation, so each works without JavaScript. With htmx, the same GET swaps only the panel.
+ * confirmation, ?import=1 the import's preview, so each works without JavaScript. With htmx, the
+ * same GET swaps only the panel.
  */
 final readonly class AdminMembersAction
 {
@@ -29,6 +30,7 @@ final readonly class AdminMembersAction
             MembersPage::query($request->getQueryParams()['q'] ?? null),
             $this->page->formFor($request),
             MembersPage::deleting($request),
+            MembersPage::importing($request),
         );
     }
 }

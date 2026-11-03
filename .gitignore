@@ -4,6 +4,7 @@
 
 # Instance files: each choir's own configuration, wording, and branding
 /config/config.php
+/config/members.csv
 /config/translations/
 /public/brand/
 

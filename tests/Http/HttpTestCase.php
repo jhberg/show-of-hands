@@ -67,7 +67,8 @@ abstract class HttpTestCase extends TestCase
             'brand' => ['name' => 'Example Choir'],
         ], $config));
 
-        return AppFactory::create(new Paths(dirname(__DIR__, 2), $this->dataDir), $config, $overrides + [
+        // The config path only places the member file, so each test has its own in the data directory.
+        return AppFactory::create(new Paths(dirname(__DIR__, 2), $this->dataDir, $this->dataDir . '/config.php'), $config, $overrides + [
             Session::class => $this->session,
             GoogleSignIn::class => $this->google,
             DevLoginGuard::class => new DevLoginGuard(builtInServer: true),

@@ -89,6 +89,9 @@ toast:
     removed: '{name} removed.'
     remove_tomorrow: '{name} took part in a poll closed today. You can remove them from tomorrow.'
     remove_after_reopened: '{name} took part in a reopened poll. You can remove them from the day after it closes.'
+    imported: '{count, plural, =0 {No new members imported.} one {One member imported.} other {# members imported.}}'
+    imported_with_problems: '{count, plural, =0 {No new members imported} one {One member imported} other {# members imported}}, {problems, plural, one {one line skipped.} other {# lines skipped.}}'
+    import_missing: '{file} is no longer there.'
   settings:
     saved: Settings saved.
   group:
@@ -230,6 +233,29 @@ admin:
     remove_confirm: Yes, remove
     cancel: Cancel
     no_match: No matches.
+    import:
+      title: Import members from a file
+      missing: 'You can also import members from a file. Put {file} into the config folder, next to config.php. The template members.example.csv shows the columns.'
+      never: '{file} is ready and has not been imported yet.'
+      last: '{file} was last imported on {moment}.'
+      open: Import the file again
+      question: '{count, plural, one {Import one new member?} other {Import # new members?}}'
+      text: Members already on the list stay as they are. Anyone removed since the last import who is still in the file comes back.
+      nothing_new: The file holds no new members.
+      existing: '{count, plural, one {One entry is already on the list and stays as it is.} other {# entries are already on the list and stay as they are.}}'
+      problems: '{count, plural, one {This line is skipped:} other {These # lines are skipped:}}'
+      confirm: Yes, import
+      line: 'Line {line}: {issue}'
+      issue:
+        header_invalid: The first line must name the columns, at least name and email.
+        name_missing: The name is missing.
+        address_missing: The email address is missing.
+        first_address_invalid: The email address is not valid.
+        second_address_invalid: The second email address is not valid.
+        same_addresses: The two addresses are the same.
+        address_repeated: 'The address {value} is already in a line above.'
+        group_unknown: 'There is no voice group "{value}".'
+        role_invalid: '"{value}" is neither yes nor no. For a role, enter x or yes, otherwise leave it empty.'
     form:
       edit_title: Edit member
       name: Name

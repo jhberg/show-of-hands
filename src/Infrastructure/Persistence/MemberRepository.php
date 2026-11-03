@@ -125,13 +125,26 @@ final readonly class MemberRepository
 
         return Transaction::immediate($this->pdo, function () use ($name, $emails, $voiceGroupKey, $isBoard, $isAdmin): int {
             $this->assertAddressesFree($emails, null);
-            $this->pdo->prepare('INSERT INTO members (name, voice_group_key, is_board, is_admin) VALUES (?, ?, ?, ?)')
-                ->execute([$name, $voiceGroupKey, (int) $isBoard, (int) $isAdmin]);
-            $id = (int) $this->pdo->lastInsertId();
-            $this->insertEmails($id, $emails);
 
-            return $id;
+            return $this->insert($name, $emails, $voiceGroupKey, $isBoard, $isAdmin);
         });
+    }
+
+    /**
+     * Adds a member inside the caller's transaction, after the caller checked that no member uses
+     * the addresses.
+     *
+     * @param list<string> $emails normalized addresses, the first one first
+     */
+    public function insert(string $name, array $emails, ?string $voiceGroupKey, bool $isBoard, bool $isAdmin): int
+    {
+        self::assertAddressCount($emails);
+        $this->pdo->prepare('INSERT INTO members (name, voice_group_key, is_board, is_admin) VALUES (?, ?, ?, ?)')
+            ->execute([$name, $voiceGroupKey, (int) $isBoard, (int) $isAdmin]);
+        $id = (int) $this->pdo->lastInsertId();
+        $this->insertEmails($id, $emails);
+
+        return $id;
     }
 
     /**

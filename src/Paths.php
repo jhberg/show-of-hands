@@ -32,6 +32,12 @@ final readonly class Paths
         return $this->configOverride ?? $this->root . '/config/config.php';
     }
 
+    /** The member list an admin may import, next to the config file, so a second copy has its own. */
+    public function memberFile(): string
+    {
+        return dirname($this->config()) . '/members.csv';
+    }
+
     public function data(): string
     {
         return $this->dataOverride ?? $this->root . '/data';

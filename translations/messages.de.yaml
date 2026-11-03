@@ -89,6 +89,9 @@ toast:
     removed: '{name} entfernt.'
     remove_tomorrow: '{name} hat an einer heute abgeschlossenen Abstimmung teilgenommen und kann erst ab morgen entfernt werden.'
     remove_after_reopened: '{name} hat an einer wieder geöffneten Abstimmung teilgenommen und kann erst ab dem Tag nach ihrem Abschluss entfernt werden.'
+    imported: '{count, plural, =0 {Keine neuen Mitglieder eingelesen.} one {Ein Mitglied eingelesen.} other {# Mitglieder eingelesen.}}'
+    imported_with_problems: '{count, plural, =0 {Keine neuen Mitglieder eingelesen} one {Ein Mitglied eingelesen} other {# Mitglieder eingelesen}}, {problems, plural, one {eine Zeile übersprungen.} other {# Zeilen übersprungen.}}'
+    import_missing: '{file} liegt nicht mehr bereit.'
   settings:
     saved: Einstellungen gespeichert.
   group:
@@ -230,6 +233,29 @@ admin:
     remove_confirm: Ja, entfernen
     cancel: Abbrechen
     no_match: Keine Treffer.
+    import:
+      title: Mitglieder aus Datei
+      missing: 'Mitglieder lassen sich auch aus einer Datei einlesen. Lege dazu {file} in den Ordner config neben config.php. Die Vorlage members.example.csv zeigt die Spalten.'
+      never: '{file} liegt bereit und wurde noch nicht eingelesen.'
+      last: '{file} wurde zuletzt am {moment} eingelesen.'
+      open: Datei erneut einlesen
+      question: '{count, plural, one {Ein neues Mitglied einlesen?} other {# neue Mitglieder einlesen?}}'
+      text: Wer schon in der Liste steht, bleibt unverändert. Wer seit dem letzten Einlesen entfernt wurde und noch in der Datei steht, kommt wieder dazu.
+      nothing_new: Die Datei enthält keine neuen Mitglieder.
+      existing: '{count, plural, one {Ein Eintrag steht schon in der Liste und bleibt unverändert.} other {# Einträge stehen schon in der Liste und bleiben unverändert.}}'
+      problems: '{count, plural, one {Diese Zeile wird übersprungen:} other {Diese # Zeilen werden übersprungen:}}'
+      confirm: Ja, einlesen
+      line: 'Zeile {line}: {issue}'
+      issue:
+        header_invalid: Die erste Zeile muss die Spaltennamen enthalten, mindestens name und email.
+        name_missing: Der Name fehlt.
+        address_missing: Die E-Mail-Adresse fehlt.
+        first_address_invalid: Die E-Mail-Adresse ist ungültig.
+        second_address_invalid: Die zweite E-Mail-Adresse ist ungültig.
+        same_addresses: Die beiden Adressen sind gleich.
+        address_repeated: 'Die Adresse {value} steht schon in einer Zeile darüber.'
+        group_unknown: 'Die Stimmgruppe „{value}“ gibt es nicht.'
+        role_invalid: '„{value}“ ist weder ja noch nein. Für eine Rolle x oder ja eintragen, sonst leer lassen.'
     form:
       edit_title: Mitglied bearbeiten
       name: Name
