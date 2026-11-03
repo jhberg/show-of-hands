@@ -2,7 +2,7 @@
 FROM php:8.3-cli-bookworm
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends libicu-dev unzip git \
+    && apt-get install -y --no-install-recommends libicu-dev unzip zip git \
     && docker-php-ext-install intl \
     && rm -rf /var/lib/apt/lists/*
 

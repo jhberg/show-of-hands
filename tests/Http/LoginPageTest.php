@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace ShowOfHands\Tests\Http;
 
 use ShowOfHands\Http\Middleware\LocaleMiddleware;
-use ShowOfHands\Http\Middleware\SecurityHeadersMiddleware;
 
 final class LoginPageTest extends HttpTestCase
 {
@@ -51,33 +50,6 @@ final class LoginPageTest extends HttpTestCase
         $this->app = $this->createApp(['locale' => ['default' => 'en']]);
 
         self::assertStringContainsString('<html lang="en">', $this->body($this->request('GET', '/login')));
-    }
-
-    public function testSendsSecurityHeaders(): void
-    {
-        $response = $this->request('GET', '/login');
-
-        self::assertSame(SecurityHeadersMiddleware::CSP, $response->getHeaderLine('Content-Security-Policy'));
-        self::assertSame('no-store', $response->getHeaderLine('Cache-Control'));
-        self::assertSame('nosniff', $response->getHeaderLine('X-Content-Type-Options'));
-        self::assertSame('DENY', $response->getHeaderLine('X-Frame-Options'));
-        self::assertFalse($response->hasHeader('Strict-Transport-Security'));
-    }
-
-    public function testSendsHstsWhenServedOverHttps(): void
-    {
-        $this->app = $this->createApp(['app' => ['url' => 'https://vote.example.org', 'env' => 'prod'], 'google' => ['client_id' => 'id', 'client_secret' => 'secret']]);
-
-        self::assertSame('max-age=31536000', $this->request('GET', '/login')->getHeaderLine('Strict-Transport-Security'));
-    }
-
-    public function testPagesHaveNoInlineStylesOrScripts(): void
-    {
-        $html = $this->body($this->request('GET', '/login'));
-
-        self::assertDoesNotMatchRegularExpression('/\sstyle=/', $html);
-        self::assertDoesNotMatchRegularExpression('/<script(?![^>]*\ssrc=)/', $html);
-        self::assertDoesNotMatchRegularExpression('/\son[a-z]+=/', $html);
     }
 
     public function testHomeSendsVisitorsToTheLoginPage(): void

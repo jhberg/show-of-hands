@@ -98,7 +98,7 @@ final class CloseTest extends HttpTestCase
         self::assertStringContainsString('<p><b>Wirklich abschließen?</b> 1 von 4 Stimmrechten sind abgegeben, 2 Mitglieder fehlen noch, 1 übertragene Stimme ist noch nicht abgegeben.</p>', $html);
         self::assertStringContainsString('<form class="row" method="post" action="/polls/' . $this->poll . '/close"', $html);
         self::assertStringContainsString('<button class="btn primary" id="board-confirm" autofocus>Abschließen und Ergebnis anzeigen</button>', $html);
-        self::assertStringContainsString('<a class="btn" id="board-cancel" href="/polls/' . $this->poll . '#board" hx-get="/polls/' . $this->poll . '"', $html);
+        self::assertStringContainsString('<a class="btn" id="board-cancel" data-focus="board-close" href="/polls/' . $this->poll . '#board" hx-get="/polls/' . $this->poll . '"', $html);
         self::assertStringNotContainsString('Abstimmung abschließen</button>', $html);
 
         $this->cast($this->lou, Choice::No);

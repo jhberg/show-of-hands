@@ -29,7 +29,8 @@ try {
     http_response_code(500);
     header('Content-Type: text/html; charset=utf-8');
     header('Cache-Control: no-store');
-    header("Content-Security-Policy: default-src 'none'");
+    header("Content-Security-Policy: default-src 'none'; frame-ancestors 'none'");
+    header('X-Content-Type-Options: nosniff');
     $items = implode('', array_map(
         static fn(string $error): string => '<li>' . htmlspecialchars($error, ENT_QUOTES) . '</li>',
         $e->errors,

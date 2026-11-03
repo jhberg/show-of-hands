@@ -47,7 +47,7 @@ final class MaintenanceTest extends TestCase
     {
         $clock = FixedClock::at('@' . $now);
 
-        return new Maintenance(new SettingsRepository($this->pdo), $this->migrator, $this->ballots(), new PollRepository($this->pdo), $clock, $this->dir . '/sessions', $this->dir . '/backup', 30, 'Europe/Berlin');
+        return new Maintenance(new SettingsRepository($this->pdo), $this->migrator, $this->ballots(), new PollRepository($this->pdo), $clock, $this->dir . '/sessions', $this->dir . '/backup', $this->dir . '/cache/twig/1.1.0', 30, 'Europe/Berlin');
     }
 
     private function ballots(): BallotRepository
@@ -111,6 +111,20 @@ final class MaintenanceTest extends TestCase
 
         self::assertFileDoesNotExist($old);
         self::assertFileExists($fresh);
+    }
+
+    public function testDeletesTheTemplateCachesOfEarlierReleases(): void
+    {
+        mkdir($this->dir . '/cache/twig/1.0.0/ab', 0o777, true);
+        mkdir($this->dir . '/cache/twig/1.1.0/cd', 0o777, true);
+        $old = $this->file('cache/twig/1.0.0/ab/template.php', self::NOW);
+        $current = $this->file('cache/twig/1.1.0/cd/template.php', self::NOW);
+
+        $this->maintenance()->run();
+
+        self::assertDirectoryDoesNotExist($this->dir . '/cache/twig/1.0.0');
+        self::assertFileDoesNotExist($old);
+        self::assertFileExists($current);
     }
 
     public function testDeletesTheBallotsOfPollsWhoseCloseDayHasEnded(): void

@@ -17,7 +17,7 @@ use Psr\Http\Server\RequestHandlerInterface;
  */
 final readonly class SecurityHeadersMiddleware implements MiddlewareInterface
 {
-    public const CSP = "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; "
+    public const CSP = "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'; "
         . "font-src 'self'; connect-src 'self'; form-action 'self'; frame-ancestors 'none'; "
         . "base-uri 'none'; object-src 'none'";
 

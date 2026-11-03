@@ -26,7 +26,7 @@
                     <button class="btn primary">{{ 'admin.polls.draft.publish'|trans }}</button>
                 </form>
                 <a class="btn" href="{{ url }}/edit">{{ 'admin.polls.draft.edit'|trans }}</a>
-                <a class="btn danger" href="{{ url }}?confirm=delete#poll-status" hx-get="{{ url }}?confirm=delete" hx-replace-url="true">{{ 'admin.polls.draft.delete'|trans }}</a>
+                <a class="btn danger" id="poll-delete" href="{{ url }}?confirm=delete#poll-status" hx-get="{{ url }}?confirm=delete" hx-replace-url="true">{{ 'admin.polls.draft.delete'|trans }}</a>
             </div>
             {% if confirm == 'delete' %}
                 <form class="warnbox" method="post" action="{{ url }}/delete" hx-post="{{ url }}/delete">
@@ -35,7 +35,7 @@
                     <div class="row">
                         {# htmx moves the focus here after the swap, so the second tap is one key away. #}
                         <button class="btn danger" autofocus>{{ 'admin.polls.draft.delete_confirm'|trans }}</button>
-                        <a class="btn" href="{{ url }}#poll-status" hx-get="{{ url }}" hx-replace-url="true">{{ 'admin.polls.cancel'|trans }}</a>
+                        <a class="btn" data-focus="poll-delete" href="{{ url }}#poll-status" hx-get="{{ url }}" hx-replace-url="true">{{ 'admin.polls.cancel'|trans }}</a>
                     </div>
                 </form>
             {% endif %}
@@ -60,7 +60,7 @@
             <div class="actions">
                 <a class="btn" href="/polls/{{ poll.id }}">{{ 'admin.polls.to_poll'|trans }}</a>
                 {% if can_reopen %}
-                    <a class="btn danger" href="{{ url }}?confirm=reopen#poll-status" hx-get="{{ url }}?confirm=reopen" hx-replace-url="true">{{ 'admin.polls.closed.reopen'|trans }}</a>
+                    <a class="btn danger" id="poll-reopen" href="{{ url }}?confirm=reopen#poll-status" hx-get="{{ url }}?confirm=reopen" hx-replace-url="true">{{ 'admin.polls.closed.reopen'|trans }}</a>
                 {% else %}
                     <button class="btn" disabled>{{ 'admin.polls.closed.reopen'|trans }}</button>
                 {% endif %}
@@ -72,7 +72,7 @@
                     <p><b>{{ 'admin.polls.closed.reopen_question'|trans }}</b> {{ 'admin.polls.closed.reopen_text'|trans }}</p>
                     <div class="row">
                         <button class="btn danger" autofocus>{{ 'admin.polls.closed.reopen_confirm'|trans }}</button>
-                        <a class="btn" href="{{ url }}#poll-status" hx-get="{{ url }}" hx-replace-url="true">{{ 'admin.polls.cancel'|trans }}</a>
+                        <a class="btn" data-focus="poll-reopen" href="{{ url }}#poll-status" hx-get="{{ url }}" hx-replace-url="true">{{ 'admin.polls.cancel'|trans }}</a>
                     </div>
                 </form>
             {% endif %}

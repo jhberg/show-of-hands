@@ -12,7 +12,8 @@
 !/data/.gitkeep
 !/data/.htaccess
 
-# Test and tool output
+# Release builds, test and tool output
+/build/
 /tests/e2e/results/
 /.twig-cs-fixer.cache
 

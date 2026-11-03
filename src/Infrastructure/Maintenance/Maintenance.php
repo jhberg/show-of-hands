@@ -20,6 +20,7 @@ use ShowOfHands\Infrastructure\Persistence\SettingsRepository;
  * - Deletes the ballots of closed polls once their close day has ended in the choir's time
  *   zone. Until then an admin may reopen the poll; afterwards the frozen tally is all it needs.
  * - Deletes closed polls once their retention period has passed, with result, turnout, and names.
+ * - Deletes the compiled templates of every other release.
  */
 final readonly class Maintenance
 {
@@ -36,6 +37,7 @@ final readonly class Maintenance
         private Clock $clock,
         private string $sessionsDir,
         private string $backupDir,
+        private string $templateCache,
         private int $sessionLifetimeDays,
         private string $timezone,
     ) {}
@@ -67,7 +69,35 @@ final readonly class Maintenance
             ? $this->deleteOlderThan($this->backupDir . '/' . Migrator::BACKUP_GLOB, $now->getTimestamp() - self::BACKUP_KEEP_SECONDS)
             : 0;
 
+        $this->deleteOtherTemplateCaches();
+
         return ['sessions' => $sessions, 'backups' => $backups, 'ballots' => $ballots, 'polls' => $polls];
+    }
+
+    private function deleteOtherTemplateCaches(): void
+    {
+        foreach (glob(dirname($this->templateCache) . '/*', GLOB_ONLYDIR) ?: [] as $dir) {
+            if ($dir !== $this->templateCache) {
+                self::deleteTree($dir);
+            }
+        }
+    }
+
+    private static function deleteTree(string $dir): void
+    {
+        $entries = new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator($dir, \FilesystemIterator::SKIP_DOTS),
+            \RecursiveIteratorIterator::CHILD_FIRST,
+        );
+        foreach ($entries as $entry) {
+            assert($entry instanceof \SplFileInfo);
+            if ($entry->isDir()) {
+                @rmdir($entry->getPathname());
+            } else {
+                @unlink($entry->getPathname());
+            }
+        }
+        @rmdir($dir);
     }
 
     private function deleteOlderThan(string $pattern, int $cutoff): int

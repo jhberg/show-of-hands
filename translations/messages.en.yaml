@@ -115,6 +115,7 @@ home:
 poll:
   back: All polls
   missing: This poll no longer exists or has not been published yet.
+  missing_title: Poll not found
   kicker:
     admission: Vote on admitting
     exception: Vote on a probation exception for
