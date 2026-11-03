@@ -10,7 +10,7 @@
             <p class="lead">{{ 'admin.members.lead'|trans }}</p>
         </div>
         {% if form is null %}
-            <a class="btn primary" href="/admin/members?add=1#member-form" hx-get="/admin/members?add=1" hx-replace-url="true">{{ 'admin.members.add'|trans }}</a>
+            <a class="btn primary" id="member-add" href="/admin/members?add=1#member-form" hx-get="/admin/members?add=1" hx-replace-url="true">{{ 'admin.members.add'|trans }}</a>
         {% endif %}
     </div>
     {% if form is not null %}

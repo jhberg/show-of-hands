@@ -85,6 +85,15 @@
     if (document.hidden || choosing(poller.closest('main'))) event.preventDefault();
   });
 
+  // Cancelling a panel or a confirmation swaps out the control that had the focus. data-focus
+  // names the control that opened it, so a keyboard user carries on from there.
+  document.addEventListener('htmx:afterSettle', function (event) {
+    var config = event.detail.requestConfig;
+    var id = config && config.elt.getAttribute('data-focus');
+    var target = id && document.getElementById(id);
+    if (target) target.focus();
+  });
+
   // A refresh that brings nothing new leaves <main> alone, so nothing flickers and a selection stays.
   // htmx names the requesting element only in requestConfig: this event's target is <main>.
   document.addEventListener('htmx:beforeSwap', function (event) {

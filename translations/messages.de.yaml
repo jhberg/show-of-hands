@@ -115,6 +115,7 @@ home:
 poll:
   back: Alle Abstimmungen
   missing: Diese Abstimmung gibt es nicht mehr oder sie ist noch nicht freigeschaltet.
+  missing_title: Abstimmung nicht gefunden
   kicker:
     admission: Abstimmung über die Aufnahme von
     exception: Abstimmung über eine Ausnahme in der Probezeit von

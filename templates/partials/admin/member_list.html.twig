@@ -14,10 +14,10 @@
                 {%- if listed.isBoard %}<span class="chip open">{{ 'role.board'|trans }}</span>{% endif %}
                 {%- if listed.isAdmin %}<span class="chip closed">{{ 'role.admin'|trans }}</span>{% endif %}
                 {%- set edit_url = '/admin/members?' ~ search|merge({edit: listed.id})|url_encode %}
-                <a class="btn sm" href="{{ edit_url }}#member-form" hx-get="{{ edit_url }}" hx-replace-url="true">{{ 'admin.members.edit'|trans }}</a>
+                <a class="btn sm" id="m-{{ listed.id }}-edit" href="{{ edit_url }}#member-form" hx-get="{{ edit_url }}" hx-replace-url="true">{{ 'admin.members.edit'|trans }}</a>
                 {%- if not is_self %}
                     {%- set delete_url = '/admin/members?' ~ search|merge({delete: listed.id})|url_encode %}
-                    <a class="btn sm ghost" href="{{ delete_url }}#m-{{ listed.id }}" hx-get="{{ delete_url }}" hx-replace-url="true">{{ 'admin.members.remove'|trans }}</a>
+                    <a class="btn sm ghost" id="m-{{ listed.id }}-remove" href="{{ delete_url }}#m-{{ listed.id }}" hx-get="{{ delete_url }}" hx-replace-url="true">{{ 'admin.members.remove'|trans }}</a>
                 {%- endif %}
             </div>
             {% if deleting == listed.id %}
@@ -27,7 +27,7 @@
                     <span><b>{{ 'admin.members.remove_question'|trans({name: listed.name}) }}</b> {{ 'admin.members.remove_text'|trans }}</span>
                     {# htmx moves the focus here after the swap, so the second tap is one key away. #}
                     <button class="btn sm danger" autofocus>{{ 'admin.members.remove_confirm'|trans }}</button>
-                    <a class="btn sm" href="{{ list_url }}#m-{{ listed.id }}" hx-get="{{ list_url }}" hx-replace-url="true">{{ 'admin.members.cancel'|trans }}</a>
+                    <a class="btn sm" href="{{ list_url }}#m-{{ listed.id }}" data-focus="m-{{ listed.id }}-remove" hx-get="{{ list_url }}" hx-replace-url="true">{{ 'admin.members.cancel'|trans }}</a>
                 </form>
             {% endif %}
         </li>

@@ -3,6 +3,8 @@
 {% block body %}
 {{ include('partials/header.html.twig', {active: 'home'}) }}
 <main class="main">
+    {# The mockup shows no heading here. Screen readers still need one to name the page. #}
+    <h1 class="sr">{{ 'poll.missing_title'|trans }}</h1>
     <a class="back" href="/">{{ icon('arrow') }}{{ 'poll.back'|trans }}</a>
     <div class="empty">{{ 'poll.missing'|trans }}</div>
 </main>

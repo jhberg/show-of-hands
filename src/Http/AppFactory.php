@@ -158,6 +158,8 @@ final class AppFactory
      */
     public static function container(Paths $paths, Config $config, array $overrides = []): Container
     {
+        // Read once: it costs a file read, and two definitions need it.
+        $templateCache = $paths->templateCache();
         $themeVersion = substr(sha1(json_encode([
             ThemeBuilder::VERSION,
             $config->brand->accent,
@@ -183,6 +185,7 @@ final class AppFactory
             Maintenance::class => autowire()
                 ->constructorParameter('sessionsDir', $paths->sessions())
                 ->constructorParameter('backupDir', $paths->data() . '/' . Migrator::BACKUP_DIR)
+                ->constructorParameter('templateCache', $templateCache)
                 ->constructorParameter('sessionLifetimeDays', $config->sessionLifetimeDays)
                 ->constructorParameter('timezone', $config->timezone),
             GoogleSignIn::class => static fn(): GoogleSignIn => new LeagueGoogleSignIn($config->googleClientId, $config->googleClientSecret, $config->appUrl),
@@ -193,9 +196,9 @@ final class AppFactory
             ),
             Theme::class => static fn(): Theme => (new ThemeBuilder())->build($config->brand),
             BrandAssets::class => static fn(): BrandAssets => new BrandAssets($paths->public()),
-            Environment::class => static function (Translator $translator, BrandAssets $assets, Session $session) use ($paths, $config, $themeVersion): Environment {
+            Environment::class => static function (Translator $translator, BrandAssets $assets, Session $session) use ($paths, $config, $themeVersion, $templateCache): Environment {
                 $twig = new Environment(new FilesystemLoader($paths->templates()), [
-                    'cache' => $paths->data() . '/cache/twig',
+                    'cache' => $templateCache,
                     'auto_reload' => true,
                     'strict_variables' => $config->isDev(),
                 ]);

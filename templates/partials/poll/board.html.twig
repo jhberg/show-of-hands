@@ -12,7 +12,7 @@
                     page's own refresh leaves the focus where it is.
                 #}
                 <button class="btn primary" id="board-confirm"{% if not live %} autofocus{% endif %}>{{ 'board.confirm'|trans }}</button>
-                <a class="btn" id="board-cancel" href="/polls/{{ poll.id }}#board" hx-get="/polls/{{ poll.id }}" hx-target="closest main" hx-swap="outerHTML">{{ 'board.cancel'|trans }}</a>
+                <a class="btn" id="board-cancel" data-focus="board-close" href="/polls/{{ poll.id }}#board" hx-get="/polls/{{ poll.id }}" hx-target="closest main" hx-swap="outerHTML">{{ 'board.cancel'|trans }}</a>
             </form>
         </div>
     {% else %}

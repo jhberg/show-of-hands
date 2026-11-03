@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+# Builds the release ZIP of a git ref into build/show-of-hands-<version>.zip.
+#
+#   docker compose run --rm app bin/build-release [ref]
+#
+# The ref defaults to HEAD. The version is `git describe --tags --match 'v*'` of the ref without
+# the leading "v", so the tag v1.2.0 builds show-of-hands-1.2.0.zip. The script prints the ZIP's
+# path. The ZIP holds only committed files of that ref, never the working tree, and no instance
+# files: no config.php, no public/brand/, no database. Its contents unpack straight into the
+# installation folder, for a new install and for an update.
+set -euo pipefail
+
+root="$(cd "$(dirname "$0")/.." && pwd)"
+ref="${1:-HEAD}"
+
+# The container runs as root on a checkout owned by the host user.
+git_() { git -c safe.directory='*' -C "$root" "$@"; }
+
+version="$(git_ describe --tags --match 'v*' --always "$ref")"
+version="${version#v}"
+zip_file="$root/build/show-of-hands-$version.zip"
+
+work="$(mktemp -d)"
+trap 'rm -rf "$work"' EXIT
+mkdir "$work/src" "$work/release"
+
+git_ archive --format=tar "$ref" | tar -x -C "$work/src"
+composer install --working-dir="$work/src" --no-dev --classmap-authoritative \
+    --no-interaction --no-progress --no-scripts --quiet
+
+# The runtime: the app, its dependencies, the console, and the documented config template.
+# bin/build-release and the test and dev tooling stay out.
+cd "$work/src"
+cp -R public src templates translations migrations vendor LICENSE README.md "$work/release/"
+mkdir -p "$work/release/bin" "$work/release/config" "$work/release/data"
+cp bin/console "$work/release/bin/"
+cp config/config.example.php "$work/release/config/"
+# data/ ships empty except for the rule that keeps it private should a host serve the whole folder.
+cp data/.htaccess "$work/release/data/"
+printf '%s\n' "$version" > "$work/release/VERSION"
+
+mkdir -p "$root/build"
+rm -f "$zip_file"
+cd "$work/release"
+# VERSION goes last. Unzipping writes in archive order, and VERSION picks the template cache: a
+# request during an update must still compile into the old release's cache, which maintenance
+# deletes later, never old templates into the new release's cache.
+zip -q -r -X "$zip_file" . -x VERSION
+zip -q -X "$zip_file" VERSION
+echo "Built build/$(basename "$zip_file") from $ref." >&2
+# The path alone on stdout, for scripts such as tests/upgrade/run.sh.
+echo "$zip_file"

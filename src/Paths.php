@@ -37,6 +37,22 @@ final readonly class Paths
         return $this->dataOverride ?? $this->root . '/data';
     }
 
+    /**
+     * The compiled templates of this release. A release ZIP restores its files' build times, which
+     * can be older than the old release's cache, so Twig's freshness check alone would keep serving
+     * the old templates after an update. Each release compiles into its own directory instead.
+     */
+    public function templateCache(): string
+    {
+        $release = trim((string) @file_get_contents($this->root . '/VERSION'));
+        // Maintenance deletes the directory's siblings, so a name like ".." must never get through.
+        if (preg_match('/^[A-Za-z0-9][A-Za-z0-9._-]*$/', $release) !== 1) {
+            $release = 'dev';
+        }
+
+        return $this->data() . '/cache/twig/' . $release;
+    }
+
     public function sessions(): string
     {
         return $this->data() . '/sessions';

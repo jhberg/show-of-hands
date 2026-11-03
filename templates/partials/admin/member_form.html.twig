@@ -40,6 +40,6 @@
     </label>
     <div class="row">
         <button class="btn primary">{{ form.memberId is null ? 'admin.members.form.submit_add'|trans : 'admin.members.form.submit_edit'|trans }}</button>
-        <a class="btn" href="/admin/members" hx-get="/admin/members" hx-replace-url="true">{{ 'admin.members.cancel'|trans }}</a>
+        <a class="btn" href="/admin/members" data-focus="{{ form.memberId is null ? 'member-add' : 'm-' ~ form.memberId ~ '-edit' }}" hx-get="/admin/members" hx-replace-url="true">{{ 'admin.members.cancel'|trans }}</a>
     </div>
 </form>
