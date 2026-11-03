@@ -1,6 +1,20 @@
-{# The whole <main> of the poll page. htmx swaps it after every action, so all sections stay in step. #}
-<main class="main">
-    <a class="back" href="/">{{ icon('arrow') }}{{ 'poll.back'|trans }}</a>
+{#
+    The whole <main> of the poll page. htmx swaps it after every action, so all sections stay in step.
+    A tap aborts a running refresh. A tap during another tap's request is dropped: a queued one
+    would be lost with its form in the swap, and one that aborted the first could land before it
+    and show a vote other than the stored one. Every focusable element in it carries an id, so
+    htmx keeps the focus across the swap. A refreshed <main> is "still": what it shows does not
+    rise into view again.
+#}
+<main class="main{% if live %} still{% endif %}" hx-sync="this:drop">
+    {% if live_url is not null %}
+        {#
+            Fetches the fresh <main> every 15 seconds, and at once when the page shows again. It gives
+            way to every tap. app.js skips it while the page is hidden or a field is being filled in.
+        #}
+        <span hidden data-live hx-get="{{ live_url }}" hx-trigger="every 15s, visibilitychange from:document" hx-target="closest main" hx-swap="outerHTML" hx-sync="closest main:abort"></span>
+    {% endif %}
+    <a class="back" id="poll-back" href="/">{{ icon('arrow') }}{{ 'poll.back'|trans }}</a>
     {{ include('partials/poll/head.html.twig') }}
     {% if poll.isOpen %}
         {{ include('partials/poll/ballot.html.twig') }}

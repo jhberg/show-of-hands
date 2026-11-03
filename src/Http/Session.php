@@ -15,6 +15,8 @@ final class Session
 
     private bool $started = false;
 
+    private bool $readAndClose = false;
+
     private string $memoryId = 'initial';
 
     private function __construct(
@@ -32,6 +34,17 @@ final class Session
     public static function inMemory(): self
     {
         return new self(false);
+    }
+
+    /**
+     * Reads the session and releases its lock at once, for a request that runs often and writes
+     * nothing, so it never holds up a POST of the same visitor. It takes effect when the session
+     * starts, so call it before the first read. Changes made afterwards last only until the end
+     * of the request. The in-memory session of the tests ignores it.
+     */
+    public function readAndClose(): void
+    {
+        $this->readAndClose = true;
     }
 
     public function start(): void
@@ -59,6 +72,7 @@ final class Session
             'gc_probability' => 0,
             // Signed-in responses send their own Cache-Control: no-store.
             'cache_limiter' => '',
+            'read_and_close' => $this->readAndClose,
         ]);
         if (!$started) {
             // Without this, an unwritable session directory shows up only as every form "expiring".
@@ -117,7 +131,11 @@ final class Session
     {
         $this->remove('csrf');
         if ($this->native) {
-            session_regenerate_id(true);
+            // session_regenerate_id() needs an active session, and a read-and-close session is
+            // closed already. The visitor's next ordinary request clears and regenerates it.
+            if (!$this->readAndClose) {
+                session_regenerate_id(true);
+            }
         } else {
             $this->memoryId = bin2hex(random_bytes(16));
         }

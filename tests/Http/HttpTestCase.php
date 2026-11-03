@@ -105,6 +105,12 @@ abstract class HttpTestCase extends TestCase
         return $this->service(PollRepository::class)->add($kind, $subject, $question, $group, $date, $note, $status, '2026-01-01T00:00:00Z');
     }
 
+    /** Hides the names of who has not voted yet from ordinary members. */
+    protected function hideOpenNames(): void
+    {
+        $this->service(\PDO::class)->exec("UPDATE settings SET value = '0' WHERE key = 'show_open_names'");
+    }
+
     /**
      * Signs in through the dev login and returns its redirect.
      */
