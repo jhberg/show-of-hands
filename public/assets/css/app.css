@@ -266,6 +266,7 @@ legend{font-weight:700;font-size:17px;padding:0;margin-bottom:6px}
 
 /* additions to the mockup */
 .hlogo{display:block;height:32px;width:auto}
+.import-list{margin:0;padding-left:20px;display:grid;gap:4px;font-size:15px}
 .lang{display:flex;gap:2px}
 .lang-btn{appearance:none;border:1px solid transparent;background:transparent;color:var(--ink-2);border-radius:var(--r-s);padding:6px 8px;min-height:36px;font-size:13px;font-weight:700;letter-spacing:.04em;cursor:pointer;transition:background var(--t) var(--ease),color var(--t) var(--ease)}
 .lang-btn:hover{background:var(--surface-2);color:var(--ink)}

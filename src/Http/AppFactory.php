@@ -11,6 +11,7 @@ use DI\ContainerBuilder;
 use Psr\Http\Message\ResponseFactoryInterface;
 use ShowOfHands\Domain\BallotToken;
 use ShowOfHands\Http\Action\AdminMemberDeleteAction;
+use ShowOfHands\Http\Action\AdminMemberImportAction;
 use ShowOfHands\Http\Action\AdminMembersAction;
 use ShowOfHands\Http\Action\AdminMemberSaveAction;
 use ShowOfHands\Http\Action\AdminPollAction;
@@ -58,6 +59,7 @@ use ShowOfHands\Infrastructure\Database\Migrator;
 use ShowOfHands\Infrastructure\I18n\TranslatorFactory;
 use ShowOfHands\Infrastructure\Log\ErrorLog;
 use ShowOfHands\Infrastructure\Maintenance\Maintenance;
+use ShowOfHands\Infrastructure\Persistence\MemberImporter;
 use ShowOfHands\Infrastructure\Setup\FirstStart;
 use ShowOfHands\Infrastructure\Theme\Theme;
 use ShowOfHands\Infrastructure\Theme\ThemeBuilder;
@@ -123,6 +125,7 @@ final class AppFactory
                 $admin->post($poll . '/reopen', AdminPollReopenAction::class);
                 $admin->get('/members', AdminMembersAction::class);
                 $admin->post('/members', AdminMemberSaveAction::class);
+                $admin->post('/members/import', AdminMemberImportAction::class);
                 $admin->post('/members/{id:[0-9]+}', AdminMemberSaveAction::class);
                 $admin->post('/members/{id:[0-9]+}/delete', AdminMemberDeleteAction::class);
                 $admin->get('/settings', AdminSettingsAction::class);
@@ -179,6 +182,7 @@ final class AppFactory
             Clock::class => autowire(SystemClock::class),
             BallotToken::class => static fn(): BallotToken => new BallotToken($config->secret),
             ErrorLog::class => static fn(): ErrorLog => new ErrorLog($paths->data() . '/logs/app.log'),
+            MemberImporter::class => autowire()->constructorParameter('file', $paths->memberFile()),
             FirstStart::class => autowire()
                 ->constructorParameter('admin', $config->bootstrapAdmin)
                 ->constructorParameter('defaultLocale', $config->defaultLocale),

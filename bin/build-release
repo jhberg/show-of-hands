@@ -28,13 +28,15 @@ git_ archive --format=tar "$ref" | tar -x -C "$work/src"
 composer install --working-dir="$work/src" --no-dev --classmap-authoritative \
     --no-interaction --no-progress --no-scripts --quiet
 
-# The runtime: the app, its dependencies, the console, and the documented config template.
+# The runtime: the app, its dependencies, the console, and the documented config and member file templates.
 # bin/build-release and the test and dev tooling stay out.
 cd "$work/src"
 cp -R public src templates translations migrations vendor LICENSE README.md "$work/release/"
 mkdir -p "$work/release/bin" "$work/release/config" "$work/release/data"
 cp bin/console "$work/release/bin/"
 cp config/config.example.php "$work/release/config/"
+# Older refs, which tests/upgrade/run.sh builds with this script too, have no member file template.
+if [ -f config/members.example.csv ]; then cp config/members.example.csv "$work/release/config/"; fi
 # data/ ships empty except for the rule that keeps it private should a host serve the whole folder.
 cp data/.htaccess "$work/release/data/"
 printf '%s\n' "$version" > "$work/release/VERSION"

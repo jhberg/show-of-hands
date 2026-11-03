@@ -20,7 +20,7 @@ No database server, no Node, no cron job, and no shell are needed.
 4. Make sure PHP may write to `data/`. The app keeps its database, sessions, and caches there.
 5. Copy `config/config.example.php` to `config/config.php` and fill in the values. See [Configuration](#configuration).
 6. Open the site. The first request creates the database, the default voice groups, and the first member from `bootstrap_admin`, with board and admin roles.
-7. Sign in as that member, open "Verwaltung" (Admin), and add the members. Where a shell exists, `bin/console member:add` adds members as well.
+7. Sign in as that member, open "Verwaltung" (Admin), and add the members. To add them all at once, put a member file next to the config first (see [Member file](#member-file)). Where a shell exists, `bin/console member:add` adds members as well.
 
 The app checks `config/config.php` on every request. If a value is missing or wrong, the page lists every problem with the key's name.
 
@@ -61,6 +61,28 @@ Sign-in uses the authorization code flow with PKCE. No Google script runs on the
 
 Admins change everything else in the app, under "Verwaltung" → "Einstellungen": the majority, whether members may delegate their vote and how many votes one person may receive, whether members see who has not voted yet, how long closed polls are kept, and the voice groups.
 
+## Member file
+
+The app can read the member list from `config/members.csv`, a CSV file next to `config/config.php`. `config/members.example.csv` is the template:
+
+```csv
+name;email;email2;group;board;admin
+Alex Example;alex.example@example.org;;S1;x;x
+Sam Sample;sam.sample@example.org;sam.private@example.org;A2;x;
+```
+
+| Column | Meaning |
+|---|---|
+| `name` | Full name. Required. |
+| `email` | The address the member signs in with. Required. |
+| `email2` | Optional second address, for example a private Google account. |
+| `group` | Voice group, by key (`S1`) or label (`Sopran 1`). Empty for none. |
+| `board`, `admin` | `x` or `ja`/`yes` for the role, empty for none. |
+
+The first line names the columns, in any order. Other columns are ignored. Mark at least one member as `admin`, or keep `bootstrap_admin` in the config, so someone can sign in to the admin area. Spreadsheets may save the file with commas or semicolons, in UTF-8 or Windows-1252.
+
+A new installation reads the file on its first request, after it creates the first member from `bootstrap_admin`. A file added later, or changed later, waits for an admin: under "Verwaltung" → "Mitglieder", "Datei erneut einlesen" first lists the members the file would add and the lines it skips, with the reason, and imports only after the admin confirms. An import only adds: a line whose address a member already uses leaves that member as it is. A member removed since the last import comes back if the file still lists them, so check the list before you confirm.
+
 ## Branding
 
 The brand lives in files that updates never touch:
@@ -80,7 +102,7 @@ The app derives its whole colour scheme, light and dark, from the accent and ink
 
 1. Download the new release ZIP. Its `VERSION` file names the version, as does the one in your installation.
 2. Pick a quiet moment, not a vote during rehearsal: while the files are being replaced, a request can meet old and new code at once.
-3. Unpack the ZIP over the installation and let it replace existing files. The ZIP contains no `config/config.php`, no `public/brand/`, and no database, so your configuration, branding, and data stay.
+3. Unpack the ZIP over the installation and let it replace existing files. The ZIP contains no `config/config.php`, no `config/members.csv`, no `public/brand/`, and no database, so your configuration, branding, and data stay.
 4. Open the site. The first request copies the database to `data/backup/app-v<N>.sqlite` and brings the schema up to date. Housekeeping deletes that copy a day later.
 
 If the update fails, the page shows an error and the log in `data/logs/app.log` names it. To go back, unpack the previous release and copy the backup over `data/app.sqlite`. While the migration fails, housekeeping keeps the backup. Files a release no longer uses may stay behind after an update. They do no harm.
@@ -91,7 +113,7 @@ Read the release notes before you update. A new setting in `config.example.php` 
 
 The app keeps the secret ballot and stores as little as it can.
 
-**What it stores.** Members with their name, up to two email addresses, voice group, roles, and chosen language. Polls with their name, question, note, and date. For each poll: who has voted, who delegated their vote to whom, and the ballots. Ballots carry no member: each holds only a token and the choice. The token is an HMAC of the poll and the member, keyed with `app.secret`, so the member can change their own vote and nobody can read the choice from the database alone.
+**What it stores.** Members with their name, up to two email addresses, voice group, roles, and chosen language. Polls with their name, question, note, and date. For each poll: who has voted, who delegated their vote to whom, and the ballots. Ballots carry no member: each holds only a token and the choice. The token is an HMAC of the poll and the member, keyed with `app.secret`, so the member can change their own vote and nobody can read the choice from the database alone. The member file `config/members.csv` holds names and addresses as well. Delete it once you no longer need to import from it.
 
 **What others see.** Nobody sees a count while a poll is open: not members, not the board, not admins. The app counts once, when the board closes the poll. Members see who has voted and who delegated to whom, as in a show of hands. Admins can hide from members who has not voted yet. The board and admins always see it.
 

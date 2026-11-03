@@ -7,16 +7,22 @@ namespace ShowOfHands\Http;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use ShowOfHands\Domain\Member;
+use ShowOfHands\Domain\MemberDetailsError;
+use ShowOfHands\Domain\MemberFileIssue;
+use ShowOfHands\Domain\MemberFileProblem;
+use ShowOfHands\Domain\MemberFileRow;
 use ShowOfHands\Domain\VoiceGroup;
 use ShowOfHands\Infrastructure\Config\Config;
+use ShowOfHands\Infrastructure\Persistence\MemberImporter;
 use ShowOfHands\Infrastructure\Persistence\MemberRepository;
+use ShowOfHands\Infrastructure\Persistence\SettingsRepository;
 use ShowOfHands\Infrastructure\Persistence\VoiceGroupRepository;
 use Symfony\Component\Translation\Translator;
 
 /**
- * The admin area's member list with its inline add, edit, and delete. The full page and the
- * htmx responses render the same partials: the whole panel (#members), or only the list
- * (#member-list) while the admin types a search.
+ * The admin area's member list with its inline add, edit, and delete, and the import from the
+ * member file with its preview. The full page and the htmx responses render the same partials:
+ * the whole panel (#members), or only the list (#member-list) while the admin types a search.
  */
 final readonly class MembersPage
 {
@@ -31,6 +37,8 @@ final readonly class MembersPage
         private MemberRepository $members,
         private VoiceGroupRepository $voiceGroups,
         private Config $config,
+        private MemberImporter $importer,
+        private SettingsRepository $settings,
     ) {}
 
     /**
@@ -39,6 +47,7 @@ final readonly class MembersPage
      * @param string $query the search, matched against names and addresses
      * @param MemberForm|null $form the open add or edit form
      * @param int|null $deleting the member whose removal awaits confirmation
+     * @param bool $importing whether the import's preview and confirmation are open
      */
     public function show(
         ServerRequestInterface $request,
@@ -47,18 +56,19 @@ final readonly class MembersPage
         string $query,
         ?MemberForm $form = null,
         ?int $deleting = null,
+        bool $importing = false,
         int $status = 200,
     ): ResponseInterface {
         $toast = $form?->errorKey === null ? null : $this->translator->trans($form->errorKey, $form->errorParams);
 
-        return $this->respond($request, $response, $this->data($actor, $query, $form, $deleting), $toast, $status);
+        return $this->respond($request, $response, $this->data($actor, $query, $form, $deleting, $importing), $toast, $status);
     }
 
     /**
      * The answer to a successful POST: the fresh panel for htmx, otherwise a redirect that leaves
      * the toast in the session. Both keep the search.
      *
-     * @param array<string, string> $toastParams
+     * @param array<string, string|int> $toastParams
      */
     public function answer(
         ServerRequestInterface $request,
@@ -77,7 +87,7 @@ final readonly class MembersPage
         // The address bar follows, since the panel no longer shows the form or the confirmation it named.
         $response = $response->withHeader('HX-Replace-Url', self::listUrl($query));
 
-        return $this->respond($request, $response, $this->data($actor, $query, null, null), $this->translator->trans($toastKey, $toastParams));
+        return $this->respond($request, $response, $this->data($actor, $query, null, null, false), $this->translator->trans($toastKey, $toastParams));
     }
 
     /** The search a GET request or a form's hidden field carries. */
@@ -107,6 +117,12 @@ final readonly class MembersPage
         return self::id($request->getQueryParams()['delete'] ?? null);
     }
 
+    /** Whether ?import=1 asks for the import's preview. */
+    public static function importing(ServerRequestInterface $request): bool
+    {
+        return ($request->getQueryParams()['import'] ?? null) === '1';
+    }
+
     private static function id(mixed $value): ?int
     {
         return is_string($value) && ctype_digit($value) ? (int) $value : null;
@@ -133,7 +149,7 @@ final readonly class MembersPage
     /**
      * @return array<string, mixed>
      */
-    private function data(Member $actor, string $query, ?MemberForm $form, ?int $deleting): array
+    private function data(Member $actor, string $query, ?MemberForm $form, ?int $deleting, bool $importing): array
     {
         $groups = $this->voiceGroups->all();
         $all = $this->members->allWithEmails($this->translator->getLocale());
@@ -162,6 +178,54 @@ final readonly class MembersPage
             'deleting' => $deleting === $actor->id ? null : $deleting,
             'groups' => $groups,
             'email_domain' => $this->config->workspaceDomain,
+            'import' => $this->import($groups, $importing),
         ];
+    }
+
+    /**
+     * The member file's state and, while the confirmation is open, what an import would add.
+     *
+     * @param list<VoiceGroup> $groups
+     *
+     * @return array<string, mixed>
+     */
+    private function import(array $groups, bool $importing): array
+    {
+        $preview = $importing ? $this->importer->preview() : null;
+
+        return [
+            'file' => $this->importer->fileName(),
+            'exists' => $this->importer->fileExists(),
+            'at' => $this->settings->memberImportAt(),
+            'preview' => $preview === null ? null : [
+                'added' => array_map(static fn(MemberFileRow $row): array => [
+                    'name' => $row->details->name,
+                    'group' => $row->voiceGroupKey === null ? null : VoiceGroup::labelOf($groups, $row->voiceGroupKey),
+                    'board' => $row->isBoard,
+                    'admin' => $row->isAdmin,
+                ], $preview->added),
+                'existing' => $preview->existing,
+                'problems' => array_map($this->problem(...), $preview->problems),
+            ],
+        ];
+    }
+
+    /** "Zeile 7: Die Stimmgruppe „S3“ gibt es nicht." */
+    private function problem(MemberFileProblem $problem): string
+    {
+        $key = match ($problem->issue) {
+            MemberFileIssue::HeaderInvalid => 'admin.members.import.issue.header_invalid',
+            MemberFileIssue::AddressRepeated => 'admin.members.import.issue.address_repeated',
+            MemberFileIssue::GroupUnknown => 'admin.members.import.issue.group_unknown',
+            MemberFileIssue::RoleInvalid => 'admin.members.import.issue.role_invalid',
+            MemberDetailsError::NameMissing => 'admin.members.import.issue.name_missing',
+            MemberDetailsError::AddressMissing => 'admin.members.import.issue.address_missing',
+            MemberDetailsError::FirstAddressInvalid => 'admin.members.import.issue.first_address_invalid',
+            MemberDetailsError::SecondAddressInvalid => 'admin.members.import.issue.second_address_invalid',
+            MemberDetailsError::SameAddresses => 'admin.members.import.issue.same_addresses',
+        };
+        $issue = $this->translator->trans($key, ['value' => $problem->value]);
+
+        return $this->translator->trans('admin.members.import.line', ['line' => $problem->line, 'issue' => $issue]);
     }
 }

@@ -1,6 +1,6 @@
 {#
     The member panel. Open forms and confirmations live in GET parameters (?add=1, ?edit={id},
-    ?delete={id}), so they work without JavaScript; with htmx, links and forms swap this panel.
+    ?delete={id}, ?import=1), so they work without JavaScript; with htmx, links and forms swap this panel.
     A saved form starts the list afresh, so the new or edited member shows whatever the search was.
 #}
 <div id="members" hx-target="this" hx-swap="outerHTML">
@@ -32,4 +32,5 @@
             hx-get="/admin/members" hx-include="closest form" hx-trigger="input changed delay:200ms, search" hx-target="#member-list" hx-replace-url="true">
     </form>
     {{ include('partials/admin/member_list.html.twig') }}
+    {{ include('partials/admin/member_import.html.twig') }}
 </div>

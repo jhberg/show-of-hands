@@ -83,6 +83,21 @@ final readonly class SettingsRepository
         return $statement->rowCount() === 1;
     }
 
+    /** When the app last read the member file, as a UTC ISO 8601 timestamp, or null when it never did. */
+    public function memberImportAt(): ?string
+    {
+        $value = $this->get('member_import_at');
+
+        return $value === '' ? null : $value;
+    }
+
+    /** The caller holds the transaction the import runs in. */
+    public function setMemberImportAt(\DateTimeImmutable $moment): void
+    {
+        $this->pdo->prepare("UPDATE settings SET value = ? WHERE key = 'member_import_at'")
+            ->execute([$moment->setTimezone(new \DateTimeZone('UTC'))->format('Y-m-d\\TH:i:s\\Z')]);
+    }
+
     private function get(string $key): string
     {
         $statement = $this->pdo->prepare('SELECT value FROM settings WHERE key = ?');
