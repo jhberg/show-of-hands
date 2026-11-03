@@ -47,7 +47,7 @@ final class MaintenanceTest extends TestCase
     {
         $clock = FixedClock::at('@' . $now);
 
-        return new Maintenance(new SettingsRepository($this->pdo), $this->migrator, $this->ballots(), $clock, $this->dir . '/sessions', $this->dir . '/backup', 30, 'Europe/Berlin');
+        return new Maintenance(new SettingsRepository($this->pdo), $this->migrator, $this->ballots(), new PollRepository($this->pdo), $clock, $this->dir . '/sessions', $this->dir . '/backup', 30, 'Europe/Berlin');
     }
 
     private function ballots(): BallotRepository
@@ -95,7 +95,7 @@ final class MaintenanceTest extends TestCase
         $active = $this->file('sessions/sess_new', self::NOW - 29 * 86400);
         $other = $this->file('sessions/notes.txt', self::NOW - 400 * 86400);
 
-        self::assertSame(['sessions' => 1, 'backups' => 0, 'ballots' => 0], $this->maintenance()->run());
+        self::assertSame(['sessions' => 1, 'backups' => 0, 'ballots' => 0, 'polls' => 0], $this->maintenance()->run());
 
         self::assertFileDoesNotExist($expired);
         self::assertFileExists($active);
@@ -107,7 +107,7 @@ final class MaintenanceTest extends TestCase
         $old = $this->file('backup/app-v1.sqlite', self::NOW - Maintenance::BACKUP_KEEP_SECONDS - 1);
         $fresh = $this->file('backup/app-v2.sqlite', self::NOW - Maintenance::BACKUP_KEEP_SECONDS + 60);
 
-        self::assertSame(['sessions' => 0, 'backups' => 1, 'ballots' => 0], $this->maintenance()->run());
+        self::assertSame(['sessions' => 0, 'backups' => 1, 'ballots' => 0, 'polls' => 0], $this->maintenance()->run());
 
         self::assertFileDoesNotExist($old);
         self::assertFileExists($fresh);
@@ -120,11 +120,32 @@ final class MaintenanceTest extends TestCase
         $today = $this->pollWithBallot('2027-01-15T07:00:00Z');
         $open = $this->pollWithBallot(null);
 
-        self::assertSame(['sessions' => 0, 'backups' => 0, 'ballots' => 1], $this->maintenance()->run());
+        self::assertSame(['sessions' => 0, 'backups' => 0, 'ballots' => 1, 'polls' => 0], $this->maintenance()->run());
 
         self::assertFalse($this->hasBallots($yesterday));
         self::assertTrue($this->hasBallots($today), 'An admin may still reopen it today.');
         self::assertTrue($this->hasBallots($open));
+    }
+
+    public function testDeletesClosedPollsOnceTheirRetentionHasPassed(): void
+    {
+        // The default retention is 14 days. NOW is 2027-01-15T08:00:00Z.
+        $expired = $this->pollWithBallot('2027-01-01T07:59:59Z');
+        $kept = $this->pollWithBallot('2027-01-01T08:00:01Z');
+        $open = $this->pollWithBallot(null);
+        $this->pdo->exec("INSERT INTO poll_roll (poll_id, member_id, name, status) VALUES ({$expired}, 1, 'Kim Example', 'voted')");
+
+        self::assertSame(['sessions' => 0, 'backups' => 0, 'ballots' => 1, 'polls' => 1], $this->maintenance()->run());
+
+        $polls = new PollRepository($this->pdo);
+        self::assertNull($polls->find($expired));
+        self::assertNotNull($polls->find($kept));
+        self::assertNotNull($polls->find($open));
+        foreach (['ballots', 'participation', 'poll_roll'] as $table) {
+            $count = $this->pdo->prepare("SELECT count(*) FROM {$table} WHERE poll_id = ?");
+            $count->execute([$expired]);
+            self::assertSame(0, $count->fetchColumn(), $table);
+        }
     }
 
     public function testKeepsTheBackupWhileAMigrationIsPending(): void

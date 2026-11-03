@@ -1,6 +1,9 @@
 {% set admission = poll.kind.value == 'admission' %}
 <section class="ballot">
     <h2>{{ 'ballot.title'|trans }}</h2>
+    {% if poll.isReopened %}
+        <div class="notice">{{ icon('info') }}<span><b>{{ 'poll.reopened.title'|trans({moment: poll.reopenedAt|moment}) }}</b> {{ 'poll.reopened.text'|trans }}</span></div>
+    {% endif %}
     {% if recipient is not null %}
         <div class="notice">{{ icon('arrow') }}<div>
             <b>{{ 'ballot.delegated.title'|trans({name: recipient.name}) }}</b>

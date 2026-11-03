@@ -1,0 +1,9 @@
+{# The poll's link for the members. The copy button needs JavaScript, so it shows only with it. #}
+<div class="share">
+    <p class="help"><b>{{ 'admin.polls.share.label'|trans }}</b></p>
+    <div class="share-row">
+        <code id="share-link">{{ share_url }}</code>
+        <button type="button" class="btn js-only" data-copy="share-link" data-copied="{{ 'toast.poll.copied'|trans }}" data-copy-failed="{{ 'toast.poll.copy_failed'|trans }}">{{ icon('copy') }}{{ 'admin.polls.share.copy'|trans }}</button>
+    </div>
+    <p class="help mt-6">{{ 'admin.polls.share.help'|trans }}</p>
+</div>

@@ -1,0 +1,8 @@
+{#- The poll's date in its kind's words: "Vorsingen am …", "Entscheidung bis …", or "Datum offen". -#}
+{%- if poll.date is null -%}
+    {{ 'poll.date_open'|trans }}
+{%- elseif poll.kind.value == 'admission' -%}
+    {{ 'poll.date.admission'|trans({date: poll.date|day_long}) }}
+{%- else -%}
+    {{ 'poll.date.exception'|trans({date: poll.date|day_long}) }}
+{%- endif -%}

@@ -16,7 +16,7 @@ final class PurgeCommand extends DatabaseCommand
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $deleted = $this->service(Maintenance::class)->run();
-        $output->writeln(sprintf('Deleted %d expired session files, %d old backups, and %d ballots of closed polls.', $deleted['sessions'], $deleted['backups'], $deleted['ballots']));
+        $output->writeln(sprintf('Deleted %d expired session files, %d old backups, %d ballots of closed polls, and %d polls past their retention.', $deleted['sessions'], $deleted['backups'], $deleted['ballots'], $deleted['polls']));
 
         return Command::SUCCESS;
     }

@@ -1,0 +1,2 @@
+{#- The verdict of a closed poll as a chip, in the lists of the home page and the admin area. -#}
+<span class="chip {{ poll.tally.isAccepted ? 'ja' : 'nein' }}">{{ icon(poll.tally.isAccepted ? 'check' : 'cross') }}{{ include('partials/poll/verdict.html.twig') }}</span>

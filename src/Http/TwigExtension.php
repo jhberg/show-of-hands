@@ -17,7 +17,8 @@ use Twig\TwigFunction;
 
 /**
  * Twig globals for the brand and the locales, the functions asset(), icon(), and csrf_token(),
- * the filters day_long, day_date, and day_short for dates without time, percent, and name_list.
+ * the filters day_long, day_date, and day_short for dates without time, moment for a stored UTC
+ * timestamp in the choir's time zone, percent, and name_list.
  */
 final class TwigExtension extends AbstractExtension implements GlobalsInterface
 {
@@ -31,6 +32,7 @@ final class TwigExtension extends AbstractExtension implements GlobalsInterface
         private readonly string $iconDir,
         private readonly Session $session,
         private readonly Translator $translator,
+        private readonly string $timezone,
     ) {}
 
     public function getGlobals(): array
@@ -62,11 +64,24 @@ final class TwigExtension extends AbstractExtension implements GlobalsInterface
             new TwigFilter('day_date', fn(string $date): string => $this->formatDay($date, 'dMMMMy')),
             // "3. Nov."
             new TwigFilter('day_short', fn(string $date): string => $this->formatDay($date, 'dMMM')),
+            // "3. November 2026 um 19:42 Uhr"
+            new TwigFilter('moment', $this->moment(...)),
             // A share between 0 and 1 as "68,0 %"
             new TwigFilter('percent', $this->percent(...)),
             // "Lina, Ida und Pia"
             new TwigFilter('name_list', $this->nameList(...)),
         ];
+    }
+
+    /**
+     * Formats a UTC ISO 8601 timestamp in the choir's time zone and the active language.
+     */
+    private function moment(string $timestamp): string
+    {
+        $moment = (new \DateTimeImmutable($timestamp))->setTimezone(new \DateTimeZone($this->timezone));
+
+        // "j" is the hour as the language writes it: 19:42 in German, 7:42 PM in English.
+        return $this->translator->trans('format.moment', ['moment' => DayFormat::format($moment, 'dMMMMyjmm', $this->translator->getLocale())]);
     }
 
     private function percent(float $share): string

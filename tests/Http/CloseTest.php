@@ -321,7 +321,8 @@ final class CloseTest extends HttpTestCase
         foreach ([$this->kim, $this->lou, $this->max] as $member) {
             $this->cast($member, Choice::Yes, $accepted);
         }
-        $closer->close($accepted, new \DateTimeImmutable('2026-10-20T20:00:00Z'));
+        // Thirteen days ago, so retention keeps it.
+        $closer->close($accepted, new \DateTimeImmutable('2026-10-21T20:00:00Z'));
         $declined = $this->addPoll('Declined Example', kind: PollKind::Exception, question: 'May they?', group: 'B1');
         $closer->close($declined, new \DateTimeImmutable('2026-10-28T20:00:00Z'));
         $this->signIn('kim@example.org');

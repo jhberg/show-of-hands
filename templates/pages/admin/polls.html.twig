@@ -1,6 +1,6 @@
 {% extends 'layout.html.twig' %}
 
-{% block title %}{{ 'nav.admin'|trans }} · {{ parent() }}{% endblock %}
+{% block title %}{{ 'admin.polls.title'|trans }} · {{ 'nav.admin'|trans }} · {{ parent() }}{% endblock %}
 
 {% block body %}
 {{ include('partials/header.html.twig', {active: 'admin'}) }}
@@ -11,6 +11,32 @@
             <h1>{{ 'admin.polls.title'|trans }}</h1>
             <p class="lead">{{ 'admin.polls.lead'|trans }}</p>
         </div>
+        <a class="btn primary" href="/admin/polls/new">{{ 'admin.polls.new'|trans }}</a>
     </div>
+    <ul class="alist panel">
+        {% for row in rows %}
+            {% set poll = row.poll %}
+            <li>
+                <div class="who">
+                    <b>{{ poll.subjectName }}</b>
+                    <span class="meta">
+                        {{- poll.kind.value == 'admission' ? 'admin.polls.kind.admission'|trans : 'admin.polls.kind.exception'|trans }} · {{ row.group_label }} · {{ poll.date is null ? 'poll.date_open'|trans : poll.date|day_long -}}
+                        {%- if row.deletion_day is not null %} · {{ 'admin.polls.deletion'|trans({date: row.deletion_day|day_date}) }}{% endif -%}
+                    </span>
+                </div>
+                <div class="side">
+                    {%- if row.cast is not null %}<span class="stat num" title="{{ 'admin.polls.turnout'|trans }}"><b>{{ row.cast }}</b> / {{ row.total }}</span>{% endif %}
+                    {%- if poll.tally is not null -%}
+                        {{ include('partials/poll/verdict_chip.html.twig') }}
+                    {%- else -%}
+                        {{ include('partials/poll/status_chip.html.twig') }}
+                    {%- endif %}
+                    <a class="btn sm" href="/admin/polls/{{ poll.id }}">{{ 'admin.polls.details'|trans }}<span class="sr">: {{ poll.subjectName }}</span></a>
+                </div>
+            </li>
+        {% else %}
+            <li><div class="who muted">{{ 'admin.polls.empty'|trans }}</div></li>
+        {% endfor %}
+    </ul>
 </main>
 {% endblock %}

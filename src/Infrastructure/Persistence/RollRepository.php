@@ -41,6 +41,12 @@ final readonly class RollRepository
         }
     }
 
+    /** Deletes the snapshot of a poll that reopens. The caller runs it inside the reopen's transaction. */
+    public function delete(int $pollId): void
+    {
+        $this->pdo->prepare('DELETE FROM poll_roll WHERE poll_id = ?')->execute([$pollId]);
+    }
+
     /**
      * The turnout of a closed poll as it stood at the close, its members in today's voice group
      * order, then by name.

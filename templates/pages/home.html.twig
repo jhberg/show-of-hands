@@ -55,7 +55,7 @@
                         <a href="/polls/{{ poll.id }}">
                             {{- lists.title(poll, entry.group_label) -}}
                             {%- if poll.tally is not null -%}
-                                <span class="chip {{ poll.tally.isAccepted ? 'ja' : 'nein' }}">{{ icon(poll.tally.isAccepted ? 'check' : 'cross') }}{{ include('partials/poll/verdict.html.twig') }}</span>
+                                {{ include('partials/poll/verdict_chip.html.twig') }}
                             {%- endif -%}
                             <span class="chev">{{ icon('chev') }}</span>
                         </a>
