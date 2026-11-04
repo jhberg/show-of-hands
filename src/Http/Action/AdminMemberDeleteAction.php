@@ -17,9 +17,9 @@ use Slim\Exception\HttpForbiddenException;
 use Slim\Exception\HttpNotFoundException;
 
 /**
- * Removes a member after the inline confirmation. They can no longer sign in, and their vote
- * drops out of the open polls. Admins cannot remove themselves, and nobody can remove a member
- * who took part in a poll closed today before the next day, or in a reopened poll while it is open.
+ * Removes a member after the inline confirmation. They can no longer sign in. Admins cannot remove
+ * themselves, and nobody can remove a member who took part in an open poll while it is open, or
+ * in a poll closed today before the next day.
  */
 final readonly class AdminMemberDeleteAction
 {
@@ -49,7 +49,7 @@ final readonly class AdminMemberDeleteAction
         } catch (RemovalTooSoonException $e) {
             $member = $this->members->find($id);
             assert($member !== null);
-            $toastKey = $e->reopened ? 'toast.member.remove_after_reopened' : 'toast.member.remove_tomorrow';
+            $toastKey = $e->open ? 'toast.member.remove_after_close' : 'toast.member.remove_tomorrow';
 
             return $this->page->answer($request, $response, $actor, $query, $toastKey, ['name' => $member->name]);
         }

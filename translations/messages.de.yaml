@@ -89,7 +89,7 @@ toast:
     saved: Mitglied gespeichert.
     removed: '{name} entfernt.'
     remove_tomorrow: '{name} hat an einer heute abgeschlossenen Abstimmung teilgenommen und kann erst ab morgen entfernt werden.'
-    remove_after_reopened: '{name} hat an einer wieder geöffneten Abstimmung teilgenommen und kann erst ab dem Tag nach ihrem Abschluss entfernt werden.'
+    remove_after_close: '{name} hat an einer laufenden Abstimmung teilgenommen und kann erst ab dem Tag nach ihrem Abschluss entfernt werden.'
     deactivated: '{name} ist jetzt inaktiv und zählt nicht mehr zu den Stimmberechtigten.'
     activated: '{name} ist wieder aktiv und stimmberechtigt.'
     deactivate_after_close: '{name} hat an einer offenen Abstimmung teilgenommen und kann erst nach ihrem Abschluss inaktiv gesetzt werden.'
@@ -239,7 +239,7 @@ admin:
     edit: Bearbeiten
     remove: Entfernen
     remove_question: '{name} entfernen?'
-    remove_text: Die Person kann sich danach nicht mehr anmelden. In offenen Abstimmungen fällt ihre Stimme weg.
+    remove_text: Die Person kann sich danach nicht mehr anmelden.
     remove_confirm: Ja, entfernen
     cancel: Abbrechen
     no_match: Keine Treffer.

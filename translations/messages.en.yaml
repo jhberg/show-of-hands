@@ -89,7 +89,7 @@ toast:
     saved: Member saved.
     removed: '{name} removed.'
     remove_tomorrow: '{name} took part in a poll closed today. You can remove them from tomorrow.'
-    remove_after_reopened: '{name} took part in a reopened poll. You can remove them from the day after it closes.'
+    remove_after_close: '{name} took part in an open poll. You can remove them from the day after it closes.'
     deactivated: '{name} is now inactive and no longer an eligible voter.'
     activated: '{name} is active again and an eligible voter.'
     deactivate_after_close: '{name} took part in an open poll. You can set them inactive once it closes.'
@@ -239,7 +239,7 @@ admin:
     edit: Edit
     remove: Remove
     remove_question: 'Remove {name}?'
-    remove_text: They will no longer be able to sign in. Their vote drops out of open polls.
+    remove_text: They will no longer be able to sign in.
     remove_confirm: Yes, remove
     cancel: Cancel
     no_match: No matches.
