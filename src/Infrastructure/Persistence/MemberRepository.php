@@ -146,6 +146,11 @@ final readonly class MemberRepository
         $this->pdo->prepare('UPDATE members SET is_active = ? WHERE id = ?')->execute([(int) $active, $id]);
     }
 
+    public function setDisplayName(int $id, ?string $displayName): void
+    {
+        $this->pdo->prepare('UPDATE members SET display_name = ? WHERE id = ?')->execute([$displayName, $id]);
+    }
+
     public function isEmpty(): bool
     {
         return $this->count() === 0;

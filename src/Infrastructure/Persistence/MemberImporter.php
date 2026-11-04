@@ -8,9 +8,10 @@ use ShowOfHands\Domain\MemberFile;
 use ShowOfHands\Infrastructure\Database\Transaction;
 
 /**
- * Reads the member file into the member list. It only adds: a row whose address a member already
- * uses leaves that member as it is. A member removed since the last import comes back if the
- * file still lists them, which is why the admin area shows the import before it runs.
+ * Reads the member file into the member list. It adds members and changes no one, with one
+ * exception: a member already on the list who has no display name gets the one of their row. A
+ * member removed since the last import comes back if the file still lists them, which is why the
+ * admin area shows the import before it runs.
  *
  * A new installation reads the file by itself on its first request. After that, only an admin
  * starts an import.
@@ -44,7 +45,7 @@ final readonly class MemberImporter
         return $contents === null ? null : $this->plan($contents);
     }
 
-    /** Adds the file's new members, or returns null without a file. */
+    /** Adds the file's new members and fills in display names, or returns null without a file. */
     public function import(\DateTimeImmutable $now): ?MemberImport
     {
         return $this->run($now, true);
@@ -74,7 +75,10 @@ final readonly class MemberImporter
             foreach ($import->added as $row) {
                 $this->members->insert($row->details->name, $row->details->emails, $row->voiceGroupKey, $row->isBoard, $row->isAdmin, $row->isActive, $row->details->displayName);
             }
-            if ($markEmpty || $import->added !== []) {
+            foreach ($import->named as $entry) {
+                $this->members->setDisplayName($entry['member']->id, $entry['display_name']);
+            }
+            if ($markEmpty || $import->added !== [] || $import->named !== []) {
                 $this->settings->setMemberImportAt($now);
             }
 
@@ -86,14 +90,23 @@ final readonly class MemberImporter
     {
         $file = MemberFile::parse($contents, $this->voiceGroups->all());
         $added = [];
+        $named = [];
+        $existing = 0;
         foreach ($file->rows as $row) {
-            $known = array_filter($row->details->emails, fn(string $email): bool => $this->members->findByEmail($email) !== null);
-            if ($known === []) {
+            $member = null;
+            foreach ($row->details->emails as $email) {
+                $member ??= $this->members->findByEmail($email)[0] ?? null;
+            }
+            if ($member === null) {
                 $added[] = $row;
+            } elseif ($member->displayName === null && $row->details->displayName !== null && !isset($named[$member->id])) {
+                $named[$member->id] = ['member' => $member, 'display_name' => $row->details->displayName];
+            } else {
+                ++$existing;
             }
         }
 
-        return new MemberImport($added, count($file->rows) - count($added), $file->problems);
+        return new MemberImport($added, array_values($named), $existing, $file->problems);
     }
 
     private function read(): ?string

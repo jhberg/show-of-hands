@@ -1,6 +1,7 @@
 {#
     The member file. ?import=1 opens what an import would add, with its confirmation, so it works
-    without JavaScript. An import only adds: members already on the list stay as they are.
+    without JavaScript. An import adds members and fills in missing display names; members already
+    on the list stay as they are otherwise.
 #}
 <section class="panel soft mt-18" id="member-import">
     <h2>{{ 'admin.members.import.title'|trans }}</h2>
@@ -22,9 +23,9 @@
             <form class="warnbox" method="post" action="/admin/members/import" hx-post="/admin/members/import">
                 {{ include('partials/csrf_field.html.twig') }}
                 <input type="hidden" name="q" value="{{ query }}">
-                {% if preview.added is empty %}
+                {% if preview.added is empty and preview.named is empty %}
                     <p><b>{{ 'admin.members.import.nothing_new'|trans }}</b></p>
-                {% else %}
+                {% elseif preview.added is not empty %}
                     <p><b>{{ 'admin.members.import.question'|trans({count: preview.added|length}) }}</b> {{ 'admin.members.import.text'|trans }}</p>
                     <ul class="import-list">
                         {% for added in preview.added %}
@@ -36,6 +37,14 @@
                                 {%- if added.admin %} · {{ 'role.admin'|trans }}{% endif %}
                                 {%- if added.inactive %} · {{ 'admin.members.inactive'|trans }}{% endif %}
                             </li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+                {% if preview.named is not empty %}
+                    <p><b>{{ 'admin.members.import.named'|trans({count: preview.named|length}) }}</b></p>
+                    <ul class="import-list">
+                        {% for named in preview.named %}
+                            <li><b>{{ named.name }}</b> · {{ 'admin.members.display_name'|trans({name: named.display_name}) }}</li>
                         {% endfor %}
                     </ul>
                 {% endif %}
@@ -51,7 +60,7 @@
                     </ul>
                 {% endif %}
                 <div class="row">
-                    {% if preview.added is not empty %}
+                    {% if preview.added is not empty or preview.named is not empty %}
                         {# htmx moves the focus here after the swap, so the second tap is one key away. #}
                         <button class="btn primary" autofocus>{{ 'admin.members.import.confirm'|trans }}</button>
                     {% endif %}

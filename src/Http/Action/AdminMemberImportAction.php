@@ -13,7 +13,8 @@ use ShowOfHands\Infrastructure\Persistence\MemberImporter;
 
 /**
  * Reads the member file again after the confirmation that showed what it adds. Members already
- * on the list stay as they are; the toast counts the new ones and the rows left out.
+ * on the list stay as they are, apart from a missing display name; the toast counts the new
+ * members, the display names filled in, and the rows left out.
  */
 final readonly class AdminMemberImportAction
 {
@@ -36,6 +37,6 @@ final readonly class AdminMemberImportAction
         }
         $toastKey = $import->problems === [] ? 'toast.member.imported' : 'toast.member.imported_with_problems';
 
-        return $this->page->answer($request, $response, $actor, $query, $toastKey, ['count' => count($import->added), 'problems' => count($import->problems)]);
+        return $this->page->answer($request, $response, $actor, $query, $toastKey, ['count' => count($import->added), 'named' => count($import->named), 'problems' => count($import->problems)]);
     }
 }

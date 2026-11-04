@@ -94,8 +94,8 @@ toast:
     activated: '{name} ist wieder aktiv und stimmberechtigt.'
     deactivate_after_close: '{name} hat an einer offenen Abstimmung teilgenommen und kann erst nach ihrem Abschluss inaktiv gesetzt werden.'
     deactivate_tomorrow: '{name} hat an einer heute abgeschlossenen Abstimmung teilgenommen und kann erst ab morgen inaktiv gesetzt werden.'
-    imported: '{count, plural, =0 {Keine neuen Mitglieder eingelesen.} one {Ein Mitglied eingelesen.} other {# Mitglieder eingelesen.}}'
-    imported_with_problems: '{count, plural, =0 {Keine neuen Mitglieder eingelesen} one {Ein Mitglied eingelesen} other {# Mitglieder eingelesen}}, {problems, plural, one {eine Zeile übersprungen.} other {# Zeilen übersprungen.}}'
+    imported: '{count, plural, =0 {Keine neuen Mitglieder eingelesen} one {Ein Mitglied eingelesen} other {# Mitglieder eingelesen}}{named, plural, =0 {} one {, ein Anzeigename nachgetragen} other {, # Anzeigenamen nachgetragen}}.'
+    imported_with_problems: '{count, plural, =0 {Keine neuen Mitglieder eingelesen} one {Ein Mitglied eingelesen} other {# Mitglieder eingelesen}}{named, plural, =0 {} one {, ein Anzeigename nachgetragen} other {, # Anzeigenamen nachgetragen}}, {problems, plural, one {eine Zeile übersprungen.} other {# Zeilen übersprungen.}}'
     import_missing: '{file} liegt nicht mehr bereit.'
   settings:
     saved: Einstellungen gespeichert.
@@ -254,8 +254,9 @@ admin:
       last: '{file} wurde zuletzt am {moment} eingelesen.'
       open: Datei erneut einlesen
       question: '{count, plural, one {Ein neues Mitglied einlesen?} other {# neue Mitglieder einlesen?}}'
-      text: Wer schon in der Liste steht, bleibt unverändert. Wer seit dem letzten Einlesen entfernt wurde und noch in der Datei steht, kommt wieder dazu.
-      nothing_new: Die Datei enthält keine neuen Mitglieder.
+      text: Wer schon in der Liste steht, bleibt unverändert, nur ein fehlender Anzeigename wird nachgetragen. Wer seit dem letzten Einlesen entfernt wurde und noch in der Datei steht, kommt wieder dazu.
+      nothing_new: Die Datei enthält keine neuen Mitglieder und keine fehlenden Anzeigenamen.
+      named: '{count, plural, one {Ein Mitglied aus der Liste bekommt den Anzeigenamen aus der Datei:} other {# Mitglieder aus der Liste bekommen den Anzeigenamen aus der Datei:}}'
       existing: '{count, plural, one {Ein Eintrag steht schon in der Liste und bleibt unverändert.} other {# Einträge stehen schon in der Liste und bleiben unverändert.}}'
       problems: '{count, plural, one {Diese Zeile wird übersprungen:} other {Diese # Zeilen werden übersprungen:}}'
       confirm: Ja, einlesen

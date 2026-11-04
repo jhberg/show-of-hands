@@ -207,6 +207,7 @@ final readonly class MembersPage
                     'admin' => $row->isAdmin,
                     'inactive' => !$row->isActive,
                 ], $preview->added),
+                'named' => array_map(static fn(array $entry): array => ['name' => $entry['member']->name, 'display_name' => $entry['display_name']], $preview->named),
                 'existing' => $preview->existing,
                 'problems' => array_map($this->problem(...), $preview->problems),
             ],
