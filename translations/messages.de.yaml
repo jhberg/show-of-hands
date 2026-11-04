@@ -51,7 +51,7 @@ role:
   admin: Verwaltung
 
 toast:
-  signed_in: Angemeldet als {name}.
+  signed_in: Du bist als {name} angemeldet.
   signed_in_via: Angemeldet als {name} über {address}.
   sign_in_failed: Die Anmeldung hat nicht geklappt. Bitte versuche es noch einmal.
   ballot:

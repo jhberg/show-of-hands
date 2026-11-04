@@ -29,7 +29,7 @@ final class GoogleSignInTest extends HttpTestCase
 
         self::assertSame('/polls/3', $callback->getHeaderLine('Location'));
         self::assertSame([['abc', FakeGoogleSignIn::VERIFIER]], $this->google->finished);
-        self::assertStringContainsString('Angemeldet als Kim Example.', $this->body($this->request('GET', '/')));
+        self::assertStringContainsString('Du bist als Kim Example angemeldet.', $this->body($this->request('GET', '/')));
     }
 
     public function testRejectsAForeignState(): void

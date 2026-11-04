@@ -32,8 +32,8 @@ final class DevLoginTest extends HttpTestCase
         self::assertSame('/polls/3', $response->getHeaderLine('Location'));
         self::assertNotSame($before, $this->session->memoryId(), 'Signing in gives the session a new id.');
         self::assertNotSame($token, $this->session->csrfToken(), 'and a new CSRF token.');
-        self::assertStringContainsString('Angemeldet als Kim Example.', $this->body($this->request('GET', '/')));
-        self::assertStringNotContainsString('Angemeldet als', $this->body($this->request('GET', '/')), 'The toast shows once.');
+        self::assertStringContainsString('Du bist als Kim Example angemeldet.', $this->body($this->request('GET', '/')));
+        self::assertStringNotContainsString('angemeldet.', $this->body($this->request('GET', '/')), 'The toast shows once.');
     }
 
     public function testNamesTheSecondAddressInTheToast(): void
@@ -43,6 +43,15 @@ final class DevLoginTest extends HttpTestCase
         $this->signIn('kim@example.net');
 
         self::assertStringContainsString('Angemeldet als Kim Example über kim@example.net.', $this->body($this->request('GET', '/')));
+    }
+
+    public function testNamesTheMemberByTheirDisplayNameInTheToast(): void
+    {
+        $this->addMember('Kimberly Example', ['kim@example.org'], displayName: 'Kim E.');
+
+        $this->signIn('kim@example.org');
+
+        self::assertStringContainsString('Du bist als Kim E. angemeldet.', $this->body($this->request('GET', '/')));
     }
 
     public function testShowsAnUnknownAddressOnTheLoginPage(): void

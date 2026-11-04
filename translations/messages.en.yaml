@@ -51,7 +51,7 @@ role:
   admin: Admin
 
 toast:
-  signed_in: Signed in as {name}.
+  signed_in: '{name}, you are signed in.'
   signed_in_via: Signed in as {name} with {address}.
   sign_in_failed: Sign-in did not work. Please try again.
   ballot:
@@ -61,7 +61,7 @@ toast:
     reclaimed: 'Vote registered: {choice}. Your delegation to {name} has ended.'
   delegation:
     choose: Please choose a person.
-    done: Vote delegated to {name}.
+    done: '{name} now holds your vote.'
     refused: The vote could not be delegated like this. The page now shows where things stand.
     revoked: Delegation taken back. Your vote is yours again.
   poll_closed: This poll is already closed.
@@ -160,7 +160,7 @@ ballot:
   registered_text: You can change it while the poll is open. It is anonymous. Others only see that you have voted.
   hint: Tap Yes or No. Your vote is registered at once and stays anonymous. Others only see that you have voted.
   delegated:
-    title: You have delegated your vote to {name}.
+    title: '{name} now holds your vote.'
     voted: '{name} has already voted. If you tap Yes or No here yourself, your vote comes straight back to you and the weight of {name}''s vote is adjusted.'
     not_voted: '{name} has not voted yet. If you tap Yes or No here yourself, your vote comes straight back to you.'
     back: If you tap Yes or No here yourself, your vote comes straight back to you.
