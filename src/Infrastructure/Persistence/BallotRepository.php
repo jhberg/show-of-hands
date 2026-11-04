@@ -62,8 +62,8 @@ final readonly class BallotRepository
     }
 
     /**
-     * Withdraws the member's ballot and their turnout mark, for a member who hands their vote on
-     * or who is removed from the member list. The caller runs it inside its own transaction.
+     * Withdraws the member's ballot and their turnout mark, for a member who hands their vote on.
+     * The caller runs it inside its own transaction.
      */
     public function withdraw(int $pollId, int $memberId): void
     {

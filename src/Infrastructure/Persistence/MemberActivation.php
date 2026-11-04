@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace ShowOfHands\Infrastructure\Persistence;
 
-use ShowOfHands\Domain\CloseDay;
 use ShowOfHands\Domain\Member;
 use ShowOfHands\Infrastructure\Database\Transaction;
 
@@ -38,13 +37,9 @@ final readonly class MemberActivation
                 return null;
             }
             if (!$active && $member->isActive) {
-                foreach (PollsTakenPart::closings($this->pdo, $memberId, neverClosed: true) as $closedAt) {
-                    if ($closedAt === null) {
-                        throw new DeactivationTooSoonException($memberId, open: true);
-                    }
-                    if (!CloseDay::hasEnded(new \DateTimeImmutable($closedAt), $now, $zone)) {
-                        throw new DeactivationTooSoonException($memberId, open: false);
-                    }
+                $open = PollsTakenPart::hold($this->pdo, $memberId, $now, $zone);
+                if ($open !== null) {
+                    throw new DeactivationTooSoonException($memberId, open: $open);
                 }
             }
             $this->members->setActive($memberId, $active);

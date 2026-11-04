@@ -7,7 +7,6 @@ namespace ShowOfHands\Tests\Http;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Psr\Http\Message\ResponseInterface;
 use ShowOfHands\Domain\Choice;
-use ShowOfHands\Domain\PollStatus;
 use ShowOfHands\Infrastructure\Clock\Clock;
 use ShowOfHands\Infrastructure\Persistence\BallotRepository;
 use ShowOfHands\Infrastructure\Persistence\DelegationRepository;
@@ -270,7 +269,7 @@ final class MembersTest extends HttpTestCase
     {
         $html = $this->page('?delete=' . $this->lou);
 
-        self::assertStringContainsString('<b>Lou Example entfernen?</b> Die Person kann sich danach nicht mehr anmelden. In offenen Abstimmungen fällt ihre Stimme weg.', $html);
+        self::assertStringContainsString('<b>Lou Example entfernen?</b> Die Person kann sich danach nicht mehr anmelden.', $html);
         self::assertStringContainsString('action="/admin/members/' . $this->lou . '/delete"', $html);
         self::assertStringNotContainsString('/delete"', $this->page('?delete=' . $this->kim));
     }
@@ -313,21 +312,60 @@ final class MembersTest extends HttpTestCase
         self::assertSame('/login', $this->request('GET', '/')->getHeaderLine('Location'));
     }
 
-    public function testRemovingAMemberTakesTheirVoteOutOfOpenPolls(): void
+    /**
+     * Removing a member who took part in an open poll would take a cast vote out of its count, so
+     * an admin could remove votes they expect to dislike.
+     */
+    public function testAMemberWhoTookPartInAnOpenPollStaysWhileItIsOpen(): void
     {
         $ballots = $this->service(BallotRepository::class);
         $poll = $this->addPoll();
+        $ned = $this->addMember('Ned Example', ['ned@example.org']);
         $ballots->cast($poll, $this->lou, Choice::Yes);
-        $ballots->cast($poll, $this->kim, Choice::No);
-        self::assertNull($this->service(DelegationRepository::class)->delegate($poll, $this->max, $this->lou));
+        self::assertNull($this->service(DelegationRepository::class)->delegate($poll, $ned, $this->max));
 
-        $this->send('/' . $this->lou . '/delete');
-
-        self::assertNull($this->members()->find($this->lou));
-        self::assertSame(1, $this->number('SELECT count(*) FROM ballots WHERE poll_id = ?', $poll));
+        // Voted, delegated, and received a vote, each in the open poll.
+        foreach ([$this->lou, $ned, $this->max] as $member) {
+            $response = $this->send('/' . $member . '/delete', htmx: true);
+            self::assertStringContainsString('an einer laufenden Abstimmung teilgenommen und kann erst ab dem Tag nach ihrem Abschluss entfernt werden.', $response->getHeaderLine('HX-Trigger'));
+            self::assertNotNull($this->members()->find($member));
+        }
+        self::assertSame(Choice::Yes, $ballots->choice($poll, $this->lou));
         self::assertSame(1, $this->number('SELECT count(*) FROM participation WHERE poll_id = ?', $poll));
-        self::assertSame(0, $this->number('SELECT count(*) FROM delegations WHERE poll_id = ?', $poll));
+        self::assertSame(1, $this->number('SELECT count(*) FROM delegations WHERE poll_id = ?', $poll));
+
+        // A reopened poll that is open again holds them the same way.
+        $this->service(\PDO::class)->prepare('UPDATE polls SET reopen_count = 1 WHERE id = ?')->execute([$poll]);
+        $response = $this->send('/' . $this->lou . '/delete', htmx: true);
+        self::assertStringContainsString('an einer laufenden Abstimmung teilgenommen', $response->getHeaderLine('HX-Trigger'));
+        self::assertNotNull($this->members()->find($this->lou));
+    }
+
+    public function testAnOpenPollOutweighsAPollClosedToday(): void
+    {
+        $ballots = $this->service(BallotRepository::class);
+        $closed = $this->addPoll();
+        $ballots->cast($closed, $this->lou, Choice::Yes);
+        $this->service(PollCloser::class)->close($closed, new \DateTimeImmutable('2026-11-03T19:00:00Z'));
+        $ballots->cast($this->addPoll(subject: 'Sam Example'), $this->lou, Choice::No);
+
+        $response = $this->send('/' . $this->lou . '/delete', htmx: true);
+
+        self::assertStringContainsString('an einer laufenden Abstimmung teilgenommen', $response->getHeaderLine('HX-Trigger'));
+    }
+
+    public function testAMemberWithoutAPartInAnOpenPollCanGo(): void
+    {
+        $ballots = $this->service(BallotRepository::class);
+        $poll = $this->addPoll();
+        $ballots->cast($poll, $this->kim, Choice::No);
+
+        $response = $this->send('/' . $this->lou . '/delete', htmx: true);
+
+        self::assertStringContainsString('Lou Example entfernt.', $response->getHeaderLine('HX-Trigger'));
+        self::assertNull($this->members()->find($this->lou));
         self::assertSame(Choice::No, $ballots->choice($poll, $this->kim));
+        self::assertSame(1, $this->number('SELECT count(*) FROM participation WHERE poll_id = ?', $poll));
     }
 
     /**
@@ -364,18 +402,6 @@ final class MembersTest extends HttpTestCase
         self::assertSame(1, $this->number('SELECT yes_weight FROM polls WHERE id = ?', $poll));
     }
 
-    public function testAMemberWhoTookPartInAReopenedPollStaysWhileItIsOpen(): void
-    {
-        $poll = $this->addPoll();
-        $this->service(BallotRepository::class)->cast($poll, $this->lou, Choice::Yes);
-        $this->service(\PDO::class)->prepare('UPDATE polls SET reopen_count = 1 WHERE id = ?')->execute([$poll]);
-
-        $response = $this->send('/' . $this->lou . '/delete', htmx: true);
-
-        self::assertStringContainsString('teilgenommen und kann erst ab dem Tag nach ihrem Abschluss entfernt werden.', $response->getHeaderLine('HX-Trigger'));
-        self::assertNotNull($this->members()->find($this->lou));
-    }
-
     public function testAMemberWithoutAPartInAPollClosedTodayCanGo(): void
     {
         $poll = $this->addPoll();
@@ -385,18 +411,6 @@ final class MembersTest extends HttpTestCase
         $this->send('/' . $this->lou . '/delete');
 
         self::assertNull($this->members()->find($this->lou));
-    }
-
-    public function testRemovingAMemberWhoReceivedVotesHandsThemBack(): void
-    {
-        $poll = $this->addPoll(status: PollStatus::Open);
-        self::assertNull($this->service(DelegationRepository::class)->delegate($poll, $this->max, $this->lou));
-
-        $this->send('/' . $this->lou . '/delete');
-
-        self::assertSame(0, $this->number('SELECT count(*) FROM delegations WHERE poll_id = ?', $poll));
-        $this->signIn('max@example.org');
-        self::assertStringNotContainsString('Du hast deine Stimme an', $this->body($this->request('GET', '/polls/' . $poll)));
     }
 
     public function testTheListReadsTheEnglishWording(): void

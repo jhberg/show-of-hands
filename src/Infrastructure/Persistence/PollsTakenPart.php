@@ -4,37 +4,42 @@ declare(strict_types=1);
 
 namespace ShowOfHands\Infrastructure\Persistence;
 
+use ShowOfHands\Domain\CloseDay;
 use ShowOfHands\Domain\PollStatus;
 
 /**
- * The polls in which a member voted, delegated, or received a vote. Turnout and delegations tell
- * this; the ballots are not read.
+ * The polls in which a member voted, delegated, or received a vote, and which still count with
+ * them: an open poll, or one closed today, which an admin may still reopen. Turnout and
+ * delegations tell this; the ballots are not read.
  */
 final class PollsTakenPart
 {
     /**
-     * When each such poll closed, or null for one that is open.
-     *
-     * @param bool $neverClosed whether open polls that were never closed count too, not only reopened ones
-     *
-     * @return list<string|null>
+     * Whether such a poll holds the member: true while one is open, false while only one closed
+     * today does, null when none does. An open poll wins, since it holds them longer.
      */
-    public static function closings(\PDO $pdo, int $memberId, bool $neverClosed): array
+    public static function hold(\PDO $pdo, int $memberId, \DateTimeImmutable $now, \DateTimeZone $zone): ?bool
     {
         $statement = $pdo->prepare(
             'SELECT CASE WHEN status = ? THEN closed_at END AS closed_at FROM polls p
-             WHERE (status = ? OR (status = ? AND (? OR reopen_count > 0))) AND (
+             WHERE status IN (?, ?) AND (
                 EXISTS (SELECT 1 FROM participation WHERE poll_id = p.id AND member_id = ?)
                 OR EXISTS (SELECT 1 FROM delegations WHERE poll_id = p.id AND (from_member_id = ? OR to_member_id = ?))
-            )',
+            )
+             ORDER BY closed_at IS NOT NULL',
         );
-        $statement->execute([PollStatus::Closed->value, PollStatus::Closed->value, PollStatus::Open->value, (int) $neverClosed, $memberId, $memberId, $memberId]);
-        $polls = [];
+        $statement->execute([PollStatus::Closed->value, PollStatus::Closed->value, PollStatus::Open->value, $memberId, $memberId, $memberId]);
         foreach ($statement->fetchAll() as $row) {
             assert(is_array($row));
-            $polls[] = Row::nullableString($row, 'closed_at');
+            $closedAt = Row::nullableString($row, 'closed_at');
+            if ($closedAt === null) {
+                return true;
+            }
+            if (!CloseDay::hasEnded(new \DateTimeImmutable($closedAt), $now, $zone)) {
+                return false;
+            }
         }
 
-        return $polls;
+        return null;
     }
 }
