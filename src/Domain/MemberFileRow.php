@@ -14,5 +14,6 @@ final readonly class MemberFileRow
         public ?string $voiceGroupKey,
         public bool $isBoard,
         public bool $isAdmin,
+        public bool $isActive,
     ) {}
 }

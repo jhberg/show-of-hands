@@ -41,6 +41,15 @@ final class MemberFileTest extends TestCase
         self::assertSame(['Alex Example', ['alex.example@example.org'], 'S1', true, true], [$alex->details->name, $alex->details->emails, $alex->voiceGroupKey, $alex->isBoard, $alex->isAdmin]);
         self::assertSame([['sam.sample@example.org', 'sam.private@example.org'], 'A2', true, false], [$sam->details->emails, $sam->voiceGroupKey, $sam->isBoard, $sam->isAdmin]);
         self::assertSame(['T1', false, false], [$robin->voiceGroupKey, $robin->isBoard, $robin->isAdmin]);
+        self::assertSame([true, true, true], [$alex->isActive, $sam->isActive, $robin->isActive]);
+    }
+
+    public function testReadsTheInactiveColumn(): void
+    {
+        $file = MemberFile::parse("name;email;inactive\nKim Example;kim@example.org;x\nLou Example;lou@example.org;\nPia Example;pia@example.org;maybe\n", self::voiceGroups());
+
+        self::assertSame([false, true], [$file->rows[0]->isActive, $file->rows[1]->isActive]);
+        self::assertSame([[4, MemberFileIssue::FlagInvalid, 'maybe']], self::problems($file));
     }
 
     public function testReadsCommasQuotesAnyColumnOrderAndExtraColumns(): void
@@ -61,6 +70,49 @@ final class MemberFileTest extends TestCase
 
         self::assertSame('Jörg Example', $utf8->rows[0]->details->name);
         self::assertSame('Jörg Example', $latin->rows[0]->details->name);
+    }
+
+    public function testReadsMacRomanAsExcelForMacSavesIt(): void
+    {
+        // Mac Roman puts ä, é, and ö on bytes that Windows-1252 reads as Š, Ž, and š.
+        $file = MemberFile::parse("name;email\r\nJo B\x8Acker;jo@example.org\r\nRen\x8E D\x9Arr;rene@example.org\r\n", self::voiceGroups());
+        // Windows-1252 puts ä and ß on bytes that Mac Roman reads as ‰ and ﬂ.
+        $windows = MemberFile::parse("name;email\nJo B\xE4cker Stra\xDFe;jo@example.org\n", self::voiceGroups());
+
+        self::assertSame(['Jo Bäcker', 'René Dörr'], [$file->rows[0]->details->name, $file->rows[1]->details->name]);
+        self::assertSame('Jo Bäcker Straße', $windows->rows[0]->details->name);
+
+        // Windows-1252 reads Mac Roman's ’ (0xD5) as the letter Õ.
+        $quoted = MemberFile::parse("name;email\r\nJo M\x9Fller;jo@example.org\r\nKim O\xD5Connor;kim@example.org\r\n", self::voiceGroups());
+        self::assertSame(['Jo Müller', 'Kim O’Connor'], [$quoted->rows[0]->details->name, $quoted->rows[1]->details->name]);
+
+        // Windows-1252 reads Mac Roman's Ö (0x85) as …, which no name holds.
+        $ellipsis = MemberFile::parse("name;email\n\x85zlem Example;ozlem@example.org\n", self::voiceGroups());
+        self::assertSame('Özlem Example', $ellipsis->rows[0]->details->name);
+
+        // Windows-1252 leaves 0x8D (ç) and 0x8F (è) undefined, and reads 0x91 (ë) as ‘.
+        $undefined = MemberFile::parse("name;email\nFran\x8Dois Example;f@example.org\nMich\x8Fle No\x91l;m@example.org\n", self::voiceGroups());
+        self::assertSame(['François Example', 'Michèle Noël'], [$undefined->rows[0]->details->name, $undefined->rows[1]->details->name]);
+    }
+
+    public function testKeepsWindows1252WhenMacRomanReadsItAsLettersToo(): void
+    {
+        // Mac Roman reads é (0xE9) as È and € (0x80) as Ä, both letters.
+        $file = MemberFile::parse("name;email;note\nRen\xE9 Example;rene@example.org;5 \x80\nEd \x91Ted\x92 Example;ted@example.org;\n", self::voiceGroups());
+
+        self::assertSame(['René Example', 'Ed ‘Ted’ Example'], [$file->rows[0]->details->name, $file->rows[1]->details->name]);
+    }
+
+    public function testReadsBareCarriageReturnsAndWindowsQuotes(): void
+    {
+        // Old Mac files end lines with a bare \r and are Mac Roman, here É (0x83).
+        $mac = MemberFile::parse("name;email\r\x83va Example;eva@example.org\rJo Example;jo@example.org\r", self::voiceGroups());
+        // Mac Roman would read the curly apostrophe (0x92) as í.
+        $windows = MemberFile::parse("name;email\nKim O\x92Connor;kim@example.org\n", self::voiceGroups());
+
+        self::assertSame([], $mac->problems);
+        self::assertSame(['Éva Example', 'Jo Example'], [$mac->rows[0]->details->name, $mac->rows[1]->details->name]);
+        self::assertSame('Kim O’Connor', $windows->rows[0]->details->name);
     }
 
     public function testMatchesGroupsByKeyOrLabelInAnyCase(): void
@@ -89,7 +141,7 @@ final class MemberFileTest extends TestCase
             [2, MemberDetailsError::NameMissing, ''],
             [3, MemberDetailsError::FirstAddressInvalid, ''],
             [5, MemberDetailsError::SameAddresses, ''],
-            [6, MemberFileIssue::RoleInvalid, 'vielleicht'],
+            [6, MemberFileIssue::FlagInvalid, 'vielleicht'],
             [8, MemberFileIssue::AddressRepeated, 'e@example.org'],
         ], self::problems($file));
         self::assertSame(['E', 'G'], array_map(static fn($row) => $row->details->name, $file->rows));

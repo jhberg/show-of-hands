@@ -6,16 +6,17 @@ namespace ShowOfHands\Domain;
 
 /**
  * The member list an instance keeps as a CSV file next to its config: one member per row, under a
- * header that names the columns name, email, email2, group, board, and admin in any order. Only
- * name and email are required; other columns are ignored. Spreadsheets save such a file with
- * commas or semicolons, in UTF-8 or Windows-1252, and either works.
+ * header that names the columns name, email, email2, group, board, admin, and inactive in any
+ * order. Only name and email are required; other columns are ignored. Spreadsheets save such a
+ * file with commas or semicolons, in UTF-8, Windows-1252, or Mac Roman (Excel for Mac's
+ * "CSV (Macintosh)"), and each works.
  *
  * Parsing checks each row on its own and against the rows above it. Whether a row's member
  * already exists is the importer's to decide.
  */
 final readonly class MemberFile
 {
-    private const COLUMNS = ['name', 'email', 'email2', 'group', 'board', 'admin'];
+    private const COLUMNS = ['name', 'email', 'email2', 'group', 'board', 'admin', 'inactive'];
 
     private const YES = ['x', '1', 'ja', 'j', 'yes', 'y', 'true', 'wahr'];
 
@@ -35,8 +36,9 @@ final readonly class MemberFile
      */
     public static function parse(string $contents, array $groups): self
     {
-        $contents = self::utf8($contents);
-        $first = strtok($contents, "\r\n") ?: '';
+        // fgetcsv() ends lines only at \n, and old Mac files end them with a bare \r.
+        $contents = (string) preg_replace('/\r\n?/', "\n", self::utf8($contents));
+        $first = strtok($contents, "\n") ?: '';
         $delimiter = substr_count($first, ';') > substr_count($first, ',') ? ';' : ',';
 
         $stream = fopen('php://memory', 'r+');
@@ -101,16 +103,16 @@ final readonly class MemberFile
                 return new MemberFileProblem($line, MemberFileIssue::GroupUnknown, $cell('group'));
             }
         }
-        $roles = [];
-        foreach (['board', 'admin'] as $role) {
-            $value = mb_strtolower($cell($role));
+        $flags = [];
+        foreach (['board', 'admin', 'inactive'] as $flag) {
+            $value = mb_strtolower($cell($flag));
             if (!in_array($value, [...self::YES, ...self::NO], true)) {
-                return new MemberFileProblem($line, MemberFileIssue::RoleInvalid, $cell($role));
+                return new MemberFileProblem($line, MemberFileIssue::FlagInvalid, $cell($flag));
             }
-            $roles[$role] = in_array($value, self::YES, true);
+            $flags[$flag] = in_array($value, self::YES, true);
         }
 
-        return new MemberFileRow($details, $group, $roles['board'], $roles['admin']);
+        return new MemberFileRow($details, $group, $flags['board'], $flags['admin'], !$flags['inactive']);
     }
 
     /**
@@ -156,13 +158,32 @@ final readonly class MemberFile
         return null;
     }
 
-    /** The contents as UTF-8 without a byte order mark. Anything that is not UTF-8 is read as Windows-1252. */
+    /**
+     * The contents as UTF-8 without a byte order mark. Anything that is not UTF-8 is Windows-1252 or
+     * Mac Roman. The two place accented letters on different bytes: read in the wrong one, "Bäcker"
+     * turns into "BŠcker" or "B‰cker". Bare \r line endings mark Mac Roman. Otherwise Mac Roman wins
+     * only with fewer characters that do not belong in a member list. Those are all but ASCII, the
+     * letters À to ÿ, and the quotes, dashes, and euro sign of Windows-1252. A ‘ inside a word counts
+     * as strange too, since there it is Mac Roman's ë ("No‘l"). The bias keeps a
+     * Windows-1252 file as it was read before Mac Roman joined, while a Mac Roman file with umlauts
+     * reads as "BŠcker" in Windows-1252 and so goes to Mac Roman.
+     */
     private static function utf8(string $contents): string
     {
         if (str_starts_with($contents, "\u{FEFF}")) {
             $contents = substr($contents, 3);
         }
+        if (mb_check_encoding($contents, 'UTF-8')) {
+            return $contents;
+        }
+        $windows = mb_convert_encoding($contents, 'UTF-8', 'Windows-1252');
+        // mbstring knows no Mac Roman, intl does.
+        $mac = \UConverter::transcode($contents, 'UTF-8', 'macintosh');
+        if (str_contains($contents, "\r") && !str_contains($contents, "\n")) {
+            return $mac;
+        }
+        $strange = static fn(string $text): int => (int) preg_match_all('/[^\x{00}-\x{7F}\x{A0}\x{C0}-\x{D6}\x{D8}-\x{F6}\x{F8}-\x{FF}‘’“”„–€]|(?<=\p{L})‘(?=\p{L})/u', $text);
 
-        return mb_check_encoding($contents, 'UTF-8') ? $contents : mb_convert_encoding($contents, 'UTF-8', 'Windows-1252');
+        return $strange($mac) < $strange($windows) ? $mac : $windows;
     }
 }

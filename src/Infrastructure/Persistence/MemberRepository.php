@@ -162,11 +162,11 @@ final readonly class MemberRepository
      *
      * @param list<string> $emails normalized addresses, the first one first
      */
-    public function insert(string $name, array $emails, ?string $voiceGroupKey, bool $isBoard, bool $isAdmin): int
+    public function insert(string $name, array $emails, ?string $voiceGroupKey, bool $isBoard, bool $isAdmin, bool $isActive = true): int
     {
         self::assertAddressCount($emails);
-        $this->pdo->prepare('INSERT INTO members (name, voice_group_key, is_board, is_admin) VALUES (?, ?, ?, ?)')
-            ->execute([$name, $voiceGroupKey, (int) $isBoard, (int) $isAdmin]);
+        $this->pdo->prepare('INSERT INTO members (name, voice_group_key, is_board, is_admin, is_active) VALUES (?, ?, ?, ?, ?)')
+            ->execute([$name, $voiceGroupKey, (int) $isBoard, (int) $isAdmin, (int) $isActive]);
         $id = (int) $this->pdo->lastInsertId();
         $this->insertEmails($id, $emails);
 

@@ -18,6 +18,6 @@ enum MemberFileIssue
     /** A group that is neither a key nor a label of an existing voice group. */
     case GroupUnknown;
 
-    /** A board or admin cell that is neither yes nor no. */
-    case RoleInvalid;
+    /** A board, admin, or inactive cell that is neither yes nor no. */
+    case FlagInvalid;
 }
