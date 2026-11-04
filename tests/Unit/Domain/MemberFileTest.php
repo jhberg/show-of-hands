@@ -32,16 +32,17 @@ final class MemberFileTest extends TestCase
     public function testReadsTheTemplate(): void
     {
         $file = MemberFile::parse((string) file_get_contents(dirname(__DIR__, 3) . '/config/members.example.csv'), [
-            new VoiceGroup('S1', 'Sopran 1'), new VoiceGroup('A2', 'Alt 2'), new VoiceGroup('T1', 'Tenor 1'),
+            new VoiceGroup('S1', 'Sopran 1'), new VoiceGroup('A2', 'Alt 2'), new VoiceGroup('T1', 'Tenor 1'), new VoiceGroup('B1', 'Bass 1'),
         ]);
 
         self::assertSame([], $file->problems);
-        self::assertCount(3, $file->rows);
-        [$alex, $sam, $robin] = $file->rows;
+        self::assertCount(4, $file->rows);
+        [$alex, $sam, $robin, $kim] = $file->rows;
         self::assertSame(['Alex Example', ['alex.example@example.org'], 'S1', true, true], [$alex->details->name, $alex->details->emails, $alex->voiceGroupKey, $alex->isBoard, $alex->isAdmin]);
         self::assertSame([['sam.sample@example.org', 'sam.private@example.org'], 'A2', true, false], [$sam->details->emails, $sam->voiceGroupKey, $sam->isBoard, $sam->isAdmin]);
         self::assertSame(['T1', false, false], [$robin->voiceGroupKey, $robin->isBoard, $robin->isAdmin]);
-        self::assertSame([true, true, true], [$alex->isActive, $sam->isActive, $robin->isActive]);
+        self::assertSame([null, 'Sam S.', null, 'Kim B.'], [$alex->details->displayName, $sam->details->displayName, $robin->details->displayName, $kim->details->displayName]);
+        self::assertSame([true, true, true, false], [$alex->isActive, $sam->isActive, $robin->isActive, $kim->isActive]);
     }
 
     public function testReadsTheInactiveColumn(): void

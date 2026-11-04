@@ -80,12 +80,12 @@ abstract class HttpTestCase extends TestCase
      *
      * @param list<string> $emails
      */
-    protected function addMember(string $name, array $emails, bool $admin = false, bool $board = false, ?string $group = 'S1'): int
+    protected function addMember(string $name, array $emails, bool $admin = false, bool $board = false, ?string $group = 'S1', ?string $displayName = null): int
     {
         $this->service(Migrator::class)->migrate();
         $this->service(FirstStart::class)->run();
 
-        return $this->service(MemberRepository::class)->add($name, $emails, $group, $board, $admin);
+        return $this->service(MemberRepository::class)->add($name, $emails, $group, $board, $admin, $displayName);
     }
 
     /**

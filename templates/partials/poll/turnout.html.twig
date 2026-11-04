@@ -15,7 +15,7 @@
                 {% for entry in missing_by_group %}
                     <div class="g">{{ entry.group ? entry.group.label : 'turnout.no_group'|trans }}</div>
                     <div class="names">
-                        {%- for missing_member in entry.members %}<span class="name">{{ missing_member.name }}</span>{% endfor -%}
+                        {%- for missing_member in entry.members %}<span class="name">{{ missing_member.shownName }}</span>{% endfor -%}
                     </div>
                 {% endfor %}
             </div>
@@ -30,7 +30,7 @@
         <ul class="dlist">
             {% for entry in turnout.delegations %}
                 <li>
-                    <span>{{ entry.from.name }}</span>{{ icon('arrow') }}<span>{{ entry.to.name }}</span>
+                    <span>{{ entry.from.shownName }}</span>{{ icon('arrow') }}<span>{{ entry.to.shownName }}</span>
                     {#- Whether the recipient voted reveals turnout, so it follows the names setting. #}
                     {%- if show_names and not entry.to_voted %}<span class="chip">{{ 'turnout.pending'|trans }}</span>{% endif -%}
                 </li>

@@ -6,17 +6,17 @@ namespace ShowOfHands\Domain;
 
 /**
  * The member list an instance keeps as a CSV file next to its config: one member per row, under a
- * header that names the columns name, email, email2, group, board, admin, and inactive in any
- * order. Only name and email are required; other columns are ignored. Spreadsheets save such a
- * file with commas or semicolons, in UTF-8, Windows-1252, or Mac Roman (Excel for Mac's
- * "CSV (Macintosh)"), and each works.
+ * header that names the columns name, display_name, email, email2, group, board, admin, and
+ * inactive in any order. Only name and email are required; other columns are ignored.
+ * Spreadsheets save such a file with commas or semicolons, in UTF-8, Windows-1252, or Mac Roman
+ * (Excel for Mac's "CSV (Macintosh)"), and each works.
  *
  * Parsing checks each row on its own and against the rows above it. Whether a row's member
  * already exists is the importer's to decide.
  */
 final readonly class MemberFile
 {
-    private const COLUMNS = ['name', 'email', 'email2', 'group', 'board', 'admin', 'inactive'];
+    private const COLUMNS = ['name', 'display_name', 'email', 'email2', 'group', 'board', 'admin', 'inactive'];
 
     private const YES = ['x', '1', 'ja', 'j', 'yes', 'y', 'true', 'wahr'];
 
@@ -92,7 +92,7 @@ final readonly class MemberFile
      */
     private static function row(int $line, \Closure $cell, array $groups): MemberFileRow|MemberFileProblem
     {
-        $details = MemberDetails::parse($cell('name'), $cell('email'), $cell('email2'));
+        $details = MemberDetails::parse($cell('name'), $cell('email'), $cell('email2'), $cell('display_name'));
         if ($details instanceof MemberDetailsError) {
             return new MemberFileProblem($line, $details);
         }

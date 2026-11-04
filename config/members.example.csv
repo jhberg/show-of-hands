@@ -1,4 +1,5 @@
-name;email;email2;group;board;admin;inactive
-Alex Example;alex.example@example.org;;S1;x;x;
-Sam Sample;sam.sample@example.org;sam.private@example.org;A2;x;;
-Robin Muster;robin.muster@example.org;;Tenor 1;;;
+name;display_name;email;email2;group;board;admin;inactive
+Alex Example;;alex.example@example.org;;S1;x;x;
+Samantha Sample-Smith;Sam S.;sam.sample@example.org;sam.private@example.org;A2;x;;
+Robin Muster;;robin.muster@example.org;;Tenor 1;;;
+Kim Beispiel;Kim B.;kim.beispiel@example.org;;B1;;;x

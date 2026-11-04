@@ -66,14 +66,16 @@ Admins change everything else in the app, under "Verwaltung" → "Einstellungen"
 The app can read the member list from `config/members.csv`, a CSV file next to `config/config.php`. `config/members.example.csv` is the template:
 
 ```csv
-name;email;email2;group;board;admin;inactive
-Alex Example;alex.example@example.org;;S1;x;x;
-Sam Sample;sam.sample@example.org;sam.private@example.org;A2;x;;
+name;display_name;email;email2;group;board;admin;inactive
+Alex Example;;alex.example@example.org;;S1;x;x;
+Samantha Sample-Smith;Sam S.;sam.sample@example.org;sam.private@example.org;A2;x;;
+Kim Beispiel;Kim B.;kim.beispiel@example.org;;B1;;;x
 ```
 
 | Column | Meaning |
 |---|---|
 | `name` | Full name. Required. |
+| `display_name` | Optional shorter name, such as `Sam S.`. Name lists show it instead of the full name. Empty for the full name. |
 | `email` | The address the member signs in with. Required. |
 | `email2` | Optional second address, for example a private Google account. |
 | `group` | Voice group, by key (`S1`) or label (`Sopran 1`). Empty for none. |
@@ -82,7 +84,7 @@ Sam Sample;sam.sample@example.org;sam.private@example.org;A2;x;;
 
 The first line names the columns, in any order. Other columns are ignored. Mark at least one member as `admin`, or keep `bootstrap_admin` in the config, so someone can sign in to the admin area. Spreadsheets may save the file with commas or semicolons, in UTF-8, Windows-1252, or Mac Roman (Excel for Mac's "CSV (Macintosh)").
 
-A new installation reads the file on its first request, after it creates the first member from `bootstrap_admin`. A file added later, or changed later, waits for an admin: under "Verwaltung" → "Mitglieder", "Datei erneut einlesen" first lists the members the file would add and the lines it skips, with the reason, and imports only after the admin confirms. An import only adds: a line whose address a member already uses leaves that member as it is, including whether they are active. A member removed since the last import comes back if the file still lists them, so check the list before you confirm.
+A new installation reads the file on its first request, after it creates the first member from `bootstrap_admin`. A file added later, or changed later, waits for an admin: under "Verwaltung" → "Mitglieder", "Datei erneut einlesen" first lists the members the file would add and the lines it skips, with the reason, and imports only after the admin confirms. An import only adds: a line whose address a member already uses leaves that member as it is, including their display name and whether they are active. A member removed since the last import comes back if the file still lists them, so check the list before you confirm.
 
 ## Branding
 

@@ -11,6 +11,7 @@ use ShowOfHands\Domain\PollStatus;
 use ShowOfHands\Http\Middleware\CsrfMiddleware;
 use ShowOfHands\Infrastructure\Persistence\BallotRepository;
 use ShowOfHands\Infrastructure\Persistence\MemberRepository;
+use ShowOfHands\Infrastructure\Persistence\PollCloser;
 
 final class PollPageTest extends HttpTestCase
 {
@@ -251,6 +252,24 @@ final class PollPageTest extends HttpTestCase
         self::assertStringContainsString('<p class="all-done">Alle Mitglieder haben abgestimmt.</p>', $html);
         self::assertStringNotContainsString('Noch nicht abgestimmt', $html);
         self::assertStringContainsString('width="100%"', $html);
+    }
+
+    public function testNameListsShowTheDisplayNameSortedByIt(): void
+    {
+        $this->addMember('Zoe Example', ['zoe@example.org'], group: 'S1', displayName: 'Abby Z.');
+        $poll = $this->addPoll();
+        $this->signIn('zoe@example.org');
+
+        $html = $this->body($this->request('GET', "/polls/{$poll}"));
+
+        self::assertStringContainsString('<span class="uname">Abby Z.</span>', $html);
+        self::assertMatchesRegularExpression('#Sopran 1</div>\s*<div class="names"><span class="name">Abby Z\.</span><span class="name">Kim Example</span>#', $html);
+        self::assertStringNotContainsString('Zoe Example', $html);
+
+        $this->service(PollCloser::class)->close($poll, new \DateTimeImmutable());
+        $html = $this->body($this->request('GET', "/polls/{$poll}"));
+
+        self::assertStringContainsString('<span class="name">Abby Z.</span>', $html, 'The closed poll keeps the name shown at the close.');
     }
 
     public function testThePageSpeaksEnglish(): void

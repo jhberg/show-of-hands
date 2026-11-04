@@ -44,9 +44,9 @@ final readonly class SignIn
         $this->session->set(MemberMiddleware::SESSION_KEY, $member->id);
         $this->session->set(MemberMiddleware::EMAIL_KEY, $address);
         if ($secondAddress) {
-            $this->flash->toast('toast.signed_in_via', ['name' => $member->name, 'address' => $address]);
+            $this->flash->toast('toast.signed_in_via', ['name' => $member->shownName(), 'address' => $address]);
         } else {
-            $this->flash->toast('toast.signed_in', ['name' => $member->name]);
+            $this->flash->toast('toast.signed_in', ['name' => $member->shownName()]);
         }
 
         return true;

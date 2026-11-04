@@ -7,6 +7,7 @@
         <li id="m-{{ listed.id }}">
             <div class="who">
                 <b>{{ listed.name }}{% if is_self %} <span class="chip mine">{{ 'admin.members.you'|trans }}</span>{% endif %}</b>
+                {%- if listed.displayName is not null %}<span class="meta">{{ 'admin.members.display_name'|trans({name: listed.displayName}) }}</span>{% endif %}
                 {%- for email in row.emails %}<span class="meta"><code>{{ email }}</code></span>{% endfor -%}
             </div>
             <div class="side">

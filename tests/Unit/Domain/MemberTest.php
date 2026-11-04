@@ -32,6 +32,16 @@ final class MemberTest extends TestCase
         self::assertSame($initials, $member->initials());
     }
 
+    public function testShowsTheDisplayNameAndFallsBackToTheFullName(): void
+    {
+        $member = new Member(1, 'Johanna Maria Example', 'S1', false, false, displayName: 'Jo E.');
+
+        self::assertSame('Jo E.', $member->shownName());
+        self::assertSame('Jo', $member->firstName());
+        self::assertSame('JE', $member->initials());
+        self::assertSame('Kim Example', (new Member(2, 'Kim Example', 'S1', false, false))->shownName());
+    }
+
     public function testNormalizesEmailAddresses(): void
     {
         self::assertSame('kim@example.org', EmailAddress::normalize('  Kim@Example.ORG '));

@@ -72,7 +72,7 @@ final readonly class MemberImporter
         return Transaction::immediate($this->pdo, function () use ($contents, $now, $markEmpty): MemberImport {
             $import = $this->plan($contents);
             foreach ($import->added as $row) {
-                $this->members->insert($row->details->name, $row->details->emails, $row->voiceGroupKey, $row->isBoard, $row->isAdmin, $row->isActive);
+                $this->members->insert($row->details->name, $row->details->emails, $row->voiceGroupKey, $row->isBoard, $row->isAdmin, $row->isActive, $row->details->displayName);
             }
             if ($markEmpty || $import->added !== []) {
                 $this->settings->setMemberImportAt($now);

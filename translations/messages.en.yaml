@@ -244,6 +244,7 @@ admin:
     cancel: Cancel
     no_match: No matches.
     inactive: inactive
+    display_name: 'Display name: {name}'
     deactivate: Set inactive
     activate: Set active
     import:
@@ -273,6 +274,9 @@ admin:
       edit_title: Edit member
       name: Name
       name_placeholder: First and last name
+      display_name: Display name (optional)
+      display_name_placeholder: e.g. Anna M.
+      display_name_help: Shown in name lists instead of the full name. Left empty, the lists show the full name.
       email: Email address ({brand} account)
       email_placeholder: 'first.last@{domain}'
       email2: Another email address (optional)

@@ -24,7 +24,7 @@
         {% if member %}
             <div class="user">
                 <span class="avatar" aria-hidden="true">{{ member.initials }}</span>
-                <span class="uname">{{ member.name }}</span>
+                <span class="uname">{{ member.shownName }}</span>
                 <form class="logout" method="post" action="/logout">
                     {{ include('partials/csrf_field.html.twig') }}
                     <button class="btn ghost sm">{{ 'nav.logout'|trans }}</button>

@@ -134,6 +134,22 @@ final class MemberImportTest extends HttpTestCase
         self::assertSame([true, false, true], [$active('kim@example.org'), $active('lou@example.org'), $active('pia@example.org')], 'The file never sets a member who exists inactive.');
     }
 
+    public function testAnImportReadsTheDisplayNameColumn(): void
+    {
+        $this->signIn('kim@example.org');
+        file_put_contents($this->dataDir . '/members.csv', "name;display_name;email\nLouisa Example;Lou E.;lou@example.org\nPia Example;;pia@example.org\n");
+
+        $preview = $this->body($this->request('GET', '/admin/members?import=1'));
+        self::assertStringContainsString('<b>Louisa Example</b> · Anzeigename: Lou E.', $preview);
+        self::assertStringNotContainsString('<b>Pia Example</b> · Anzeigename', $preview);
+
+        $this->post('/admin/members/import');
+
+        $members = $this->service(MemberRepository::class);
+        $displayName = static fn(string $email): ?string => ($members->findByEmail($email) ?? throw new \LogicException($email))[0]->displayName;
+        self::assertSame(['Lou E.', null], [$displayName('lou@example.org'), $displayName('pia@example.org')]);
+    }
+
     public function testAPreviewWithNothingNewOffersNoConfirmation(): void
     {
         $this->writeFile('Kim Example;kim@example.org;;;;');

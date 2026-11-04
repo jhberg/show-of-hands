@@ -6,6 +6,7 @@
     <h2>{{ form.memberId is null ? 'admin.members.add'|trans : 'admin.members.form.edit_title'|trans }}</h2>
     {% for field in [
         {name: 'name', type: 'text', label: 'admin.members.form.name'|trans, placeholder: 'admin.members.form.name_placeholder'|trans, value: form.name},
+        {name: 'display_name', type: 'text', label: 'admin.members.form.display_name'|trans, placeholder: 'admin.members.form.display_name_placeholder'|trans, value: form.displayName, help: 'admin.members.form.display_name_help'|trans},
         {name: 'email', type: 'email', label: 'admin.members.form.email'|trans({brand: brand.name}), placeholder: email_domain is null ? '' : 'admin.members.form.email_placeholder'|trans({domain: email_domain}), value: form.email},
         {name: 'email2', type: 'email', label: 'admin.members.form.email2'|trans, placeholder: 'admin.members.form.email2_placeholder'|trans, value: form.email2, help: 'admin.members.form.email_help'|trans},
     ] %}

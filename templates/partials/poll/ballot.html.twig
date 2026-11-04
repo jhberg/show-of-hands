@@ -6,7 +6,7 @@
     {% endif %}
     {% if recipient is not null %}
         <div class="notice">{{ icon('arrow') }}<div>
-            <b>{{ 'ballot.delegated.title'|trans({name: recipient.name}) }}</b>
+            <b>{{ 'ballot.delegated.title'|trans({name: recipient.shownName}) }}</b>
             {% if recipient_voted is null -%}
                 {{ 'ballot.delegated.back'|trans }}
             {%- elseif recipient_voted -%}

@@ -30,6 +30,7 @@
                         {% for added in preview.added %}
                             <li>
                                 <b>{{ added.name }}</b>
+                                {%- if added.display_name is not null %} · {{ 'admin.members.display_name'|trans({name: added.display_name}) }}{% endif %}
                                 {%- if added.group is not null %} · {{ added.group }}{% endif %}
                                 {%- if added.board %} · {{ 'role.board'|trans }}{% endif %}
                                 {%- if added.admin %} · {{ 'role.admin'|trans }}{% endif %}
