@@ -255,7 +255,7 @@ admin:
       open: Datei erneut einlesen
       question: '{count, plural, one {Ein neues Mitglied einlesen?} other {# neue Mitglieder einlesen?}}'
       text: Wer schon in der Liste steht, bleibt unverändert, nur ein fehlender Anzeigename wird nachgetragen. Wer seit dem letzten Einlesen entfernt wurde und noch in der Datei steht, kommt wieder dazu.
-      nothing_new: Die Datei enthält keine neuen Mitglieder und keine fehlenden Anzeigenamen.
+      nothing_new: Die Datei bringt keine neuen Mitglieder und keine Anzeigenamen zum Nachtragen.
       named: '{count, plural, one {Ein Mitglied aus der Liste bekommt den Anzeigenamen aus der Datei:} other {# Mitglieder aus der Liste bekommen den Anzeigenamen aus der Datei:}}'
       existing: '{count, plural, one {Ein Eintrag steht schon in der Liste und bleibt unverändert.} other {# Einträge stehen schon in der Liste und bleiben unverändert.}}'
       problems: '{count, plural, one {Diese Zeile wird übersprungen:} other {Diese # Zeilen werden übersprungen:}}'

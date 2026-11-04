@@ -255,7 +255,7 @@ admin:
       open: Import the file again
       question: '{count, plural, one {Import one new member?} other {Import # new members?}}'
       text: Members already on the list stay as they are, except that a missing display name is filled in. Anyone removed since the last import who is still in the file comes back.
-      nothing_new: The file holds no new members and no missing display names.
+      nothing_new: The file adds no new members and fills in no display names.
       named: '{count, plural, one {One member on the list gets the display name from the file:} other {# members on the list get the display name from the file:}}'
       existing: '{count, plural, one {One entry is already on the list and stays as it is.} other {# entries are already on the list and stay as they are.}}'
       problems: '{count, plural, one {This line is skipped:} other {These # lines are skipped:}}'

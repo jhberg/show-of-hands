@@ -93,13 +93,18 @@ final readonly class MemberImporter
         $named = [];
         $existing = 0;
         foreach ($file->rows as $row) {
-            $member = null;
+            $matches = [];
             foreach ($row->details->emails as $email) {
-                $member ??= $this->members->findByEmail($email)[0] ?? null;
+                $member = $this->members->findByEmail($email)[0] ?? null;
+                if ($member !== null) {
+                    $matches[$member->id] = $member;
+                }
             }
-            if ($member === null) {
+            // A row whose addresses belong to two members describes neither for sure.
+            $member = count($matches) === 1 ? reset($matches) : null;
+            if ($matches === []) {
                 $added[] = $row;
-            } elseif ($member->displayName === null && $row->details->displayName !== null && !isset($named[$member->id])) {
+            } elseif ($member !== null && $member->displayName === null && $row->details->displayName !== null && !isset($named[$member->id])) {
                 $named[$member->id] = ['member' => $member, 'display_name' => $row->details->displayName];
             } else {
                 ++$existing;
