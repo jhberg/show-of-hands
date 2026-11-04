@@ -134,6 +134,51 @@ final class MemberImportTest extends HttpTestCase
         self::assertSame([true, false, true], [$active('kim@example.org'), $active('lou@example.org'), $active('pia@example.org')], 'The file never sets a member who exists inactive.');
     }
 
+    public function testAnImportReadsTheDisplayNameColumn(): void
+    {
+        $this->signIn('kim@example.org');
+        file_put_contents($this->dataDir . '/members.csv', "name;display_name;email\nLouisa Example;Lou E.;lou@example.org\nPia Example;;pia@example.org\n");
+
+        $preview = $this->body($this->request('GET', '/admin/members?import=1'));
+        self::assertStringContainsString('<b>Louisa Example</b> · Anzeigename: Lou E.', $preview);
+        self::assertStringNotContainsString('<b>Pia Example</b> · Anzeigename', $preview);
+
+        $this->post('/admin/members/import');
+
+        $members = $this->service(MemberRepository::class);
+        $displayName = static fn(string $email): ?string => ($members->findByEmail($email) ?? throw new \LogicException($email))[0]->displayName;
+        self::assertSame(['Lou E.', null], [$displayName('lou@example.org'), $displayName('pia@example.org')]);
+    }
+
+    public function testAnImportFillsInMissingDisplayNamesOfMembersOnTheList(): void
+    {
+        $members = $this->service(MemberRepository::class);
+        $this->signIn('kim@example.org');
+        $lou = $members->add('Louisa Example', ['lou@example.org'], 'T1', false, false);
+        $pia = $members->add('Pia Example', ['pia@example.org'], 'S1', false, false, 'Pia E.');
+        $ned = $members->add('Ned Example', ['ned@example.org'], 'B1', false, false);
+        $max = $members->add('Max Example', ['max@example.org'], 'B1', false, false);
+        file_put_contents($this->dataDir . '/members.csv', "name;display_name;email;email2;group\nLouisa Renamed;Lou E.;lou@example.org;;B1\nPia Example;Pia X.;pia@example.org;;\nKim Example;;kim@example.org;;\nNed Example;Ned E.;ned@example.org;max@example.org;\n");
+
+        $preview = $this->body($this->request('GET', '/admin/members?import=1'));
+        self::assertStringNotContainsString('Die Datei bringt keine neuen Mitglieder', $preview);
+        self::assertStringNotContainsString('neue Mitglieder einlesen?', $preview);
+        self::assertStringContainsString('<b>Ein Mitglied aus der Liste bekommt den Anzeigenamen aus der Datei:</b>', $preview);
+        self::assertStringContainsString('<li><b>Louisa Example</b> · Anzeigename: Lou E.</li>', $preview);
+        self::assertStringNotContainsString('Pia X.', $preview, 'A display name already set stays.');
+        self::assertStringContainsString('3 Einträge stehen schon in der Liste und bleiben unverändert.', $preview);
+        self::assertStringContainsString('Ja, einlesen', $preview);
+        self::assertNull($members->find($lou)?->displayName, 'The preview writes nothing.');
+
+        $this->post('/admin/members/import');
+
+        self::assertStringContainsString('Keine neuen Mitglieder eingelesen, ein Anzeigename nachgetragen.', $this->body($this->request('GET', '/admin/members')));
+        $louAfter = $members->find($lou);
+        self::assertSame(['Lou E.', 'Louisa Example', 'T1'], [$louAfter?->displayName, $louAfter?->name, $louAfter?->voiceGroupKey], 'Only the display name changes.');
+        self::assertSame('Pia E.', $members->find($pia)?->displayName);
+        self::assertSame([null, null], [$members->find($ned)?->displayName, $members->find($max)?->displayName], 'A row with the addresses of two members names neither.');
+    }
+
     public function testAPreviewWithNothingNewOffersNoConfirmation(): void
     {
         $this->writeFile('Kim Example;kim@example.org;;;;');
@@ -141,7 +186,7 @@ final class MemberImportTest extends HttpTestCase
 
         $preview = $this->body($this->request('GET', '/admin/members?import=1'));
 
-        self::assertStringContainsString('Die Datei enthält keine neuen Mitglieder.', $preview);
+        self::assertStringContainsString('Die Datei bringt keine neuen Mitglieder und keine Anzeigenamen zum Nachtragen.', $preview);
         self::assertStringNotContainsString('Ja, einlesen', $preview);
     }
 

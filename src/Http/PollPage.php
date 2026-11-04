@@ -168,7 +168,7 @@ final readonly class PollPage
                 $recipient = $entry['to'];
                 $recipientVoted = $entry['to_voted'];
             } elseif ($entry['to']->id === $member->id) {
-                $senders[] = $entry['from']->name;
+                $senders[] = $entry['from']->shownName();
             }
             if (!$entry['to_voted']) {
                 ++$pendingDelegations;
@@ -232,7 +232,7 @@ final readonly class PollPage
             'max_received' => $maxReceived,
             'targets' => $open ? array_map(static fn(Member $target): array => [
                 'id' => $target->id,
-                'name' => $target->name,
+                'name' => $target->shownName(),
                 'group_label' => $target->voiceGroupKey === null ? null : VoiceGroup::labelOf($groups, $target->voiceGroupKey),
                 'voted' => $showNames && isset($voted[$target->id]),
             ], $delegations->targets($members, $member->id, $maxReceived)) : [],

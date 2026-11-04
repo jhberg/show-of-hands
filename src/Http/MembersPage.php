@@ -44,7 +44,7 @@ final readonly class MembersPage
     /**
      * The page or, for htmx, the part it asked for. A refused save shows its message as the toast.
      *
-     * @param string $query the search, matched against names and addresses
+     * @param string $query the search, matched against names, display names, and addresses
      * @param MemberForm|null $form the open add or edit form
      * @param int|null $deleting the member whose removal awaits confirmation
      * @param bool $importing whether the import's preview and confirmation are open
@@ -157,7 +157,7 @@ final readonly class MembersPage
         $matches = static fn(string $text): bool => str_contains(mb_strtolower($text), $needle);
         $rows = [];
         foreach ($all as $entry) {
-            if ($needle !== '' && array_filter([$entry['member']->name, ...$entry['emails']], $matches) === []) {
+            if ($needle !== '' && array_filter([$entry['member']->name, $entry['member']->displayName ?? '', ...$entry['emails']], $matches) === []) {
                 continue;
             }
             $key = $entry['member']->voiceGroupKey;
@@ -201,11 +201,13 @@ final readonly class MembersPage
             'preview' => $preview === null ? null : [
                 'added' => array_map(static fn(MemberFileRow $row): array => [
                     'name' => $row->details->name,
+                    'display_name' => $row->details->displayName,
                     'group' => $row->voiceGroupKey === null ? null : VoiceGroup::labelOf($groups, $row->voiceGroupKey),
                     'board' => $row->isBoard,
                     'admin' => $row->isAdmin,
                     'inactive' => !$row->isActive,
                 ], $preview->added),
+                'named' => array_map(static fn(array $entry): array => ['name' => $entry['member']->name, 'display_name' => $entry['display_name']], $preview->named),
                 'existing' => $preview->existing,
                 'problems' => array_map($this->problem(...), $preview->problems),
             ],

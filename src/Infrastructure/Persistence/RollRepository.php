@@ -17,7 +17,8 @@ final readonly class RollRepository
     public function __construct(private \PDO $pdo) {}
 
     /**
-     * Stores the turnout at the close. The caller runs it inside the close's transaction.
+     * Stores the turnout at the close, with each member's shown name. The caller runs it inside
+     * the close's transaction.
      *
      * @param list<Member> $members every eligible voter at the close
      */
@@ -37,7 +38,7 @@ final readonly class RollRepository
                 isset($recipients[$member->id]) => 'delegated',
                 default => 'voted',
             };
-            $insert->execute([$pollId, $member->id, $member->name, $member->voiceGroupKey, $status, $recipients[$member->id] ?? null]);
+            $insert->execute([$pollId, $member->id, $member->shownName(), $member->voiceGroupKey, $status, $recipients[$member->id] ?? null]);
         }
     }
 
@@ -49,7 +50,7 @@ final readonly class RollRepository
 
     /**
      * The turnout of a closed poll as it stood at the close, its members in today's voice group
-     * order, then by name.
+     * order, then by the name shown at the close.
      */
     public function turnout(int $pollId, string $locale): Turnout
     {

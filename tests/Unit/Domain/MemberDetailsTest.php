@@ -13,16 +13,27 @@ final class MemberDetailsTest extends TestCase
 {
     public function testTrimsTheNameAndNormalizesBothAddresses(): void
     {
-        $details = MemberDetails::parse('  Kim Example ', ' Kim@Example.ORG', 'kim@example.NET ');
+        $details = MemberDetails::parse('  Kim Example ', ' Kim@Example.ORG', 'kim@example.NET ', '');
 
         self::assertInstanceOf(MemberDetails::class, $details);
         self::assertSame('Kim Example', $details->name);
         self::assertSame(['kim@example.org', 'kim@example.net'], $details->emails);
     }
 
+    public function testTrimsTheDisplayNameAndLeavesAnEmptyOneOut(): void
+    {
+        $details = MemberDetails::parse('Kim Example', 'kim@example.org', '', ' Kim E. ');
+        self::assertInstanceOf(MemberDetails::class, $details);
+        self::assertSame('Kim E.', $details->displayName);
+
+        $details = MemberDetails::parse('Kim Example', 'kim@example.org', '', '  ');
+        self::assertInstanceOf(MemberDetails::class, $details);
+        self::assertNull($details->displayName);
+    }
+
     public function testASecondAddressAloneBecomesTheFirst(): void
     {
-        $details = MemberDetails::parse('Kim Example', ' ', 'kim@example.net');
+        $details = MemberDetails::parse('Kim Example', ' ', 'kim@example.net', '');
 
         self::assertInstanceOf(MemberDetails::class, $details);
         self::assertSame(['kim@example.net'], $details->emails);
@@ -44,6 +55,6 @@ final class MemberDetailsTest extends TestCase
     #[DataProvider('refusals')]
     public function testRefuses(string $name, string $email, string $secondEmail, MemberDetailsError $error): void
     {
-        self::assertSame($error, MemberDetails::parse($name, $email, $secondEmail));
+        self::assertSame($error, MemberDetails::parse($name, $email, $secondEmail, ''));
     }
 }

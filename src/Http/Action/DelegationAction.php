@@ -59,6 +59,6 @@ final readonly class DelegationAction
         $recipient = $this->members->find($to);
         assert($recipient !== null);
 
-        return $this->page->answer($request, $response, $poll, $member, 'toast.delegation.done', ['name' => $recipient->name]);
+        return $this->page->answer($request, $response, $poll, $member, 'toast.delegation.done', ['name' => $recipient->shownName()]);
     }
 }

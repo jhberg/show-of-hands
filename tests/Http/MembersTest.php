@@ -138,6 +138,34 @@ final class MembersTest extends HttpTestCase
         self::assertFalse($found[0]->isAdmin);
     }
 
+    public function testAddsAndClearsADisplayNameTheListShowsBesideTheFullName(): void
+    {
+        $this->send('', ['name' => 'Nedwin Example', 'display_name' => ' Ned E. ', 'email' => 'ned@example.org', 'group' => 'B1']);
+
+        $ned = $this->members()->findByEmail('ned@example.org')[0] ?? null;
+        self::assertNotNull($ned);
+        self::assertSame('Ned E.', $ned->displayName);
+        $this->addMember('Zed Example', ['zed@example.org'], group: 'B1', displayName: 'Abe Z.');
+        $page = $this->page();
+        self::assertStringContainsString('<b>Nedwin Example</b><span class="meta">Anzeigename: Ned E.</span>', $page);
+        self::assertLessThan(strpos($page, 'Zed Example'), strpos($page, 'Nedwin Example'), 'The admin list keeps the full-name order.');
+        self::assertStringContainsString('Nedwin Example', $this->page('?q=ned+e.'));
+        self::assertStringContainsString('value="Ned E."', $this->page('?edit=' . $ned->id));
+
+        $this->send('/' . $ned->id, ['name' => 'Nedwin Example', 'display_name' => '', 'email' => 'ned@example.org', 'group' => 'B1']);
+
+        self::assertNull($this->members()->find($ned->id)?->displayName);
+        self::assertStringNotContainsString('Anzeigename: Ned E.', $this->page());
+    }
+
+    public function testARefusedSaveKeepsTheDisplayNameAsEntered(): void
+    {
+        $response = $this->send('', ['name' => '', 'display_name' => 'Ned E.', 'email' => 'ned@example.org', 'group' => 'B1']);
+
+        self::assertSame(422, $response->getStatusCode());
+        self::assertStringContainsString('value="Ned E."', $this->body($response));
+    }
+
     public function testAddingWithHtmxSwapsThePanelAndShowsEveryMember(): void
     {
         $response = $this->send('', ['name' => 'Ned Example', 'email' => 'ned@example.org', 'group' => 'B1'], htmx: true);
@@ -297,7 +325,7 @@ final class MembersTest extends HttpTestCase
         self::assertSame(200, $this->request('GET', '/admin/members')->getStatusCode());
 
         $this->signIn('kim@example.net');
-        $this->service(MemberRepository::class)->update($this->kim, 'Kim Example', ['kim@example.org'], 'S1', false, true);
+        $this->service(MemberRepository::class)->update($this->kim, 'Kim Example', ['kim@example.org'], 'S1', false, true, null);
 
         self::assertSame('/login', $this->request('GET', '/')->getHeaderLine('Location'));
     }
@@ -306,8 +334,8 @@ final class MembersTest extends HttpTestCase
     {
         $this->signIn('lou@example.org');
         $members = $this->members();
-        $members->update($this->lou, 'Lou Example', ['lou@example.net'], 'T1', false, false);
-        $members->update($this->max, 'Max Example', ['max@example.org', 'lou@example.org'], null, true, false);
+        $members->update($this->lou, 'Lou Example', ['lou@example.net'], 'T1', false, false, null);
+        $members->update($this->max, 'Max Example', ['max@example.org', 'lou@example.org'], null, true, false, null);
 
         self::assertSame('/login', $this->request('GET', '/')->getHeaderLine('Location'));
     }

@@ -51,7 +51,7 @@ role:
   admin: Admin
 
 toast:
-  signed_in: Signed in as {name}.
+  signed_in: '{name}, you are signed in.'
   signed_in_via: Signed in as {name} with {address}.
   sign_in_failed: Sign-in did not work. Please try again.
   ballot:
@@ -61,7 +61,7 @@ toast:
     reclaimed: 'Vote registered: {choice}. Your delegation to {name} has ended.'
   delegation:
     choose: Please choose a person.
-    done: Vote delegated to {name}.
+    done: '{name} now holds your vote.'
     refused: The vote could not be delegated like this. The page now shows where things stand.
     revoked: Delegation taken back. Your vote is yours again.
   poll_closed: This poll is already closed.
@@ -94,8 +94,8 @@ toast:
     activated: '{name} is active again and an eligible voter.'
     deactivate_after_close: '{name} took part in an open poll. You can set them inactive once it closes.'
     deactivate_tomorrow: '{name} took part in a poll closed today. You can set them inactive from tomorrow.'
-    imported: '{count, plural, =0 {No new members imported.} one {One member imported.} other {# members imported.}}'
-    imported_with_problems: '{count, plural, =0 {No new members imported} one {One member imported} other {# members imported}}, {problems, plural, one {one line skipped.} other {# lines skipped.}}'
+    imported: '{count, plural, =0 {No new members imported} one {One member imported} other {# members imported}}{named, plural, =0 {} one {, one display name filled in} other {, # display names filled in}}.'
+    imported_with_problems: '{count, plural, =0 {No new members imported} one {One member imported} other {# members imported}}{named, plural, =0 {} one {, one display name filled in} other {, # display names filled in}}, {problems, plural, one {one line skipped.} other {# lines skipped.}}'
     import_missing: '{file} is no longer there.'
   settings:
     saved: Settings saved.
@@ -160,7 +160,7 @@ ballot:
   registered_text: You can change it while the poll is open. It is anonymous. Others only see that you have voted.
   hint: Tap Yes or No. Your vote is registered at once and stays anonymous. Others only see that you have voted.
   delegated:
-    title: You have delegated your vote to {name}.
+    title: '{name} now holds your vote.'
     voted: '{name} has already voted. If you tap Yes or No here yourself, your vote comes straight back to you and the weight of {name}''s vote is adjusted.'
     not_voted: '{name} has not voted yet. If you tap Yes or No here yourself, your vote comes straight back to you.'
     back: If you tap Yes or No here yourself, your vote comes straight back to you.
@@ -244,6 +244,7 @@ admin:
     cancel: Cancel
     no_match: No matches.
     inactive: inactive
+    display_name: 'Display name: {name}'
     deactivate: Set inactive
     activate: Set active
     import:
@@ -253,8 +254,9 @@ admin:
       last: '{file} was last imported on {moment}.'
       open: Import the file again
       question: '{count, plural, one {Import one new member?} other {Import # new members?}}'
-      text: Members already on the list stay as they are. Anyone removed since the last import who is still in the file comes back.
-      nothing_new: The file holds no new members.
+      text: Members already on the list stay as they are, except that a missing display name is filled in. Anyone removed since the last import who is still in the file comes back.
+      nothing_new: The file adds no new members and fills in no display names.
+      named: '{count, plural, one {One member on the list gets the display name from the file:} other {# members on the list get the display name from the file:}}'
       existing: '{count, plural, one {One entry is already on the list and stays as it is.} other {# entries are already on the list and stay as they are.}}'
       problems: '{count, plural, one {This line is skipped:} other {These # lines are skipped:}}'
       confirm: Yes, import
@@ -273,6 +275,9 @@ admin:
       edit_title: Edit member
       name: Name
       name_placeholder: First and last name
+      display_name: Display name (optional)
+      display_name_placeholder: e.g. Anna M.
+      display_name_help: Shown in name lists instead of the full name. Left empty, the lists show the full name.
       email: Email address ({brand} account)
       email_placeholder: 'first.last@{domain}'
       email2: Another email address (optional)

@@ -27,9 +27,9 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 /**
  * Replaces all data with the sample choir of the reference mockup: 25 invented members in nine
- * voice groups, some with a second address and with board or admin roles, and the mockup's polls
- * with their ballots and delegations. The settings return to their defaults. Dates are relative
- * to today, so the sample never goes stale.
+ * voice groups, some with a second address, a display name, or board or admin roles, and the
+ * mockup's polls with their ballots and delegations. The settings return to their defaults.
+ * Dates are relative to today, so the sample never goes stale.
  */
 #[AsCommand('seed:demo', 'Replace all data with sample data (development only).')]
 final class SeedDemoCommand extends DatabaseCommand
@@ -38,9 +38,10 @@ final class SeedDemoCommand extends DatabaseCommand
     private const PRIVATE_DOMAIN = 'example.net';
 
     /**
-     * Name, voice group (null for the director's group), and options. 'private' adds a second address.
+     * Name, voice group (null for the director's group), and options. 'private' adds a second
+     * address, 'display' a display name.
      *
-     * @var list<array{string, string|null, array{admin?: bool, board?: bool, private?: bool}}>
+     * @var list<array{string, string|null, array{admin?: bool, board?: bool, private?: bool, display?: string}}>
      */
     private const MEMBERS = [
         ['Mara Kessler', 'S1', ['admin' => true, 'board' => true, 'private' => true]],
@@ -50,11 +51,11 @@ final class SeedDemoCommand extends DatabaseCommand
         ['Pia Lechner', 'S2', []],
         ['Jana Wirth', 'S2', []],
         ['Ella Moser', 'S2', []],
-        ['Tilda Ebert', 'A1', []],
+        ['Tilda Ebert', 'A1', ['display' => 'Tilda E.']],
         ['Rosa Kühn', 'A1', []],
         ['Frieda Haas', 'A1', []],
         ['Emma Pohl', 'A2', ['private' => true]],
-        ['Lotte Brenner', 'A2', []],
+        ['Charlotte Brenner-Waldheim', 'A2', ['display' => 'Lotte B.']],
         ['Hedi Graf', 'A2', []],
         ['Jonas Falk', 'T1', ['admin' => true, 'board' => true]],
         ['Theo Reinhardt', 'T1', []],
@@ -114,7 +115,7 @@ final class SeedDemoCommand extends DatabaseCommand
             if ($options['private'] ?? false) {
                 $emails[] = $local . '@' . self::PRIVATE_DOMAIN;
             }
-            $ids[] = $members->add($name, $emails, $group ?? $groups[0]->key, $options['board'] ?? false, $options['admin'] ?? false);
+            $ids[] = $members->add($name, $emails, $group ?? $groups[0]->key, $options['board'] ?? false, $options['admin'] ?? false, $options['display'] ?? null);
         }
 
         $pollCount = $this->seedPolls($config, $polls, $ids);

@@ -29,6 +29,7 @@ final readonly class MemberForm
         public ?string $group,
         public bool $board,
         public bool $admin,
+        public string $displayName,
         public ?string $errorField = null,
         public ?string $errorKey = null,
         public array $errorParams = [],
@@ -37,7 +38,7 @@ final readonly class MemberForm
     /** An empty form for a new member, in the first voice group. */
     public static function blank(?string $firstGroup): self
     {
-        return new self(null, '', '', '', $firstGroup, false, false);
+        return new self(null, '', '', '', $firstGroup, false, false, '');
     }
 
     /**
@@ -45,7 +46,7 @@ final readonly class MemberForm
      */
     public static function of(Member $member, array $emails): self
     {
-        return new self($member->id, $member->name, $emails[0] ?? '', $emails[1] ?? '', $member->voiceGroupKey, $member->isBoard, $member->isAdmin);
+        return new self($member->id, $member->name, $emails[0] ?? '', $emails[1] ?? '', $member->voiceGroupKey, $member->isBoard, $member->isAdmin, $member->displayName ?? '');
     }
 
     /**
@@ -64,6 +65,7 @@ final readonly class MemberForm
             $group === '' ? null : $group,
             $text('board') === '1',
             $text('admin') === '1',
+            $text('display_name'),
         );
     }
 
@@ -96,6 +98,6 @@ final readonly class MemberForm
      */
     private function withError(string $field, string $messageKey, array $params = []): self
     {
-        return new self($this->memberId, $this->name, $this->email, $this->email2, $this->group, $this->board, $this->admin, $field, $messageKey, $params);
+        return new self($this->memberId, $this->name, $this->email, $this->email2, $this->group, $this->board, $this->admin, $this->displayName, $field, $messageKey, $params);
     }
 }

@@ -5,8 +5,9 @@ declare(strict_types=1);
 namespace ShowOfHands\Domain;
 
 /**
- * The name and sign-in addresses an admin enters for a member. A member needs a name and at
- * least one valid address. The second address is optional and must differ from the first.
+ * The name, display name, and sign-in addresses an admin enters for a member. A member needs a
+ * name and at least one valid address. The display name and the second address are optional, and
+ * the second address must differ from the first.
  */
 final readonly class MemberDetails
 {
@@ -16,14 +17,16 @@ final readonly class MemberDetails
     private function __construct(
         public string $name,
         public array $emails,
+        public ?string $displayName,
     ) {}
 
     /**
      * An empty first field with a filled second one makes the second address the first.
      */
-    public static function parse(string $name, string $email, string $secondEmail): self|MemberDetailsError
+    public static function parse(string $name, string $email, string $secondEmail, string $displayName): self|MemberDetailsError
     {
         $name = trim($name);
+        $displayName = trim($displayName);
         if ($name === '') {
             return MemberDetailsError::NameMissing;
         }
@@ -45,6 +48,6 @@ final readonly class MemberDetails
             return MemberDetailsError::SameAddresses;
         }
 
-        return new self($name, $emails);
+        return new self($name, $emails, $displayName === '' ? null : $displayName);
     }
 }

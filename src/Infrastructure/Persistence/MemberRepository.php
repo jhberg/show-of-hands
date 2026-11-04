@@ -13,7 +13,7 @@ use ShowOfHands\Infrastructure\Database\Transaction;
  */
 final readonly class MemberRepository
 {
-    private const COLUMNS = 'm.id, m.name, m.voice_group_key, m.is_board, m.is_admin, m.locale, m.is_active';
+    private const COLUMNS = 'm.id, m.name, m.voice_group_key, m.is_board, m.is_admin, m.locale, m.is_active, m.display_name';
 
     public function __construct(private \PDO $pdo) {}
 
@@ -62,17 +62,17 @@ final readonly class MemberRepository
     }
 
     /**
-     * Every member, in voice group order, then by name.
+     * Every member, in voice group order, then by shown name, as the name lists show them.
      *
      * @return list<Member>
      */
     public function all(string $locale): array
     {
-        return array_column($this->allWithEmails($locale), 'member');
+        return array_column($this->sorted($locale, static fn(Member $member): string => $member->shownName()), 'member');
     }
 
     /**
-     * The eligible voters: every active member, in voice group order, then by name.
+     * The eligible voters: every active member, in voice group order, then by shown name.
      *
      * @return list<Member>
      */
@@ -82,11 +82,22 @@ final readonly class MemberRepository
     }
 
     /**
-     * Every member with their addresses, in voice group order, then by name.
+     * Every member with their addresses, in voice group order, then by full name, as the admin
+     * area's member list shows them.
      *
      * @return list<array{member: Member, emails: list<string>}>
      */
     public function allWithEmails(string $locale): array
+    {
+        return $this->sorted($locale, static fn(Member $member): string => $member->name);
+    }
+
+    /**
+     * @param \Closure(Member): string $name the name the order follows within a voice group
+     *
+     * @return list<array{member: Member, emails: list<string>}>
+     */
+    private function sorted(string $locale, \Closure $name): array
     {
         $statement = $this->pdo->query(
             'SELECT ' . self::COLUMNS . ', e.email, coalesce(g.position, 999999) AS group_position
@@ -107,7 +118,7 @@ final readonly class MemberRepository
         }
         $collator = new \Collator($locale);
         usort($members, static fn(array $a, array $b): int => $a['position'] <=> $b['position']
-            ?: (int) $collator->compare($a['member']->name, $b['member']->name));
+            ?: (int) $collator->compare($name($a['member']), $name($b['member'])));
 
         return array_map(static fn(array $entry): array => ['member' => $entry['member'], 'emails' => $entry['emails']], $members);
     }
@@ -135,6 +146,11 @@ final readonly class MemberRepository
         $this->pdo->prepare('UPDATE members SET is_active = ? WHERE id = ?')->execute([(int) $active, $id]);
     }
 
+    public function setDisplayName(int $id, ?string $displayName): void
+    {
+        $this->pdo->prepare('UPDATE members SET display_name = ? WHERE id = ?')->execute([$displayName, $id]);
+    }
+
     public function isEmpty(): bool
     {
         return $this->count() === 0;
@@ -145,14 +161,14 @@ final readonly class MemberRepository
      *
      * @throws DuplicateEmailException when another member already uses one of the addresses
      */
-    public function add(string $name, array $emails, ?string $voiceGroupKey, bool $isBoard, bool $isAdmin): int
+    public function add(string $name, array $emails, ?string $voiceGroupKey, bool $isBoard, bool $isAdmin, ?string $displayName = null): int
     {
         self::assertAddressCount($emails);
 
-        return Transaction::immediate($this->pdo, function () use ($name, $emails, $voiceGroupKey, $isBoard, $isAdmin): int {
+        return Transaction::immediate($this->pdo, function () use ($name, $emails, $voiceGroupKey, $isBoard, $isAdmin, $displayName): int {
             $this->assertAddressesFree($emails, null);
 
-            return $this->insert($name, $emails, $voiceGroupKey, $isBoard, $isAdmin);
+            return $this->insert($name, $emails, $voiceGroupKey, $isBoard, $isAdmin, true, $displayName);
         });
     }
 
@@ -162,11 +178,11 @@ final readonly class MemberRepository
      *
      * @param list<string> $emails normalized addresses, the first one first
      */
-    public function insert(string $name, array $emails, ?string $voiceGroupKey, bool $isBoard, bool $isAdmin, bool $isActive = true): int
+    public function insert(string $name, array $emails, ?string $voiceGroupKey, bool $isBoard, bool $isAdmin, bool $isActive, ?string $displayName): int
     {
         self::assertAddressCount($emails);
-        $this->pdo->prepare('INSERT INTO members (name, voice_group_key, is_board, is_admin, is_active) VALUES (?, ?, ?, ?, ?)')
-            ->execute([$name, $voiceGroupKey, (int) $isBoard, (int) $isAdmin, (int) $isActive]);
+        $this->pdo->prepare('INSERT INTO members (name, display_name, voice_group_key, is_board, is_admin, is_active) VALUES (?, ?, ?, ?, ?, ?)')
+            ->execute([$name, $displayName, $voiceGroupKey, (int) $isBoard, (int) $isAdmin, (int) $isActive]);
         $id = (int) $this->pdo->lastInsertId();
         $this->insertEmails($id, $emails);
 
@@ -174,7 +190,7 @@ final readonly class MemberRepository
     }
 
     /**
-     * Replaces the member's name, addresses, group, and roles.
+     * Replaces the member's name, display name, addresses, group, and roles.
      *
      * @param list<string> $emails normalized addresses, the first one first
      *
@@ -182,13 +198,13 @@ final readonly class MemberRepository
      *
      * @throws DuplicateEmailException when another member already uses one of the addresses
      */
-    public function update(int $id, string $name, array $emails, ?string $voiceGroupKey, bool $isBoard, bool $isAdmin): bool
+    public function update(int $id, string $name, array $emails, ?string $voiceGroupKey, bool $isBoard, bool $isAdmin, ?string $displayName): bool
     {
         self::assertAddressCount($emails);
 
-        return Transaction::immediate($this->pdo, function () use ($id, $name, $emails, $voiceGroupKey, $isBoard, $isAdmin): bool {
-            $update = $this->pdo->prepare('UPDATE members SET name = ?, voice_group_key = ?, is_board = ?, is_admin = ? WHERE id = ?');
-            $update->execute([$name, $voiceGroupKey, (int) $isBoard, (int) $isAdmin, $id]);
+        return Transaction::immediate($this->pdo, function () use ($id, $name, $emails, $voiceGroupKey, $isBoard, $isAdmin, $displayName): bool {
+            $update = $this->pdo->prepare('UPDATE members SET name = ?, display_name = ?, voice_group_key = ?, is_board = ?, is_admin = ? WHERE id = ?');
+            $update->execute([$name, $displayName, $voiceGroupKey, (int) $isBoard, (int) $isAdmin, $id]);
             if ($update->rowCount() === 0) {
                 return false;
             }
@@ -272,6 +288,7 @@ final readonly class MemberRepository
             isAdmin: Row::int($row, 'is_admin') === 1,
             locale: Row::nullableString($row, 'locale'),
             isActive: Row::int($row, 'is_active') === 1,
+            displayName: Row::nullableString($row, 'display_name'),
         );
     }
 }

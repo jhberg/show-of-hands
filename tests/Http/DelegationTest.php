@@ -56,6 +56,26 @@ final class DelegationTest extends HttpTestCase
         return $this->service(DelegationRepository::class);
     }
 
+    public function testDelegationsNameMembersByTheirDisplayName(): void
+    {
+        $zoe = $this->addMember('Zoe Example', ['zoe@example.org'], group: 'S1', displayName: 'Zo E.');
+        $this->addMember('Pia Example', ['pia@example.org'], group: 'S1', displayName: 'Pia E.');
+        $this->signIn('pia@example.org');
+
+        self::assertStringContainsString("<option value=\"{$zoe}\">Zo E. (Sopran 1)</option>", $this->page('?delegate=1'));
+
+        $this->send('/delegation', ['to' => (string) $zoe]);
+        self::assertSame(['key' => 'toast.delegation.done', 'params' => ['name' => 'Zo E.'], 'page' => "/polls/{$this->poll}"], $this->session->get('flash'));
+        $html = $this->page();
+        self::assertStringContainsString('<b>Du hast deine Stimme an Zo E. übertragen.</b>', $html);
+        self::assertMatchesRegularExpression('#<span>Pia E\.</span><svg.*?</svg><span>Zo E\.</span>#s', $html);
+        self::assertStringContainsString('<span class="chip mine">Übertragen an Zo</span>', $this->body($this->request('GET', '/')));
+
+        $this->signIn('zoe@example.org');
+        self::assertStringContainsString('Pia E. hat dir die Stimme übertragen.', $this->page());
+        self::assertStringNotContainsString('Example', (string) preg_replace('#.*<ul class="dlist">(.*?)</ul>.*#s', '$1', $this->page()));
+    }
+
     public function testTheToggleOpensThePanelWithTheMembersTheVoteCanGoTo(): void
     {
         $this->service(BallotRepository::class)->cast($this->poll, $this->lou, Choice::Yes);

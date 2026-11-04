@@ -45,7 +45,7 @@ final readonly class AdminMemberSaveAction
         $body = $request->getParsedBody();
         $body = is_array($body) ? $body : [];
         $form = MemberForm::fromBody($body, $id);
-        $details = MemberDetails::parse($form->name, $form->email, $form->email2);
+        $details = MemberDetails::parse($form->name, $form->email, $form->email2, $form->displayName);
         if (!$details instanceof MemberDetails) {
             return $this->page->show($request, $response, $actor, '', $form->refused($details), status: 422);
         }
@@ -65,8 +65,8 @@ final readonly class AdminMemberSaveAction
 
         try {
             if ($id === null) {
-                $this->members->add($details->name, $details->emails, $group, $form->board, $admin);
-            } elseif (!$this->members->update($id, $details->name, $details->emails, $group, $form->board, $admin)) {
+                $this->members->add($details->name, $details->emails, $group, $form->board, $admin, $details->displayName);
+            } elseif (!$this->members->update($id, $details->name, $details->emails, $group, $form->board, $admin, $details->displayName)) {
                 throw new HttpNotFoundException($request);
             }
         } catch (DuplicateEmailException $e) {
