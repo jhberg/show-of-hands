@@ -149,7 +149,7 @@ final readonly class PollPage
         $locale = $this->translator->getLocale();
         $showNames = $member->isBoard || $member->isAdmin || $this->settings->showOpenNames();
         if ($poll->isOpen()) {
-            $members = $this->members->all($locale);
+            $members = $this->members->eligible($locale);
             $participantIds = $this->ballots->participantIds($poll->id);
             $delegations = $this->delegations->forPoll($poll->id);
             $turnout = Turnout::of($members, $participantIds, $delegations);
@@ -175,7 +175,7 @@ final readonly class PollPage
             }
         }
         $delegation = null;
-        if ($poll->isOpen() && $recipient === null && $senders === [] && $this->settings->delegationEnabled()) {
+        if ($poll->isOpen() && $member->isActive && $recipient === null && $senders === [] && $this->settings->delegationEnabled()) {
             $delegation = $this->delegationBlock($groups, $members, $member, $delegations, array_flip($participantIds), $showNames, $delegationOpen);
         }
 

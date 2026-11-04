@@ -65,6 +65,7 @@ toast:
     refused: The vote could not be delegated like this. The page now shows where things stand.
     revoked: Delegation taken back. Your vote is yours again.
   poll_closed: This poll is already closed.
+  inactive: You are inactive for now and do not vote.
   close_done: Poll closed. The result is now visible.
   poll:
     name_missing: Please enter the name.
@@ -89,6 +90,10 @@ toast:
     removed: '{name} removed.'
     remove_tomorrow: '{name} took part in a poll closed today. You can remove them from tomorrow.'
     remove_after_reopened: '{name} took part in a reopened poll. You can remove them from the day after it closes.'
+    deactivated: '{name} is now inactive and no longer an eligible voter.'
+    activated: '{name} is active again and an eligible voter.'
+    deactivate_after_close: '{name} took part in an open poll. You can set them inactive once it closes.'
+    deactivate_tomorrow: '{name} took part in a poll closed today. You can set them inactive from tomorrow.'
     imported: '{count, plural, =0 {No new members imported.} one {One member imported.} other {# members imported.}}'
     imported_with_problems: '{count, plural, =0 {No new members imported} one {One member imported} other {# members imported}}, {problems, plural, one {one line skipped.} other {# lines skipped.}}'
     import_missing: '{file} is no longer there.'
@@ -114,6 +119,7 @@ home:
   voted: Voted
   not_voted: Not voted yet
   delegated: Delegated to {name}
+  inactive: Inactive
 
 poll:
   back: All polls
@@ -162,6 +168,9 @@ ballot:
   weight:
     title: You vote with {weight} voting rights.
     text: '{count, plural, one {{names} has delegated their vote to you.} other {{names} have delegated their votes to you.}} Your decision counts {weight} times while the delegation stands.'
+  inactive:
+    title: You are inactive for now.
+    text: You are not an eligible voter, so you do not vote. The admins can set you active again.
 
 delegation:
   toggle: Delegate your vote to another member
@@ -223,6 +232,7 @@ admin:
       eligible: '{count, plural, one {eligible voter} other {eligible voters}}'
       board: on the board
       admin: with admin access
+      inactive: inactive
     search_label: Search members
     search_placeholder: Search by name or email
     you: you
@@ -233,6 +243,9 @@ admin:
     remove_confirm: Yes, remove
     cancel: Cancel
     no_match: No matches.
+    inactive: inactive
+    deactivate: Set inactive
+    activate: Set active
     import:
       title: Import members from a file
       missing: 'You can also import members from a file. Put {file} into the config folder, next to config.php. The template members.example.csv shows the columns.'

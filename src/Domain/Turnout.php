@@ -11,7 +11,7 @@ namespace ShowOfHands\Domain;
 final readonly class Turnout
 {
     /**
-     * @param int $eligible every member, each with one voting right
+     * @param int $eligible every active member, each with one voting right
      * @param int $castWeight the voting rights cast so far: each ballot with the votes handed to its member
      * @param int $voted the members with a ballot
      * @param list<Member> $missing the members without a ballot who kept their vote, in voice group order, then by name
@@ -28,7 +28,7 @@ final readonly class Turnout
     /**
      * A delegated vote counts as cast only once its recipient has voted.
      *
-     * @param list<Member> $members every member, in voice group order, then by name
+     * @param list<Member> $members the eligible voters, in voice group order, then by name
      * @param list<int> $participantIds the members who have voted
      */
     public static function of(array $members, array $participantIds, Delegations $delegations = new Delegations()): self

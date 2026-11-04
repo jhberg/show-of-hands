@@ -74,7 +74,7 @@ final readonly class AdminPollsPage
             ];
             if ($poll->isOpen()) {
                 // Only the counts matter here, so the order does not.
-                $members ??= $this->members->all('root');
+                $members ??= $this->members->eligible('root');
                 $turnout = $this->liveTurnout($poll, $members);
                 $row['cast'] = $turnout->castWeight;
                 $row['total'] = $turnout->eligible;
@@ -190,7 +190,8 @@ final readonly class AdminPollsPage
         $locale = $this->translator->getLocale();
         if ($poll->isOpen()) {
             $members = $this->members->all($locale);
-            $turnout = $this->liveTurnout($poll, $members);
+            $turnout = $this->liveTurnout($poll, Member::eligibleOf($members));
+            // An inactive board member may still close the poll.
             $data['board_names'] = array_values(array_map(
                 static fn(Member $member): string => $member->firstName(),
                 array_filter($members, static fn(Member $member): bool => $member->isBoard),
@@ -208,7 +209,7 @@ final readonly class AdminPollsPage
     /**
      * Who has voted in an open poll. It reads turnout and delegations, never a ballot.
      *
-     * @param list<Member> $members every member, in voice group order, then by name
+     * @param list<Member> $members the eligible voters, in voice group order, then by name
      */
     private function liveTurnout(Poll $poll, array $members): Turnout
     {

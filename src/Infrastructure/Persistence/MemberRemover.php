@@ -38,7 +38,7 @@ final readonly class MemberRemover
             if ($member === null) {
                 return null;
             }
-            foreach ($this->countedPollsTakenPartIn($memberId) as $closedAt) {
+            foreach (PollsTakenPart::closings($this->pdo, $memberId, neverClosed: false) as $closedAt) {
                 if ($closedAt === null) {
                     throw new RemovalTooSoonException($memberId, reopened: true);
                 }
@@ -56,31 +56,5 @@ final readonly class MemberRemover
 
             return $member;
         });
-    }
-
-    /**
-     * The polls counted once already, closed or reopened, in which the member voted, delegated, or
-     * received a vote: when each closed, or null for a reopened poll that is open again. Turnout
-     * and delegations tell this; the ballots are not read.
-     *
-     * @return list<string|null>
-     */
-    private function countedPollsTakenPartIn(int $memberId): array
-    {
-        $statement = $this->pdo->prepare(
-            'SELECT CASE WHEN status = ? THEN closed_at END AS closed_at FROM polls p
-             WHERE (status = ? OR (status = ? AND reopen_count > 0)) AND (
-                EXISTS (SELECT 1 FROM participation WHERE poll_id = p.id AND member_id = ?)
-                OR EXISTS (SELECT 1 FROM delegations WHERE poll_id = p.id AND (from_member_id = ? OR to_member_id = ?))
-            )',
-        );
-        $statement->execute([PollStatus::Closed->value, PollStatus::Closed->value, PollStatus::Open->value, $memberId, $memberId, $memberId]);
-        $polls = [];
-        foreach ($statement->fetchAll() as $row) {
-            assert(is_array($row));
-            $polls[] = Row::nullableString($row, 'closed_at');
-        }
-
-        return $polls;
     }
 }

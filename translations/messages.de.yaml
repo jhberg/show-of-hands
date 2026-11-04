@@ -65,6 +65,7 @@ toast:
     refused: Die Übertragung ist so nicht möglich. Die Seite zeigt jetzt den aktuellen Stand.
     revoked: Übertragung zurückgenommen. Dein Stimmrecht liegt wieder bei dir.
   poll_closed: Die Abstimmung ist bereits abgeschlossen.
+  inactive: Du bist zurzeit inaktiv und stimmst nicht mit ab.
   close_done: Abstimmung abgeschlossen. Das Ergebnis ist jetzt sichtbar.
   poll:
     name_missing: Bitte den Namen eintragen.
@@ -89,6 +90,10 @@ toast:
     removed: '{name} entfernt.'
     remove_tomorrow: '{name} hat an einer heute abgeschlossenen Abstimmung teilgenommen und kann erst ab morgen entfernt werden.'
     remove_after_reopened: '{name} hat an einer wieder geöffneten Abstimmung teilgenommen und kann erst ab dem Tag nach ihrem Abschluss entfernt werden.'
+    deactivated: '{name} ist jetzt inaktiv und zählt nicht mehr zu den Stimmberechtigten.'
+    activated: '{name} ist wieder aktiv und stimmberechtigt.'
+    deactivate_after_close: '{name} hat an einer offenen Abstimmung teilgenommen und kann erst nach ihrem Abschluss inaktiv gesetzt werden.'
+    deactivate_tomorrow: '{name} hat an einer heute abgeschlossenen Abstimmung teilgenommen und kann erst ab morgen inaktiv gesetzt werden.'
     imported: '{count, plural, =0 {Keine neuen Mitglieder eingelesen.} one {Ein Mitglied eingelesen.} other {# Mitglieder eingelesen.}}'
     imported_with_problems: '{count, plural, =0 {Keine neuen Mitglieder eingelesen} one {Ein Mitglied eingelesen} other {# Mitglieder eingelesen}}, {problems, plural, one {eine Zeile übersprungen.} other {# Zeilen übersprungen.}}'
     import_missing: '{file} liegt nicht mehr bereit.'
@@ -114,6 +119,7 @@ home:
   voted: Abgestimmt
   not_voted: Noch nicht abgestimmt
   delegated: Übertragen an {name}
+  inactive: Inaktiv
 
 poll:
   back: Alle Abstimmungen
@@ -162,6 +168,9 @@ ballot:
   weight:
     title: Du stimmst mit {weight} Stimmrechten.
     text: '{count, plural, one {{names} hat dir die Stimme übertragen.} other {{names} haben dir die Stimmen übertragen.}} Deine Entscheidung zählt {weight}-fach, solange die Übertragung besteht.'
+  inactive:
+    title: Du bist zurzeit inaktiv.
+    text: Du zählst nicht zu den Stimmberechtigten und stimmst deshalb nicht mit ab. Die Verwaltung kann dich wieder aktiv setzen.
 
 delegation:
   toggle: Stimme an ein anderes Mitglied übertragen
@@ -223,6 +232,7 @@ admin:
       eligible: Stimmberechtigte
       board: im Vorstand
       admin: mit Verwaltungszugang
+      inactive: inaktiv
     search_label: Mitglieder durchsuchen
     search_placeholder: Name oder E-Mail suchen
     you: du
@@ -233,6 +243,9 @@ admin:
     remove_confirm: Ja, entfernen
     cancel: Abbrechen
     no_match: Keine Treffer.
+    inactive: inaktiv
+    deactivate: Inaktiv setzen
+    activate: Aktiv setzen
     import:
       title: Mitglieder aus Datei
       missing: 'Mitglieder lassen sich auch aus einer Datei einlesen. Lege dazu {file} in den Ordner config neben config.php. Die Vorlage members.example.csv zeigt die Spalten.'

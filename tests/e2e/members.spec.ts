@@ -53,6 +53,13 @@ test('an admin adds, finds, edits, and removes a member', async ({ page }, testI
   await expect(row).toContainText('Bass 2');
   await expect(row).toContainText('Vorstand');
 
+  await row.getByRole('button', { name: 'Inaktiv setzen' }).click();
+  await expect(page.getByRole('status')).toHaveText(`${name} ist jetzt inaktiv und zählt nicht mehr zu den Stimmberechtigten.`);
+  await expect(row).toContainText('inaktiv');
+  await row.getByRole('button', { name: 'Aktiv setzen' }).click();
+  await expect(page.getByRole('status')).toHaveText(`${name} ist wieder aktiv und stimmberechtigt.`);
+  await expect(row.getByRole('button', { name: 'Inaktiv setzen' })).toBeVisible();
+
   await row.getByRole('link', { name: 'Entfernen' }).click();
   await expect(row).toContainText(`${name} entfernen?`);
   const confirm = page.getByRole('button', { name: 'Ja, entfernen' });

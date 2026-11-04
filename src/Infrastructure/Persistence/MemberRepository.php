@@ -13,7 +13,7 @@ use ShowOfHands\Infrastructure\Database\Transaction;
  */
 final readonly class MemberRepository
 {
-    private const COLUMNS = 'm.id, m.name, m.voice_group_key, m.is_board, m.is_admin, m.locale';
+    private const COLUMNS = 'm.id, m.name, m.voice_group_key, m.is_board, m.is_admin, m.locale, m.is_active';
 
     public function __construct(private \PDO $pdo) {}
 
@@ -72,6 +72,16 @@ final readonly class MemberRepository
     }
 
     /**
+     * The eligible voters: every active member, in voice group order, then by name.
+     *
+     * @return list<Member>
+     */
+    public function eligible(string $locale): array
+    {
+        return Member::eligibleOf($this->all($locale));
+    }
+
+    /**
      * Every member with their addresses, in voice group order, then by name.
      *
      * @return list<array{member: Member, emails: list<string>}>
@@ -107,6 +117,22 @@ final readonly class MemberRepository
         $statement = $this->pdo->query('SELECT COUNT(*) FROM members');
 
         return $statement === false ? 0 : (int) $statement->fetchColumn();
+    }
+
+    public function countEligible(): int
+    {
+        $statement = $this->pdo->query('SELECT COUNT(*) FROM members WHERE is_active = 1');
+
+        return $statement === false ? 0 : (int) $statement->fetchColumn();
+    }
+
+    /**
+     * Sets the member active or inactive. The caller checks first, inside its transaction, that
+     * the change alters no poll counted with them.
+     */
+    public function setActive(int $id, bool $active): void
+    {
+        $this->pdo->prepare('UPDATE members SET is_active = ? WHERE id = ?')->execute([(int) $active, $id]);
     }
 
     public function isEmpty(): bool
@@ -245,6 +271,7 @@ final readonly class MemberRepository
             isBoard: Row::int($row, 'is_board') === 1,
             isAdmin: Row::int($row, 'is_admin') === 1,
             locale: Row::nullableString($row, 'locale'),
+            isActive: Row::int($row, 'is_active') === 1,
         );
     }
 }

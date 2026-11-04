@@ -9,6 +9,7 @@ use Psr\Http\Message\ServerRequestInterface;
 use ShowOfHands\Http\Middleware\MemberMiddleware;
 use ShowOfHands\Http\PollPage;
 use ShowOfHands\Infrastructure\Persistence\DelegationRepository;
+use ShowOfHands\Infrastructure\Persistence\MemberInactiveException;
 use ShowOfHands\Infrastructure\Persistence\MemberRepository;
 use ShowOfHands\Infrastructure\Persistence\PollNotOpenException;
 use ShowOfHands\Infrastructure\Persistence\PollRepository;
@@ -52,6 +53,8 @@ final readonly class DelegationAction
             }
         } catch (PollNotOpenException) {
             return $this->page->answer($request, $response, $poll, $member, 'toast.poll_closed');
+        } catch (MemberInactiveException) {
+            return $this->page->answer($request, $response, $poll, $member, 'toast.inactive');
         }
         $recipient = $this->members->find($to);
         assert($recipient !== null);

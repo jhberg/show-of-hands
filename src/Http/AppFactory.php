@@ -10,6 +10,7 @@ use DI\Container;
 use DI\ContainerBuilder;
 use Psr\Http\Message\ResponseFactoryInterface;
 use ShowOfHands\Domain\BallotToken;
+use ShowOfHands\Http\Action\AdminMemberActiveAction;
 use ShowOfHands\Http\Action\AdminMemberDeleteAction;
 use ShowOfHands\Http\Action\AdminMemberImportAction;
 use ShowOfHands\Http\Action\AdminMembersAction;
@@ -127,6 +128,7 @@ final class AppFactory
                 $admin->post('/members', AdminMemberSaveAction::class);
                 $admin->post('/members/import', AdminMemberImportAction::class);
                 $admin->post('/members/{id:[0-9]+}', AdminMemberSaveAction::class);
+                $admin->post('/members/{id:[0-9]+}/active', AdminMemberActiveAction::class);
                 $admin->post('/members/{id:[0-9]+}/delete', AdminMemberDeleteAction::class);
                 $admin->get('/settings', AdminSettingsAction::class);
                 $admin->post('/settings', AdminSettingsSaveAction::class);

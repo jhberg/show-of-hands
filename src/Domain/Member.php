@@ -5,7 +5,8 @@ declare(strict_types=1);
 namespace ShowOfHands\Domain;
 
 /**
- * A person on the member list. The list is also the access list: only members can sign in.
+ * A person on the member list. The list is also the access list: only members can sign in. An
+ * inactive member keeps signing in, but is no eligible voter until they are active again.
  */
 final readonly class Member
 {
@@ -16,7 +17,20 @@ final readonly class Member
         public bool $isBoard,
         public bool $isAdmin,
         public ?string $locale = null,
+        public bool $isActive = true,
     ) {}
+
+    /**
+     * The eligible voters among the given members: the active ones, in the given order.
+     *
+     * @param list<Member> $members
+     *
+     * @return list<Member>
+     */
+    public static function eligibleOf(array $members): array
+    {
+        return array_values(array_filter($members, static fn(self $member): bool => $member->isActive));
+    }
 
     public function firstName(): string
     {

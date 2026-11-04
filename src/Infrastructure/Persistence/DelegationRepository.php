@@ -22,15 +22,17 @@ final readonly class DelegationRepository
 
     /**
      * Hands $from's vote in the poll to $to and withdraws $from's own ballot. Returns why it
-     * cannot, or null once it is done.
+     * cannot, or null once it is done. Only active members hand their vote on or receive one.
      *
      * @throws PollNotOpenException
+     * @throws MemberInactiveException
      */
     public function delegate(int $pollId, int $from, int $to): ?DelegationRefusal
     {
         return Transaction::immediate($this->pdo, function () use ($pollId, $from, $to): ?DelegationRefusal {
             OpenPoll::require($this->pdo, $pollId);
-            $member = $this->pdo->prepare('SELECT 1 FROM members WHERE id = ?');
+            ActiveMember::require($this->pdo, $from);
+            $member = $this->pdo->prepare('SELECT 1 FROM members WHERE id = ? AND is_active = 1');
             $member->execute([$to]);
             if ($member->fetchColumn() === false) {
                 return DelegationRefusal::UnknownTarget;

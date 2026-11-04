@@ -91,7 +91,7 @@ final readonly class SettingsPage
      */
     private function data(VoiceGroupForm $form): array
     {
-        $eligible = $this->members->count();
+        $eligible = $this->members->countEligible();
         $settings = $this->settings->all();
 
         return [
