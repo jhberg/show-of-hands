@@ -1,10 +1,11 @@
 import { expect, test, type Page } from '@playwright/test';
 
 // Members from bin/console seed:demo who take no part in "Mila Sandberg" (poll 2). The journey
-// only looks, so it changes nothing that other journeys count.
+// only looks, so it changes nothing that other journeys count. It runs after the journeys that
+// vote on poll 2 (see playwright.config.ts), since their votes would bring a new <main>.
 const WATCHERS = {
-  phone: 'pia.lechner@example.org',
-  desktop: 'jana.wirth@example.org',
+  'live-phone': 'pia.lechner@example.org',
+  'live-desktop': 'jana.wirth@example.org',
 };
 
 async function signIn(page: Page, email: string) {
