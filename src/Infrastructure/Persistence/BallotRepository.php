@@ -30,14 +30,17 @@ final readonly class BallotRepository
     /**
      * Records the member's choice and marks them as having voted. A member who had handed their
      * vote on takes it back by voting, which ends the delegation. The poll status is re-read
-     * inside the transaction, so a ballot never commits after the close that froze the tally.
+     * inside the transaction, so a ballot never commits after the close that froze the tally, and
+     * so is the member's status, so an inactive member casts none.
      *
      * @throws PollNotOpenException
+     * @throws MemberInactiveException
      */
     public function cast(int $pollId, int $memberId, Choice $choice): CastResult
     {
         return Transaction::immediate($this->pdo, function () use ($pollId, $memberId, $choice): CastResult {
             OpenPoll::require($this->pdo, $pollId);
+            ActiveMember::require($this->pdo, $memberId);
             $reclaimedFrom = $this->endDelegation($pollId, $memberId);
             $token = $this->tokens->for($pollId, $memberId);
             $outcome = CastOutcome::of($this->choiceByToken($pollId, $token), $choice);

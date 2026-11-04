@@ -19,7 +19,7 @@ final readonly class RollRepository
     /**
      * Stores the turnout at the close. The caller runs it inside the close's transaction.
      *
-     * @param list<Member> $members every member at the close
+     * @param list<Member> $members every eligible voter at the close
      */
     public function write(int $pollId, array $members, Turnout $turnout): void
     {

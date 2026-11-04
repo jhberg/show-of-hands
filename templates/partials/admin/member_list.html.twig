@@ -13,8 +13,16 @@
                 {%- if row.group_label is not null %}<span class="chip">{{ row.group_label }}</span>{% endif %}
                 {%- if listed.isBoard %}<span class="chip open">{{ 'role.board'|trans }}</span>{% endif %}
                 {%- if listed.isAdmin %}<span class="chip closed">{{ 'role.admin'|trans }}</span>{% endif %}
+                {%- if not listed.isActive %}<span class="chip">{{ 'admin.members.inactive'|trans }}</span>{% endif %}
                 {%- set edit_url = '/admin/members?' ~ search|merge({edit: listed.id})|url_encode %}
                 <a class="btn sm" id="m-{{ listed.id }}-edit" href="{{ edit_url }}#member-form" hx-get="{{ edit_url }}" hx-replace-url="true">{{ 'admin.members.edit'|trans }}</a>
+                {#- Reversible, so it needs no second tap. #}
+                <form method="post" action="/admin/members/{{ listed.id }}/active" hx-post="/admin/members/{{ listed.id }}/active">
+                    {{- include('partials/csrf_field.html.twig') -}}
+                    <input type="hidden" name="q" value="{{ query }}">
+                    <input type="hidden" name="active" value="{{ listed.isActive ? '0' : '1' }}">
+                    <button class="btn sm" id="m-{{ listed.id }}-active">{{ listed.isActive ? 'admin.members.deactivate'|trans : 'admin.members.activate'|trans }}</button>
+                </form>
                 {%- if not is_self %}
                     {%- set delete_url = '/admin/members?' ~ search|merge({delete: listed.id})|url_encode %}
                     <a class="btn sm ghost" id="m-{{ listed.id }}-remove" href="{{ delete_url }}#m-{{ listed.id }}" hx-get="{{ delete_url }}" hx-replace-url="true">{{ 'admin.members.remove'|trans }}</a>

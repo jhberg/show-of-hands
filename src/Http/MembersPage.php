@@ -170,7 +170,8 @@ final readonly class MembersPage
             'list_url' => self::listUrl($query),
             'rows' => $rows,
             'counts' => [
-                'eligible' => count($members),
+                'eligible' => count(array_filter($members, static fn(Member $member): bool => $member->isActive)),
+                'inactive' => count(array_filter($members, static fn(Member $member): bool => !$member->isActive)),
                 'board' => count(array_filter($members, static fn(Member $member): bool => $member->isBoard)),
                 'admin' => count(array_filter($members, static fn(Member $member): bool => $member->isAdmin)),
             ],

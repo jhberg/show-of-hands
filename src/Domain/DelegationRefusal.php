@@ -15,7 +15,7 @@ enum DelegationRefusal
     /** The member chose themselves. */
     case ToSelf;
 
-    /** The chosen member is not on the member list. */
+    /** The chosen member is not on the member list, or is inactive. */
     case UnknownTarget;
 
     /** The chosen member has handed their own vote on, and a delegated vote cannot be passed on. */

@@ -20,6 +20,7 @@
         <b>{{ counts.eligible }}</b> {{ 'admin.members.count.eligible'|trans({count: counts.eligible}) }}
         · <b>{{ counts.board }}</b> {{ 'admin.members.count.board'|trans({count: counts.board}) }}
         · <b>{{ counts.admin }}</b> {{ 'admin.members.count.admin'|trans({count: counts.admin}) }}
+        {%- if counts.inactive > 0 %} · <b>{{ counts.inactive }}</b> {{ 'admin.members.count.inactive'|trans({count: counts.inactive}) }}{% endif %}
     </p>
     {# Enter submits the search without JavaScript. With htmx, typing swaps only the list. #}
     <form class="search" role="search" method="get" action="/admin/members">

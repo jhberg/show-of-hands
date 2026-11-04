@@ -31,6 +31,8 @@
                             {{- lists.title(poll, entry.group_label) -}}
                             {%- if entry.voted -%}
                                 <span class="chip">{{ icon('check') }}{{ 'home.voted'|trans }}</span>
+                            {%- elseif not member.isActive -%}
+                                <span class="chip">{{ 'home.inactive'|trans }}</span>
                             {%- elseif entry.delegated_to is not null -%}
                                 <span class="chip mine">{{ 'home.delegated'|trans({name: entry.delegated_to}) }}</span>
                             {%- else -%}

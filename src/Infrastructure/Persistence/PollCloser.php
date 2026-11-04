@@ -32,7 +32,7 @@ final readonly class PollCloser
             $poll = $this->polls->find($pollId);
             assert($poll !== null);
             // The order is irrelevant here: the snapshot is sorted when it is read.
-            $members = $this->members->all('root');
+            $members = $this->members->eligible('root');
             $turnout = Turnout::of($members, $this->ballots->participantIds($pollId), $this->delegations->forPoll($pollId));
             $received = [];
             foreach ($turnout->delegations as $entry) {

@@ -12,7 +12,7 @@ namespace ShowOfHands\Domain;
 final readonly class Tally
 {
     /**
-     * @param int $eligible every member at the close, each with one voting right
+     * @param int $eligible every active member at the close, each with one voting right
      * @param int $yes the voting rights behind Yes, delegated ones included
      * @param int $no the voting rights behind No, delegated ones included
      * @param int $delegations the delegated votes among them, those whose recipient voted

@@ -12,6 +12,7 @@ use ShowOfHands\Http\Middleware\MemberMiddleware;
 use ShowOfHands\Http\PollPage;
 use ShowOfHands\Http\Redirect;
 use ShowOfHands\Infrastructure\Persistence\BallotRepository;
+use ShowOfHands\Infrastructure\Persistence\MemberInactiveException;
 use ShowOfHands\Infrastructure\Persistence\MemberRepository;
 use ShowOfHands\Infrastructure\Persistence\PollNotOpenException;
 use ShowOfHands\Infrastructure\Persistence\PollRepository;
@@ -61,6 +62,8 @@ final readonly class BallotAction
             }
         } catch (PollNotOpenException) {
             $toastKey = 'toast.poll_closed';
+        } catch (MemberInactiveException) {
+            $toastKey = 'toast.inactive';
         }
 
         return $this->page->answer($request, $response, $poll, $member, $toastKey, $params);
