@@ -33,6 +33,7 @@
                                 {%- if added.group is not null %} · {{ added.group }}{% endif %}
                                 {%- if added.board %} · {{ 'role.board'|trans }}{% endif %}
                                 {%- if added.admin %} · {{ 'role.admin'|trans }}{% endif %}
+                                {%- if added.inactive %} · {{ 'admin.members.inactive'|trans }}{% endif %}
                             </li>
                         {% endfor %}
                     </ul>

@@ -118,6 +118,22 @@ final class MemberImportTest extends HttpTestCase
         self::assertSame('Kim Example', $kim[0]->name);
     }
 
+    public function testAnImportAddsMembersMarkedInactiveAsInactive(): void
+    {
+        $this->signIn('kim@example.org');
+        file_put_contents($this->dataDir . '/members.csv', "name;email;inactive\nKim Example;kim@example.org;x\nLou Example;lou@example.org;x\nPia Example;pia@example.org;\n");
+
+        $preview = $this->body($this->request('GET', '/admin/members?import=1'));
+        self::assertStringContainsString('<b>Lou Example</b> · inaktiv', $preview);
+        self::assertStringNotContainsString('<b>Pia Example</b> · inaktiv', $preview);
+
+        $this->post('/admin/members/import');
+
+        $members = $this->service(MemberRepository::class);
+        $active = static fn(string $email): ?bool => $members->findByEmail($email)[0]->isActive ?? null;
+        self::assertSame([true, false, true], [$active('kim@example.org'), $active('lou@example.org'), $active('pia@example.org')], 'The file never sets a member who exists inactive.');
+    }
+
     public function testAPreviewWithNothingNewOffersNoConfirmation(): void
     {
         $this->writeFile('Kim Example;kim@example.org;;;;');

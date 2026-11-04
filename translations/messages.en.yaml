@@ -268,7 +268,7 @@ admin:
         same_addresses: The two addresses are the same.
         address_repeated: 'The address {value} is already in a line above.'
         group_unknown: 'There is no voice group "{value}".'
-        role_invalid: '"{value}" is neither yes nor no. For a role, enter x or yes, otherwise leave it empty.'
+        flag_invalid: '"{value}" is neither yes nor no. Enter x for yes, or leave it empty.'
     form:
       edit_title: Edit member
       name: Name

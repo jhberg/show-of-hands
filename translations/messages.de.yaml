@@ -268,7 +268,7 @@ admin:
         same_addresses: Die beiden Adressen sind gleich.
         address_repeated: 'Die Adresse {value} steht schon in einer Zeile darüber.'
         group_unknown: 'Die Stimmgruppe „{value}“ gibt es nicht.'
-        role_invalid: '„{value}“ ist weder ja noch nein. Für eine Rolle x oder ja eintragen, sonst leer lassen.'
+        flag_invalid: '„{value}“ ist weder ja noch nein. Für ja ein x eintragen, sonst leer lassen.'
     form:
       edit_title: Mitglied bearbeiten
       name: Name
