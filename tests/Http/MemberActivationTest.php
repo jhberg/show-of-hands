@@ -58,8 +58,9 @@ final class MemberActivationTest extends HttpTestCase
         $html = $this->body($response);
         self::assertStringContainsString('<b>3</b> Stimmberechtigte', $html);
         self::assertStringContainsString(' · <b>1</b> inaktiv', $html);
-        self::assertStringContainsString('<span class="chip">inaktiv</span>', $html);
-        self::assertStringContainsString('<button class="btn sm" id="m-' . $this->lou . '-active">Aktiv setzen</button>', $html);
+        // Inactive leads the pills, before the voice group.
+        self::assertStringContainsString('<span class="tags"><span class="chip">inaktiv</span><span class="chip">Tenor 1</span></span>', $html);
+        self::assertStringContainsString('<button class="btn icon" id="m-' . $this->lou . '-active" aria-label="Aktiv setzen" title="Aktiv setzen"><svg', $html);
         self::assertFalse($this->isActive($this->lou));
     }
 

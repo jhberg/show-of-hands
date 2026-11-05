@@ -62,6 +62,8 @@ code{font-family:var(--mono);font-size:.9em}
 .btn.danger:hover{background:var(--nein-soft)}
 .btn.ghost{border-color:transparent;background:transparent;color:var(--ink-2);padding-left:8px;padding-right:8px}
 .btn.ghost:hover{background:var(--surface-2);color:var(--ink)}
+.btn.ghost.danger{color:var(--nein)}
+.btn.ghost.danger:hover{background:var(--nein-soft)}
 .btn.sm{min-height:36px;padding:6px 12px;font-size:14px}
 .btn.icon{min-height:36px;min-width:36px;padding:6px}
 .btn[disabled]{opacity:.45;cursor:not-allowed}
@@ -213,12 +215,16 @@ section.board .help{max-width:60ch}
 .alist .who b{font-size:17px;display:block}
 .alist .who .meta{font-size:14px;color:var(--ink-2);word-break:break-word;display:block}
 .alist .who .meta code{font-family:var(--mono);font-size:13px}
-.alist .side{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+.alist .side{display:flex;gap:8px 14px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+.alist .tags{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+/* Three fixed slots keep the buttons in columns, also in your own row without the bin. */
+.alist .acts{display:grid;grid-template-columns:repeat(3,36px);gap:4px;margin-left:auto}
 .alist .full{grid-column:1 / -1}
 .alist .drow{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:10px 12px;border-radius:var(--r-s);background:var(--nein-soft);border:1px solid var(--nein-line);font-size:15px}
 /* The mockup's .alist resets the panel's padding, so names touched the border. */
 .alist.panel{padding:4px 18px}
-@media (max-width:520px){.alist li{grid-template-columns:1fr}.alist .side{justify-content:flex-start}}
+/* On the phone the pills go left and the buttons right, below the name. */
+@media (max-width:520px){.alist li{grid-template-columns:1fr}.alist .side{justify-content:space-between}}
 .stat{font-size:15px;color:var(--ink-2)}
 .stat b{color:var(--ink)}
 .glist{list-style:none;padding:0;margin:0;display:grid;gap:6px}
@@ -338,5 +344,6 @@ input[aria-invalid=true]{border-color:var(--nein)}
 @media (pointer:coarse){
   .btn.sm,.btn.icon,.nav a{min-height:44px}
   .btn.icon{min-width:44px}
+  .alist .acts{grid-template-columns:repeat(3,44px)}
   .link{min-height:44px;display:inline-flex;align-items:center}
 }

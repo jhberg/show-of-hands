@@ -76,6 +76,11 @@ final class MembersTest extends HttpTestCase
         self::assertStringContainsString('Kim Example <span class="chip mine">du</span>', $html);
         self::assertStringContainsString('<code>kim@example.net</code>', $html);
         self::assertStringContainsString('<span class="chip">Tenor 1</span>', $html);
+        // The pills read right to left: voice group, admin, board.
+        self::assertStringContainsString('<span class="tags"><span class="chip open">Vorstand</span><span class="chip closed">Verwaltung</span><span class="chip">Sopran 1</span></span>', $html);
+        // The actions are icons that say what they do to screen readers and in a tooltip.
+        self::assertMatchesRegularExpression('#id="m-' . $this->lou . '-edit" href="[^"]+" hx-get="[^"]+" hx-replace-url="true" aria-label="Bearbeiten" title="Bearbeiten"><svg#', $html);
+        self::assertMatchesRegularExpression('#id="m-' . $this->lou . '-remove" href="[^"]+" hx-get="[^"]+" hx-replace-url="true" aria-label="Entfernen" title="Entfernen"><svg#', $html);
         self::assertStringContainsString('<b>3</b> Stimmberechtigte', $html);
         self::assertStringContainsString('<b>2</b> im Vorstand', $html);
         self::assertStringContainsString('<b>1</b> mit Verwaltungszugang', $html);
