@@ -1,8 +1,9 @@
+{# One flag shows the language in use. Pressing it switches to the other language. #}
 {% set names = {de: 'locale.de'|trans, en: 'locale.en'|trans} %}
-<form class="lang" method="post" action="/locale" aria-label="{{ 'locale.label'|trans }}">
+{% set next = locales|filter(code => code != locale)|first %}
+{% set label = 'locale.switch'|trans({current: names[locale], next: names[next]}) %}
+<form class="lang" method="post" action="/locale">
     {{ include('partials/csrf_field.html.twig') }}
     <input type="hidden" name="return" value="{{ current_url }}">
-    {%- for code in locales %}
-        <button class="lang-btn" name="locale" value="{{ code }}" lang="{{ code }}" title="{{ names[code] }}"{% if code == locale %} aria-current="true"{% endif %}>{{ code|upper }}</button>
-    {%- endfor %}
+    <button class="btn ghost icon" name="locale" value="{{ next }}" aria-label="{{ label }}" title="{{ label }}">{{ icon('flag-' ~ locale) }}</button>
 </form>

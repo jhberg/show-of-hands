@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
+import { openAdmin } from './header';
 
 // Runs after every other journey (see playwright.config.ts), because its new polls join the
 // lists the others read. Each device works on polls of its own name.
@@ -22,8 +23,7 @@ test('an admin creates, publishes, and after an accidental close reopens a poll'
   const name = `Noah ${testInfo.project.name}`;
   const toast = page.getByRole('status');
   await signIn(page, ADMIN);
-  await page.getByRole('link', { name: 'Verwaltung' }).click();
-  await expect(page).toHaveURL('/admin/polls');
+  await openAdmin(page, 'Abstimmungen');
   await expect(page.getByRole('link', { name: /^Details\W+Lea Hartwig$/ })).toBeVisible();
   await noViolations(page);
 

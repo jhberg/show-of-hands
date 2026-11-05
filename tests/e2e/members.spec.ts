@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
+import { openAdmin } from './header';
 
 // Runs after the other journeys (see playwright.config.ts), because adding a member changes
 // the eligible count they read. Each project adds and removes a member of its own.
@@ -16,9 +17,7 @@ test('an admin adds, finds, edits, and removes a member', async ({ page }, testI
   const name = `Robin ${device}`;
   const email = `robin.${device}@example.org`;
   await signIn(page, ADMIN);
-  await page.getByRole('link', { name: 'Verwaltung' }).click();
-  await page.getByRole('link', { name: 'Mitglieder' }).click();
-  await expect(page).toHaveURL('/admin/members');
+  await openAdmin(page, 'Mitglieder');
   await expect(page.getByText('Mara Kessler du')).toBeVisible();
 
   await page.getByRole('link', { name: 'Mitglied hinzufügen' }).click();
