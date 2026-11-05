@@ -1,5 +1,6 @@
 // Toasts: the server renders one into #toast, or an htmx response names one in HX-Trigger.
-// The poll page's refresh, the poll form's kind switch, and the copy button of the poll link live here too.
+// The poll page's refresh, the poll form's kind switch, the copy button of the poll link, and the
+// closing of the phone menu live here too.
 (function () {
   'use strict';
   var timer;
@@ -105,5 +106,19 @@
     var current = main.cloneNode(true);
     current.querySelector('[data-live]').removeAttribute('class');
     if (choosing(main) || current.isEqualNode(fresh.content.firstElementChild)) event.detail.shouldSwap = false;
+  });
+
+  // The phone menu is a <details>, so it opens without JavaScript. With it, a tap beside the menu
+  // or Escape closes it again, and Escape returns the focus to the menu button.
+  document.addEventListener('click', function (event) {
+    var open = document.querySelector('details.menu[open]');
+    if (open && !(event.target instanceof Node && open.contains(event.target))) open.removeAttribute('open');
+  });
+
+  document.addEventListener('keydown', function (event) {
+    var open = document.querySelector('details.menu[open]');
+    if (!open || event.key !== 'Escape') return;
+    open.removeAttribute('open');
+    open.querySelector('summary').focus();
   });
 })();

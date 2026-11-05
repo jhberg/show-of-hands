@@ -3,9 +3,9 @@ app:
   page_title: '{brand} Abstimmung'
 
 locale:
-  label: Sprache
   de: Deutsch
   en: English
+  switch: 'Sprache: {current}. Zu {next} wechseln'
 
 login:
   lead: Melde dich mit deinem Google-Konto an, dem {brand}-Konto oder deinem privaten, wenn es hinterlegt ist. Abstimmen kann nur, wer in der Mitgliederliste steht.
@@ -45,6 +45,7 @@ nav:
   vote: Abstimmen
   admin: Verwaltung
   logout: Abmelden
+  menu: Menü
 
 role:
   board: Vorstand

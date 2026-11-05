@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
+import { adminEntry } from './header';
 
 // Members from bin/console seed:demo.
 const MEMBER = { name: 'Ben Engel', email: 'ben.engel@example.org' };
@@ -17,7 +18,9 @@ test('a member signs in through the dev login and signs out', async ({ page }) =
   await expect(page.getByRole('heading', { name: 'Hallo Ben' })).toBeVisible();
   await expect(page.getByRole('status')).toHaveText(`Du bist als ${MEMBER.name} angemeldet.`);
   await expect(page.getByRole('link', { name: /Klara Wendt/ })).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Verwaltung' })).toHaveCount(0);
+  await expect(adminEntry(page)).toHaveCount(0);
+  // A member has nowhere else to go, so the header has no nav; the brand leads home.
+  await expect(page.getByRole('navigation')).toHaveCount(0);
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
 
   await page.getByRole('button', { name: 'Abmelden' }).click();
@@ -38,7 +41,7 @@ test('a deep link returns to the poll after sign-in', async ({ page }) => {
   await expect(page).toHaveURL('/polls/2');
   await expect(page.getByRole('status')).toHaveText(`Angemeldet als ${ADMIN_PRIVATE.name} über ${ADMIN_PRIVATE.email}.`);
   await expect(page.getByRole('heading', { level: 1, name: 'Mila Sandberg' })).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Verwaltung' })).toBeVisible();
+  await expect(adminEntry(page)).toBeVisible();
 });
 
 test('an unknown address sees the error and can try another account', async ({ page }) => {

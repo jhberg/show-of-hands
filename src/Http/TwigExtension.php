@@ -16,7 +16,7 @@ use Twig\TwigFilter;
 use Twig\TwigFunction;
 
 /**
- * Twig globals for the brand and the locales, the functions asset(), icon(), and csrf_token(),
+ * Twig globals for the brand, the locales, and the admin sections, the functions asset(), icon(), and csrf_token(),
  * the filters day_long, day_date, and day_short for dates without time, moment for a stored UTC
  * timestamp in the choir's time zone, percent, and name_list.
  */
@@ -41,6 +41,12 @@ final class TwigExtension extends AbstractExtension implements GlobalsInterface
             'brand' => $this->brand,
             'brand_assets' => $this->assets,
             'locales' => Locales::SUPPORTED,
+            // The admin tabs and the phone menu list these, each with its title's translation key.
+            'admin_sections' => [
+                ['key' => 'polls', 'path' => '/admin/polls', 'label' => 'admin.polls.title'],
+                ['key' => 'members', 'path' => '/admin/members', 'label' => 'admin.members.title'],
+                ['key' => 'settings', 'path' => '/admin/settings', 'label' => 'admin.settings.title'],
+            ],
             'theme_url' => ThemeAction::PATH . '?v=' . $this->themeVersion,
         ];
     }

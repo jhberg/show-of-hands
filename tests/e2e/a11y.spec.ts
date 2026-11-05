@@ -40,6 +40,8 @@ const ADMIN_PAGES = [
   '/admin/settings',
   '/no-such-page',
 ];
+// The phone menu, open, on the start page and in an admin section.
+const MENU_PAGES = ['/#menu', '/admin/members#menu'];
 const MEMBER_PAGES = ['/', '/polls/1', '/polls/1?delegate=1', '/polls/5'];
 
 // A member's language is stored with them. The desktop switches back to German afterwards, because
@@ -54,9 +56,13 @@ async function signIn(page: Page, email: string) {
   await expect(page).toHaveURL('/');
 }
 
+// The flag shows the language in use and switches to the other one.
 async function switchLanguage(page: Page, code: string) {
-  await page.getByRole('button', { name: code, exact: true }).click();
-  await expect(page.locator('html')).toHaveAttribute('lang', code.toLowerCase());
+  const lang = code.toLowerCase();
+  if ((await page.locator('html').getAttribute('lang')) !== lang) {
+    await page.locator(`button[name=locale][value=${lang}]`).click();
+  }
+  await expect(page.locator('html')).toHaveAttribute('lang', lang);
 }
 
 /**
@@ -78,22 +84,25 @@ async function watchErrors(page: Page) {
 /** Collects every problem of every page first, so one run lists them all. */
 async function checkPages(page: Page, paths: string[], errors: string[]) {
   const problems: string[] = [];
-  for (const path of paths) {
+  for (const entry of paths) {
+    // "#menu" opens the phone menu before the check.
+    const [path, open] = entry.split('#');
     // Reduced motion stops the rise into view and the colour transitions, so axe reads the
     // final colours, and the scheme can switch without loading the page again.
     await page.emulateMedia({ colorScheme: 'light', reducedMotion: 'reduce' });
     await page.goto(path);
+    if (open === 'menu') await page.locator('details.menu summary').click();
     for (const scheme of ['light', 'dark'] as const) {
       await page.emulateMedia({ colorScheme: scheme, reducedMotion: 'reduce' });
       const { violations } = await new AxeBuilder({ page }).analyze();
       for (const violation of violations) {
         for (const node of violation.nodes) {
-          problems.push(`${path} (${scheme}): ${violation.id} at ${node.target.join(' ')}: ${node.failureSummary ?? ''}`);
+          problems.push(`${entry} (${scheme}): ${violation.id} at ${node.target.join(' ')}: ${node.failureSummary ?? ''}`);
         }
       }
     }
     for (const csp of await page.evaluate(() => (window as unknown as { cspViolations: string[] }).cspViolations)) {
-      problems.push(`${path}: CSP ${csp}`);
+      problems.push(`${entry}: CSP ${csp}`);
     }
   }
   expect(problems).toEqual([]);
@@ -111,7 +120,7 @@ test('every page passes axe in light and dark mode', async ({ page }, testInfo) 
 
   await signIn(page, ADMIN);
   await switchLanguage(page, code);
-  await checkPages(page, ADMIN_PAGES, errors);
+  await checkPages(page, testInfo.project.name === 'a11y-phone' ? [...ADMIN_PAGES, ...MENU_PAGES] : ADMIN_PAGES, errors);
   if (back !== null) {
     await page.goto('/');
     await switchLanguage(page, back);
@@ -252,4 +261,26 @@ test('an admin opens and cancels the poll confirmations with the keyboard', asyn
     await expect(page.getByRole('button', { name: confirm })).toHaveCount(0);
     await expect(open).toBeFocused();
   }
+});
+
+test('an admin opens the phone menu and closes it with Escape or a tap beside it', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'a11y-phone', 'Only the phone has the menu.');
+  await signIn(page, ADMIN);
+
+  const toggle = page.locator('details.menu summary');
+  const members = page.getByRole('navigation', { name: 'Bereiche' }).getByRole('link', { name: 'Mitglieder' });
+  // Escape and the tap beside the menu need app.js, which marks the page once it runs.
+  await expect(page.locator('html')).toHaveClass(/\bjs\b/);
+  await toggle.focus();
+  await page.keyboard.press('Enter');
+  await expect(members).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(members).toBeHidden();
+  await expect(toggle).toBeFocused();
+
+  await toggle.click();
+  await expect(members).toBeVisible();
+  // The open menu covers the middle of the heading, so the tap goes to its left edge.
+  await page.getByRole('heading', { level: 1 }).click({ position: { x: 4, y: 4 } });
+  await expect(members).toBeHidden();
 });

@@ -3,7 +3,7 @@
 {% block title %}{{ 'admin.settings.title'|trans }} · {{ 'nav.admin'|trans }} · {{ parent() }}{% endblock %}
 
 {% block body %}
-{{ include('partials/header.html.twig', {active: 'admin'}) }}
+{{ include('partials/header.html.twig', {active: 'admin', section: 'settings'}) }}
 <main class="main wide">
     {{ include('partials/admin/tabs.html.twig', {section: 'settings'}) }}
     <h1>{{ 'admin.settings.title'|trans }}</h1>

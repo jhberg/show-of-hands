@@ -5,7 +5,7 @@
 {% block title %}{{ title }} · {{ 'nav.admin'|trans }} · {{ parent() }}{% endblock %}
 
 {% block body %}
-{{ include('partials/header.html.twig', {active: 'admin'}) }}
+{{ include('partials/header.html.twig', {active: 'admin', section: 'polls'}) }}
 <main class="main wide">
     {{ include('partials/admin/tabs.html.twig', {section: 'polls'}) }}
     <a class="back" href="{{ form.url }}">{{ icon('arrow') }}{{ 'admin.polls.form.back'|trans }}</a>

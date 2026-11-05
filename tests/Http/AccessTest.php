@@ -69,8 +69,8 @@ final class AccessTest extends HttpTestCase
         self::assertStringContainsString('Ergebnisse werden 14 Tage nach dem Abschluss automatisch gelöscht.', $html);
         self::assertStringContainsString('<span class="avatar" aria-hidden="true">KE</span>', $html);
         self::assertStringContainsString('<span class="uname">Kim Example</span>', $html);
-        self::assertStringContainsString('Abmelden', $html);
-        self::assertStringContainsString('aria-current="page">Abstimmen</a>', $html);
+        self::assertStringContainsString('aria-label="Abmelden"', $html);
+        self::assertStringNotContainsString('<nav', $html, 'Members get no nav: the brand leads home.');
         self::assertStringNotContainsString('/admin/polls', $html, 'Members see no admin link.');
     }
 
@@ -102,6 +102,13 @@ final class AccessTest extends HttpTestCase
         $admin = $this->request('GET', '/admin/polls');
         self::assertSame(200, $admin->getStatusCode());
         self::assertStringContainsString('class="on" aria-current="page">Verwaltung</a>', $this->body($admin));
+
+        // The phone menu lists every admin section and marks the open one.
+        $members = $this->body($this->request('GET', '/admin/members'));
+        self::assertStringContainsString('<details class="menu">', $members);
+        self::assertStringContainsString('<li><a href="/admin/polls">Abstimmungen</a></li>', $members);
+        self::assertStringContainsString('<li><a href="/admin/members" aria-current="page">Mitglieder</a></li>', $members);
+        self::assertStringContainsString('<li><a href="/admin/settings">Einstellungen</a></li>', $members);
     }
 
     public function testBoardRoutesRefuseOtherMembers(): void

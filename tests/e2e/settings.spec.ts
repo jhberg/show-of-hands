@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
+import { openAdmin } from './header';
 
 // Runs after the member journeys and one device after the other (see playwright.config.ts):
 // saving the settings writes every value, and the other journeys read them.
@@ -18,9 +19,7 @@ test('an admin changes a setting and maintains the voice groups', async ({ page 
   const toast = page.getByRole('status');
   const keys = page.locator('.glist .key');
   await signIn(page, ADMIN);
-  await page.getByRole('link', { name: 'Verwaltung' }).click();
-  await page.getByRole('link', { name: 'Einstellungen' }).click();
-  await expect(page).toHaveURL('/admin/settings');
+  await openAdmin(page, 'Einstellungen');
   await expect(page.getByText('Bei 25 Mitgliedern sind 17 Ja-Stimmen nötig.')).toBeVisible();
   await expect(page.getByLabel('OAuth-Client-ID')).toHaveAttribute('readonly', '');
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);

@@ -3,9 +3,9 @@ app:
   page_title: '{brand} Voting'
 
 locale:
-  label: Language
   de: Deutsch
   en: English
+  switch: 'Language: {current}. Switch to {next}'
 
 login:
   lead: 'Sign in with your Google account: your {brand} account, or your private one if it is registered. Only people on the member list can vote.'
@@ -45,6 +45,7 @@ nav:
   vote: Vote
   admin: Admin
   logout: Sign out
+  menu: Menu
 
 role:
   board: Board
