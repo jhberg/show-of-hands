@@ -1,0 +1,7 @@
+{#
+    A brand logo: src and class for the image, dark for its optional dark-mode variant.
+    The browser picks the variant from prefers-color-scheme, the same query the theme follows.
+#}
+{%- if dark -%}<picture class="logo-pic"><source media="(prefers-color-scheme: dark)" srcset="{{ dark }}">{%- endif -%}
+<img class="{{ class }}" src="{{ src }}" alt="{{ brand.name }}">
+{%- if dark -%}</picture>{%- endif -%}

@@ -7,6 +7,7 @@ namespace ShowOfHands\Infrastructure\Config;
 /**
  * Finds the instance's logo and favicon in public/brand/, falling back to the default favicon
  * in public/assets/brand-default/. URLs carry the file time, so a replaced file shows at once.
+ * A logo may come with a `-dark` variant, which the page shows when the device is in dark mode.
  */
 final readonly class BrandAssets
 {
@@ -18,10 +19,22 @@ final readonly class BrandAssets
         return $this->find('/brand/logo', ['svg', 'png']);
     }
 
+    /** Login logo for dark mode. Null means the login logo shows in both modes. */
+    public function logoDark(): ?string
+    {
+        return $this->find('/brand/logo-dark', ['svg', 'png']);
+    }
+
     /** Header logo. Null means the header shows the wordmark. */
     public function headerLogo(): ?string
     {
         return $this->find('/brand/header-logo', ['svg', 'png']);
+    }
+
+    /** Header logo for dark mode. Null means the header logo shows in both modes. */
+    public function headerLogoDark(): ?string
+    {
+        return $this->find('/brand/header-logo-dark', ['svg', 'png']);
     }
 
     public function favicon(): string

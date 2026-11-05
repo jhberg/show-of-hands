@@ -7,7 +7,7 @@
     </div>
     {% set logo = brand_assets.logo %}
     {% if logo %}
-        <img class="logo" src="{{ logo }}" alt="{{ brand.name }}">
+        {{ include('partials/brand_logo.html.twig', {src: logo, dark: brand_assets.logoDark, class: 'logo'}) }}
     {% else %}
         <p class="logo-wm">{{ include('partials/wordmark.html.twig') }}</p>
     {% endif %}

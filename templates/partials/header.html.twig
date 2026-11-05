@@ -10,7 +10,7 @@
         <a class="brand" href="/">
             {%- set header_logo = brand_assets.headerLogo -%}
             {%- if header_logo -%}
-                <img class="hlogo" src="{{ header_logo }}" alt="{{ brand.name }}">
+                {{- include('partials/brand_logo.html.twig', {src: header_logo, dark: brand_assets.headerLogoDark, class: 'hlogo'}) -}}
             {%- else -%}
                 {{ include('partials/wordmark.html.twig') }}
             {%- endif -%}

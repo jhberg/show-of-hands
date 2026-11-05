@@ -94,7 +94,9 @@ The brand lives in files that updates never touch:
 |---|---|
 | Name, wordmark, accent and ink colour, font | `brand` in `config/config.php` |
 | Login logo | `public/brand/logo.svg` or `logo.png`. Without one, the login page shows the wordmark. |
+| Login logo for dark mode | `public/brand/logo-dark.svg` or `.png` (optional). Devices in dark mode show it in place of the login logo. Without one, they show the login logo. |
 | Header logo | `public/brand/header-logo.svg` or `.png` (optional). Without one, the header shows the wordmark. |
+| Header logo for dark mode | `public/brand/header-logo-dark.svg` or `.png` (optional). Devices in dark mode show it in place of the header logo. |
 | Favicon | `public/brand/favicon.png` |
 | Fonts | `public/brand/fonts/*.woff2`, listed in `brand.font.files` |
 | Wording | `config/translations/messages.de.yaml` and `messages.en.yaml`. List only the keys you change. |
