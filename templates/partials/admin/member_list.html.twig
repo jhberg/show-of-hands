@@ -11,23 +11,31 @@
                 {%- for email in row.emails %}<span class="meta"><code>{{ email }}</code></span>{% endfor -%}
             </div>
             <div class="side">
-                {%- if row.group_label is not null %}<span class="chip">{{ row.group_label }}</span>{% endif %}
-                {%- if listed.isBoard %}<span class="chip open">{{ 'role.board'|trans }}</span>{% endif %}
-                {%- if listed.isAdmin %}<span class="chip closed">{{ 'role.admin'|trans }}</span>{% endif %}
-                {%- if not listed.isActive %}<span class="chip">{{ 'admin.members.inactive'|trans }}</span>{% endif %}
-                {%- set edit_url = '/admin/members?' ~ search|merge({edit: listed.id})|url_encode %}
-                <a class="btn sm" id="m-{{ listed.id }}-edit" href="{{ edit_url }}#member-form" hx-get="{{ edit_url }}" hx-replace-url="true">{{ 'admin.members.edit'|trans }}</a>
-                {#- Reversible, so it needs no second tap. #}
-                <form method="post" action="/admin/members/{{ listed.id }}/active" hx-post="/admin/members/{{ listed.id }}/active">
-                    {{- include('partials/csrf_field.html.twig') -}}
-                    <input type="hidden" name="q" value="{{ query }}">
-                    <input type="hidden" name="active" value="{{ listed.isActive ? '0' : '1' }}">
-                    <button class="btn sm" id="m-{{ listed.id }}-active">{{ listed.isActive ? 'admin.members.deactivate'|trans : 'admin.members.activate'|trans }}</button>
-                </form>
-                {%- if not is_self %}
-                    {%- set delete_url = '/admin/members?' ~ search|merge({delete: listed.id})|url_encode %}
-                    <a class="btn sm ghost" id="m-{{ listed.id }}-remove" href="{{ delete_url }}#m-{{ listed.id }}" hx-get="{{ delete_url }}" hx-replace-url="true">{{ 'admin.members.remove'|trans }}</a>
-                {%- endif %}
+                {#- Read right to left: voice group, admin, board. #}
+                <span class="tags">
+                    {%- if not listed.isActive %}<span class="chip">{{ 'admin.members.inactive'|trans }}</span>{% endif %}
+                    {%- if listed.isBoard %}<span class="chip open">{{ 'role.board'|trans }}</span>{% endif %}
+                    {%- if listed.isAdmin %}<span class="chip closed">{{ 'role.admin'|trans }}</span>{% endif %}
+                    {%- if row.group_label is not null %}<span class="chip">{{ row.group_label }}</span>{% endif -%}
+                </span>
+                <span class="acts">
+                    {%- set edit_url = '/admin/members?' ~ search|merge({edit: listed.id})|url_encode %}
+                    {%- set edit_label = 'admin.members.edit'|trans %}
+                    <a class="btn icon" id="m-{{ listed.id }}-edit" href="{{ edit_url }}#member-form" hx-get="{{ edit_url }}" hx-replace-url="true" aria-label="{{ edit_label }}" title="{{ edit_label }}">{{ icon('edit') }}</a>
+                    {#- Reversible, so it needs no second tap. #}
+                    <form method="post" action="/admin/members/{{ listed.id }}/active" hx-post="/admin/members/{{ listed.id }}/active">
+                        {{- include('partials/csrf_field.html.twig') -}}
+                        <input type="hidden" name="q" value="{{ query }}">
+                        <input type="hidden" name="active" value="{{ listed.isActive ? '0' : '1' }}">
+                        {%- set active_label = listed.isActive ? 'admin.members.deactivate'|trans : 'admin.members.activate'|trans %}
+                        <button class="btn icon" id="m-{{ listed.id }}-active" aria-label="{{ active_label }}" title="{{ active_label }}">{{ icon(listed.isActive ? 'pause' : 'play') }}</button>
+                    </form>
+                    {%- if not is_self %}
+                        {%- set delete_url = '/admin/members?' ~ search|merge({delete: listed.id})|url_encode %}
+                        {%- set remove_label = 'admin.members.remove'|trans %}
+                        <a class="btn icon ghost danger" id="m-{{ listed.id }}-remove" href="{{ delete_url }}#m-{{ listed.id }}" hx-get="{{ delete_url }}" hx-replace-url="true" aria-label="{{ remove_label }}" title="{{ remove_label }}">{{ icon('trash') }}</a>
+                    {%- endif -%}
+                </span>
             </div>
             {% if deleting == listed.id %}
                 <form class="full drow" method="post" action="/admin/members/{{ listed.id }}/delete" hx-post="/admin/members/{{ listed.id }}/delete">
