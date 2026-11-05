@@ -51,9 +51,11 @@ final class BrandCheckCommand extends Command
         $table->render();
 
         $assets = new BrandAssets($this->paths->public());
-        $output->writeln('Login logo:  ' . ($assets->logo() ?? 'none, the login page shows the wordmark'));
-        $output->writeln('Header logo: ' . ($assets->headerLogo() ?? 'none, the header shows the wordmark'));
-        $output->writeln('Favicon:     ' . $assets->favicon());
+        $output->writeln('Login logo:       ' . ($assets->logo() ?? 'none, the login page shows the wordmark'));
+        $output->writeln('Login logo dark:  ' . $this->darkVariant($assets->logoDark(), $assets->logo(), 'logo'));
+        $output->writeln('Header logo:      ' . ($assets->headerLogo() ?? 'none, the header shows the wordmark'));
+        $output->writeln('Header logo dark: ' . $this->darkVariant($assets->headerLogoDark(), $assets->headerLogo(), 'header-logo'));
+        $output->writeln('Favicon:          ' . $assets->favicon());
 
         if ($failures > 0) {
             $output->writeln("<error>{$failures} pairs are below their minimum contrast.</error>");
@@ -63,5 +65,14 @@ final class BrandCheckCommand extends Command
         $output->writeln('<info>Every pair meets its minimum contrast.</info>');
 
         return Command::SUCCESS;
+    }
+
+    private function darkVariant(?string $dark, ?string $light, string $lightBase): string
+    {
+        if ($dark === null) {
+            return $light === null ? 'none' : 'none, dark mode shows the same logo';
+        }
+
+        return $light === null ? "{$dark}, unused without a {$lightBase}.svg or {$lightBase}.png" : $dark;
     }
 }

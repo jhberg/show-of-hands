@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace ShowOfHands\Tests\Unit\Console;
 
 use PHPUnit\Framework\TestCase;
+use ShowOfHands\Infrastructure\Console\BrandCheckCommand;
 use ShowOfHands\Infrastructure\Console\MemberAddCommand;
 use ShowOfHands\Infrastructure\Console\PurgeCommand;
 use ShowOfHands\Infrastructure\Console\SeedDemoCommand;
@@ -97,5 +98,20 @@ final class ConsoleTest extends TestCase
 
         self::assertSame(Command::SUCCESS, $tester->execute([]));
         self::assertStringContainsString('Deleted 0 expired session files, 0 old backups, 0 ballots of closed polls, and 0 polls past their retention.', $tester->getDisplay());
+    }
+
+    public function testBrandCheckListsTheDarkLogos(): void
+    {
+        $root = $this->tempDir() . '/root';
+        mkdir($root . '/public/brand', 0o777, true);
+        foreach (['logo.svg', 'logo-dark.png', 'header-logo-dark.svg'] as $file) {
+            file_put_contents($root . '/public/brand/' . $file, '<svg xmlns="http://www.w3.org/2000/svg"/>');
+        }
+        $tester = new CommandTester(new BrandCheckCommand(new Paths($root)));
+
+        self::assertSame(Command::SUCCESS, $tester->execute([]));
+        $output = $tester->getDisplay();
+        self::assertMatchesRegularExpression('#Login logo dark: +/brand/logo-dark\.png\?v=\d+\n#', $output);
+        self::assertMatchesRegularExpression('#Header logo dark: +/brand/header-logo-dark\.svg\?v=\d+, unused without a header-logo\.svg or header-logo\.png\n#', $output);
     }
 }
