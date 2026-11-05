@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace ShowOfHands\Infrastructure\Persistence;
 
+use ShowOfHands\Domain\ColorMode;
 use ShowOfHands\Domain\EmailAddress;
 use ShowOfHands\Domain\Member;
 use ShowOfHands\Infrastructure\Database\Transaction;
@@ -13,7 +14,7 @@ use ShowOfHands\Infrastructure\Database\Transaction;
  */
 final readonly class MemberRepository
 {
-    private const COLUMNS = 'm.id, m.name, m.voice_group_key, m.is_board, m.is_admin, m.locale, m.is_active, m.display_name';
+    private const COLUMNS = 'm.id, m.name, m.voice_group_key, m.is_board, m.is_admin, m.locale, m.is_active, m.display_name, m.color_mode';
 
     public function __construct(private \PDO $pdo) {}
 
@@ -239,6 +240,11 @@ final readonly class MemberRepository
         $this->pdo->prepare('UPDATE members SET locale = ? WHERE id = ?')->execute([$locale, $id]);
     }
 
+    public function setColorMode(int $id, ColorMode $mode): void
+    {
+        $this->pdo->prepare('UPDATE members SET color_mode = ? WHERE id = ?')->execute([$mode->value, $id]);
+    }
+
     /**
      * @param list<string> $emails
      */
@@ -280,6 +286,8 @@ final readonly class MemberRepository
      */
     private static function member(array $row): Member
     {
+        $colorMode = Row::nullableString($row, 'color_mode');
+
         return new Member(
             id: Row::int($row, 'id'),
             name: Row::string($row, 'name'),
@@ -289,6 +297,7 @@ final readonly class MemberRepository
             locale: Row::nullableString($row, 'locale'),
             isActive: Row::int($row, 'is_active') === 1,
             displayName: Row::nullableString($row, 'display_name'),
+            colorMode: $colorMode === null ? null : ColorMode::from($colorMode),
         );
     }
 }

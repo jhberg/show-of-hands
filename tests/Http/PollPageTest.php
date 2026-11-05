@@ -57,7 +57,7 @@ final class PollPageTest extends HttpTestCase
         self::assertStringContainsString('Soll Robin Example in den Chor aufgenommen werden?', $html);
         self::assertStringContainsString('<small>aufnehmen</small>', $html);
         self::assertStringContainsString('<small>nicht aufnehmen</small>', $html);
-        self::assertSame(2, substr_count($html, 'aria-pressed="false"'));
+        self::assertSame(2, substr_count((string) strstr($html, '<main'), 'aria-pressed="false"'));
         self::assertStringContainsString('Tippe auf Ja oder Nein.', $html);
         self::assertStringNotContainsString('Deine Stimme ist registriert', $html);
         self::assertStringContainsString('<b>0</b> von 3 Stimmrechten abgegeben', $html);

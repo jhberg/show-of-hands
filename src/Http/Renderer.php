@@ -6,13 +6,15 @@ namespace ShowOfHands\Http;
 
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
+use ShowOfHands\Domain\ColorMode;
+use ShowOfHands\Http\Action\ColorModeAction;
 use ShowOfHands\Http\Middleware\MemberMiddleware;
 use Symfony\Component\Translation\Translator;
 use Twig\Environment;
 
 /**
- * Renders a Twig page into a response, with the locale, the URL, the signed-in member,
- * and the pending toast in the context.
+ * Renders a Twig page into a response, with the locale, the colour mode, the URL, the signed-in
+ * member, and the pending toast in the context.
  */
 final readonly class Renderer
 {
@@ -43,10 +45,23 @@ final readonly class Renderer
             // Path and query, so the language switch keeps open panels and searches.
             'current_url' => $uri->getPath() . ($uri->getQuery() === '' ? '' : '?' . $uri->getQuery()),
             'member' => $request->getAttribute(MemberMiddleware::ATTRIBUTE),
+            'color_mode' => self::colorMode($request)->value,
         ]);
         $response->getBody()->write($html);
 
         return $response->withStatus($status)->withHeader('Content-Type', 'text/html; charset=utf-8');
+    }
+
+    /**
+     * A signed-in member's saved colour mode, then the cookie's, then the device's.
+     */
+    private static function colorMode(ServerRequestInterface $request): ColorMode
+    {
+        $cookie = $request->getCookieParams()[ColorModeAction::COOKIE] ?? null;
+
+        return MemberMiddleware::member($request)->colorMode
+            ?? ColorMode::tryFrom(is_string($cookie) ? $cookie : '')
+            ?? ColorMode::System;
     }
 
     /**

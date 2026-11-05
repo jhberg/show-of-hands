@@ -105,7 +105,7 @@ final class AccessTest extends HttpTestCase
 
         // The phone menu lists every admin section and marks the open one.
         $members = $this->body($this->request('GET', '/admin/members'));
-        self::assertStringContainsString('<details class="menu">', $members);
+        self::assertStringContainsString('<details class="pop menu">', $members);
         self::assertStringContainsString('<li><a href="/admin/polls">Abstimmungen</a></li>', $members);
         self::assertStringContainsString('<li><a href="/admin/members" aria-current="page">Mitglieder</a></li>', $members);
         self::assertStringContainsString('<li><a href="/admin/settings">Einstellungen</a></li>', $members);

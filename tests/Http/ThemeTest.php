@@ -13,7 +13,9 @@ final class ThemeTest extends HttpTestCase
         self::assertSame(200, $response->getStatusCode());
         self::assertSame('text/css; charset=utf-8', $response->getHeaderLine('Content-Type'));
         self::assertStringContainsString('--accent:#3b6fb6;', $this->body($response));
-        self::assertStringContainsString('prefers-color-scheme: dark', $this->body($response));
+        // The device's dark mode applies unless light was chosen; a chosen dark mode applies always.
+        self::assertStringContainsString('@media (prefers-color-scheme: dark){:root:not([data-theme=light]){color-scheme:dark;', $this->body($response));
+        self::assertStringContainsString(':root[data-theme=dark]{color-scheme:dark;', $this->body($response));
         self::assertSame('public, max-age=31536000, immutable', $response->getHeaderLine('Cache-Control'));
     }
 

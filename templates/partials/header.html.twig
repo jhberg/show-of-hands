@@ -24,6 +24,7 @@
         {% endif %}
         <div class="top-lang">
             {{ include('partials/locale_switch.html.twig') }}
+            {{ include('partials/color_mode_switch.html.twig') }}
         </div>
         {% if member %}
             <div class="user{% if member.isAdmin %} with-menu{% endif %}">
@@ -34,7 +35,7 @@
                     <button class="btn ghost icon" aria-label="{{ 'nav.logout'|trans }}" title="{{ 'nav.logout'|trans }}">{{ icon('logout') }}</button>
                 </form>
                 {% if member.isAdmin %}
-                    <details class="menu">
+                    <details class="pop menu">
                         <summary class="btn ghost icon" aria-label="{{ 'nav.menu'|trans }}" title="{{ 'nav.menu'|trans }}">{{ icon('menu') }}</summary>
                         <nav class="menu-panel" aria-label="{{ 'nav.label'|trans }}">
                             <a href="/"{% if active == 'home' %} aria-current="page"{% endif %}>{{ 'nav.vote'|trans }}</a>

@@ -284,3 +284,37 @@ test('an admin opens the phone menu and closes it with Escape or a tap beside it
   await page.getByRole('heading', { level: 1 }).click({ position: { x: 4, y: 4 } });
   await expect(members).toBeHidden();
 });
+
+// The member's choice of light or dark mode overrides the device's, and "Wie System" hands it back.
+test('a chosen colour mode overrides the system setting', async ({ page }) => {
+  const errors = await watchErrors(page);
+  const background = () => page.evaluate(() => getComputedStyle(document.body).backgroundColor);
+  const choose = async (mode: string) => {
+    await page.locator('details.mode summary').click();
+    await page.getByRole('button', { name: mode, exact: true }).click();
+  };
+
+  await page.emulateMedia({ colorScheme: 'light', reducedMotion: 'reduce' });
+  await page.goto('/login');
+  const light = await background();
+  await choose('Dunkel');
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+  await expect(page.locator('details.mode summary')).toHaveAttribute('aria-label', 'Darstellung: Dunkel. Ändern');
+  const dark = await background();
+  expect(dark).not.toBe(light);
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+
+  // A signed-in member's choice is stored with them. The phone's run leaves the admin's at "Wie System",
+  // which beats the cookie, so the desktop's run starts there.
+  await signIn(page, ADMIN);
+  await page.emulateMedia({ colorScheme: 'dark', reducedMotion: 'reduce' });
+  await choose('Hell');
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+  expect(await background()).toBe(light);
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+
+  await choose('Wie System');
+  await expect(page.locator('html')).not.toHaveAttribute('data-theme');
+  expect(await background()).toBe(dark);
+  expect(errors).toEqual([]);
+});

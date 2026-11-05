@@ -1,7 +1,9 @@
 {#
     A brand logo: src and class for the image, dark for its optional dark-mode variant.
-    The browser picks the variant from prefers-color-scheme, the same query the theme follows.
+    In the device's mode the browser picks the variant from prefers-color-scheme, the same query
+    the theme follows. A chosen mode picks the file here, since a <source> cannot follow it.
 #}
-{%- if dark -%}<picture class="logo-pic"><source media="(prefers-color-scheme: dark)" srcset="{{ dark }}">{%- endif -%}
-<img class="{{ class }}" src="{{ src }}" alt="{{ brand.name }}">
-{%- if dark -%}</picture>{%- endif -%}
+{%- set follows_device = dark and color_mode == 'system' -%}
+{%- if follows_device -%}<picture class="logo-pic"><source media="(prefers-color-scheme: dark)" srcset="{{ dark }}">{%- endif -%}
+<img class="{{ class }}" src="{{ dark and color_mode == 'dark' ? dark : src }}" alt="{{ brand.name }}">
+{%- if follows_device -%}</picture>{%- endif -%}

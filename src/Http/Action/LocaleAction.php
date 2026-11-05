@@ -8,6 +8,7 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use ShowOfHands\Http\Middleware\LocaleMiddleware;
 use ShowOfHands\Http\Middleware\MemberMiddleware;
+use ShowOfHands\Http\PreferenceCookie;
 use ShowOfHands\Http\ReturnPath;
 use ShowOfHands\Infrastructure\I18n\Locales;
 use ShowOfHands\Infrastructure\Persistence\MemberRepository;
@@ -18,8 +19,6 @@ use ShowOfHands\Infrastructure\Persistence\MemberRepository;
  */
 final readonly class LocaleAction
 {
-    private const COOKIE_DAYS = 365;
-
     public function __construct(
         private ReturnPath $returnPath,
         private MemberRepository $members,
@@ -40,14 +39,6 @@ final readonly class LocaleAction
             $this->members->setLocale($member->id, $locale);
         }
 
-        $cookie = sprintf(
-            '%s=%s; Path=/; Max-Age=%d; HttpOnly; SameSite=Lax%s',
-            LocaleMiddleware::COOKIE,
-            $locale,
-            self::COOKIE_DAYS * 86400,
-            $this->https ? '; Secure' : '',
-        );
-
-        return $redirect->withAddedHeader('Set-Cookie', $cookie);
+        return $redirect->withAddedHeader('Set-Cookie', PreferenceCookie::header(LocaleMiddleware::COOKIE, $locale, $this->https));
     }
 }

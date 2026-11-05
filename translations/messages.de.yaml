@@ -7,6 +7,13 @@ locale:
   en: English
   switch: 'Sprache: {current}. Zu {next} wechseln'
 
+color_mode:
+  label: Darstellung
+  switch: 'Darstellung: {current}. Ändern'
+  light: Hell
+  dark: Dunkel
+  system: Wie System
+
 login:
   lead: Melde dich mit deinem Google-Konto an, dem {brand}-Konto oder deinem privaten, wenn es hinterlegt ist. Abstimmen kann nur, wer in der Mitgliederliste steht.
   google: Mit Google anmelden

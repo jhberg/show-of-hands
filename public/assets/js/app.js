@@ -108,15 +108,15 @@
     if (choosing(main) || current.isEqualNode(fresh.content.firstElementChild)) event.detail.shouldSwap = false;
   });
 
-  // The phone menu is a <details>, so it opens without JavaScript. With it, a tap beside the menu
-  // or Escape closes it again, and Escape returns the focus to the menu button.
+  // The phone menu and the colour mode panel are <details>, so they open without JavaScript. With
+  // it, a tap beside one or Escape closes it again, and Escape returns the focus to its button.
   document.addEventListener('click', function (event) {
-    var open = document.querySelector('details.menu[open]');
+    var open = document.querySelector('details.pop[open]');
     if (open && !(event.target instanceof Node && open.contains(event.target))) open.removeAttribute('open');
   });
 
   document.addEventListener('keydown', function (event) {
-    var open = document.querySelector('details.menu[open]');
+    var open = document.querySelector('details.pop[open]');
     if (!open || event.key !== 'Escape') return;
     open.removeAttribute('open');
     open.querySelector('summary').focus();

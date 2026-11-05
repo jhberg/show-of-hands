@@ -30,6 +30,7 @@ use ShowOfHands\Http\Action\AdminVoiceGroupMoveAction;
 use ShowOfHands\Http\Action\AdminVoiceGroupRenameAction;
 use ShowOfHands\Http\Action\BallotAction;
 use ShowOfHands\Http\Action\CloseAction;
+use ShowOfHands\Http\Action\ColorModeAction;
 use ShowOfHands\Http\Action\DelegationAction;
 use ShowOfHands\Http\Action\DevLoginAction;
 use ShowOfHands\Http\Action\GoogleCallbackAction;
@@ -96,6 +97,7 @@ final class AppFactory
         $app->get('/login', LoginAction::class);
         $app->post('/logout', LogoutAction::class);
         $app->post('/locale', LocaleAction::class);
+        $app->post('/color-mode', ColorModeAction::class);
         $app->get(ThemeAction::PATH, ThemeAction::class);
         if ($config->hasGoogleClient()) {
             $app->get('/auth/google', GoogleStartAction::class);
@@ -217,6 +219,7 @@ final class AppFactory
             LocaleMiddleware::class => static fn(Translator $translator): LocaleMiddleware => new LocaleMiddleware($translator, $config->defaultLocale),
             SecurityHeadersMiddleware::class => static fn(): SecurityHeadersMiddleware => new SecurityHeadersMiddleware($config->isHttps()),
             LocaleAction::class => autowire()->constructorParameter('https', $config->isHttps()),
+            ColorModeAction::class => autowire()->constructorParameter('https', $config->isHttps()),
             LoginAction::class => autowire()
                 ->constructorParameter('googleConfigured', $config->hasGoogleClient())
                 ->constructorParameter('devLogin', $config->isDev()),
