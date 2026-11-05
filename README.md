@@ -94,9 +94,9 @@ The brand lives in files that updates never touch:
 |---|---|
 | Name, wordmark, accent and ink colour, font | `brand` in `config/config.php` |
 | Login logo | `public/brand/logo.svg` or `logo.png`. Without one, the login page shows the wordmark. |
-| Login logo for dark mode | `public/brand/logo-dark.svg` or `.png` (optional). Devices in dark mode show it in place of the login logo. Without one, they show the login logo. |
+| Login logo for dark mode | `public/brand/logo-dark.svg` or `.png` (optional). Devices in dark mode, and members who chose dark mode, see it in place of the login logo. Without one, they see the login logo. |
 | Header logo | `public/brand/header-logo.svg` or `.png` (optional). Without one, the header shows the wordmark. |
-| Header logo for dark mode | `public/brand/header-logo-dark.svg` or `.png` (optional). Devices in dark mode show it in place of the header logo. |
+| Header logo for dark mode | `public/brand/header-logo-dark.svg` or `.png` (optional). Devices in dark mode, and members who chose dark mode, see it in place of the header logo. |
 | Favicon | `public/brand/favicon.png` |
 | Fonts | `public/brand/fonts/*.woff2`, listed in `brand.font.files` |
 | Wording | `config/translations/messages.de.yaml` and `messages.en.yaml`. List only the keys you change. |
@@ -118,7 +118,7 @@ Read the release notes before you update. A new setting in `config.example.php` 
 
 The app keeps the secret ballot and stores as little as it can.
 
-**What it stores.** Members with their name, up to two email addresses, voice group, roles, and chosen language. Polls with their name, question, note, and date. For each poll: who has voted, who delegated their vote to whom, and the ballots. Ballots carry no member: each holds only a token and the choice. The token is an HMAC of the poll and the member, keyed with `app.secret`, so the member can change their own vote and nobody can read the choice from the database alone. The member file `config/members.csv` holds names and addresses as well. Delete it once you no longer need to import from it.
+**What it stores.** Members with their name, up to two email addresses, voice group, roles, and chosen language and colour mode. Polls with their name, question, note, and date. For each poll: who has voted, who delegated their vote to whom, and the ballots. Ballots carry no member: each holds only a token and the choice. The token is an HMAC of the poll and the member, keyed with `app.secret`, so the member can change their own vote and nobody can read the choice from the database alone. The member file `config/members.csv` holds names and addresses as well. Delete it once you no longer need to import from it.
 
 **What others see.** Nobody sees a count while a poll is open: not members, not the board, not admins. The app counts once, when the board closes the poll. Members see who has voted and who delegated to whom, as in a show of hands. Admins can hide from members who has not voted yet. The board and admins always see it.
 
@@ -133,7 +133,7 @@ SQLite runs with `secure_delete`, so deleted ballots leave no trace in the file.
 
 **The cost of changeable votes.** Whoever holds both the database and `config/config.php`, such as the web host's administrator, can recompute the tokens of an open or just-closed poll and read who voted what. Deleting ballots the day after closing keeps that window short. Keep both files off shared drives and out of backups you hand around.
 
-**Cookies and outside services.** The app sets a session cookie (`HttpOnly`, `Secure`, `SameSite=Lax`) and, once someone switches the language, a language cookie. It loads no third-party scripts or fonts and sends no analytics. The only outside service is Google, for sign-in. The choice travels only in a form's POST body, so it never appears in a URL or a server's access log. The app's log records errors without request data.
+**Cookies and outside services.** The app sets a session cookie (`HttpOnly`, `Secure`, `SameSite=Lax`) and, once someone switches the language or the colour mode, a cookie for that choice. It loads no third-party scripts or fonts and sends no analytics. The only outside service is Google, for sign-in. The choice travels only in a form's POST body, so it never appears in a URL or a server's access log. The app's log records errors without request data.
 
 ## Development
 

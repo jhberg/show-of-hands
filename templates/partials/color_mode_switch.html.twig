@@ -1,0 +1,17 @@
+{#
+    The button shows the colour mode in use. It opens a panel to choose light, dark, or the
+    device's setting. The panel is a <details>, so it opens without JavaScript.
+#}
+{% set modes = {light: 'sun', dark: 'moon', system: 'contrast'} %}
+{% set label = 'color_mode.switch'|trans({current: ('color_mode.' ~ color_mode)|trans}) %}
+<details class="pop mode">
+    <summary class="btn ghost icon" aria-label="{{ label }}" title="{{ label }}">{{ icon(modes[color_mode]) }}</summary>
+    <form class="menu-panel" method="post" action="/color-mode" aria-label="{{ 'color_mode.label'|trans }}">
+        {{ include('partials/csrf_field.html.twig') }}
+        <input type="hidden" name="return" value="{{ current_url }}">
+        <p class="menu-head" aria-hidden="true">{{ 'color_mode.label'|trans }}</p>
+        {% for mode, mode_icon in modes %}
+            <button name="mode" value="{{ mode }}" aria-pressed="{{ mode == color_mode ? 'true' : 'false' }}">{{ icon(mode_icon) }}{{ ('color_mode.' ~ mode)|trans }}</button>
+        {% endfor %}
+    </form>
+</details>

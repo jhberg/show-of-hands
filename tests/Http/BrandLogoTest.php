@@ -32,6 +32,27 @@ final class BrandLogoTest extends HttpTestCase
         self::assertMatchesRegularExpression('#<picture class="logo-pic"><source media="\(prefers-color-scheme: dark\)" srcset="/brand/logo-dark\.png\?v=\d+"><img class="logo" src="/brand/logo\.svg\?v=\d+" alt="Example Choir"></picture>#', $body);
     }
 
+    public function testAChosenModePicksTheLogoOnTheServer(): void
+    {
+        $this->withBrandFiles(['logo.svg', 'logo-dark.png']);
+
+        $dark = $this->body($this->request('GET', '/login', cookies: ['soh_mode' => 'dark']));
+        $light = $this->body($this->request('GET', '/login', cookies: ['soh_mode' => 'light']));
+
+        self::assertMatchesRegularExpression('#<img class="logo" src="/brand/logo-dark\.png\?v=\d+" alt="Example Choir">#', $dark);
+        self::assertMatchesRegularExpression('#<img class="logo" src="/brand/logo\.svg\?v=\d+" alt="Example Choir">#', $light);
+        self::assertStringNotContainsString('<picture', $dark . $light);
+    }
+
+    public function testInDarkModeWithoutADarkLogoTheLoginPageShowsTheLogo(): void
+    {
+        $this->withBrandFiles(['logo.svg']);
+
+        $body = $this->body($this->request('GET', '/login', cookies: ['soh_mode' => 'dark']));
+
+        self::assertMatchesRegularExpression('#<img class="logo" src="/brand/logo\.svg\?v=\d+" alt="Example Choir">#', $body);
+    }
+
     public function testWithoutADarkLogoTheLoginPageShowsTheLogoAlone(): void
     {
         $this->withBrandFiles(['logo.svg']);
@@ -62,6 +83,19 @@ final class BrandLogoTest extends HttpTestCase
         $body = $this->body($this->request('GET', '/'));
 
         self::assertMatchesRegularExpression('#<picture class="logo-pic"><source media="\(prefers-color-scheme: dark\)" srcset="/brand/header-logo-dark\.svg\?v=\d+"><img class="hlogo" src="/brand/header-logo\.png\?v=\d+" alt="Example Choir"></picture>#', $body);
+    }
+
+    public function testAMembersChosenModePicksTheHeaderLogo(): void
+    {
+        $this->withBrandFiles(['header-logo.png', 'header-logo-dark.svg']);
+        $this->addMember('Robin Example', ['robin@example.org']);
+        $this->signIn('robin@example.org');
+        $this->post('/color-mode', ['mode' => 'dark', 'return' => '/']);
+
+        $body = $this->body($this->request('GET', '/'));
+
+        self::assertMatchesRegularExpression('#<img class="hlogo" src="/brand/header-logo-dark\.svg\?v=\d+" alt="Example Choir">#', $body);
+        self::assertStringNotContainsString('<picture', $body);
     }
 
     public function testWithoutADarkHeaderLogoTheHeaderShowsTheLogoAlone(): void

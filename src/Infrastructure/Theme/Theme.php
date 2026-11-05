@@ -63,8 +63,11 @@ final readonly class Theme
         $css .= ':root{color-scheme:light;' . $this->tokens($this->light)
             . '--shadow:' . $this->shadow($this->light['ink'], 0.06, 0.22) . ';'
             . '--font:' . $this->fontStack() . "}\n";
-        $css .= '@media (prefers-color-scheme: dark){:root{color-scheme:dark;' . $this->tokens($this->dark)
-            . '--shadow:' . $this->shadow(Color::inGamut(0, 0, 0), 0.3, 0.5) . "}}\n";
+        // The device's dark mode applies unless light was chosen; a chosen dark mode applies always.
+        $dark = 'color-scheme:dark;' . $this->tokens($this->dark)
+            . '--shadow:' . $this->shadow(Color::inGamut(0, 0, 0), 0.3, 0.5);
+        $css .= '@media (prefers-color-scheme: dark){:root:not([data-theme=light]){' . $dark . "}}\n";
+        $css .= ':root[data-theme=dark]{' . $dark . "}\n";
 
         return $css;
     }

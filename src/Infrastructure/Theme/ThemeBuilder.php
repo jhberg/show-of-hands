@@ -15,8 +15,8 @@ use ShowOfHands\Infrastructure\Config\Brand;
  */
 final class ThemeBuilder
 {
-    /** Bump when the derivation changes, so browsers drop their cached /theme.css. */
-    public const VERSION = 2;
+    /** Bump when the derivation or the rendered stylesheet changes, so browsers drop their cached /theme.css. */
+    public const VERSION = 3;
 
     public const TEXT_CONTRAST = 4.5;
     public const UI_CONTRAST = 3.0;

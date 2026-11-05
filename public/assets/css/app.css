@@ -292,21 +292,25 @@ a.gbtn{color:var(--ink);text-decoration:none}
 .error-page .lead{margin-top:10px;max-width:46ch}
 .error-page .actions{margin-top:22px}
 .details{margin-top:22px;padding:12px;border:1px solid var(--line);border-radius:var(--r-s);background:var(--surface);font:13px/1.45 var(--mono);white-space:pre-wrap;overflow-wrap:anywhere}
-/* Header: brand, admin nav, language flag, avatar, and sign-out stay in one row down to 320 px.
+/* Header: brand, admin nav, language flag, colour mode, avatar, and sign-out stay in one row down to 320 px.
    Below 560 px, an admin's nav, admin tabs, and sign-out button give way to the menu. */
-.top-lang{margin-left:auto}
-.menu{position:relative;display:none}
-.menu summary{list-style:none}
-.menu summary::-webkit-details-marker{display:none}
-.menu[open] summary{background:var(--surface-2);color:var(--ink)}
-.menu-panel{position:absolute;right:0;top:calc(100% + 8px);min-width:230px;padding:6px;background:var(--bg);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow)}
+.top-lang{margin-left:auto;display:flex;align-items:center}
+/* A popover: the phone menu, or the colour mode panel. */
+.pop{position:relative}
+.pop summary{list-style:none}
+.pop summary::-webkit-details-marker{display:none}
+.pop[open] summary{background:var(--surface-2);color:var(--ink)}
+.menu{display:none}
+.menu-panel{position:absolute;z-index:var(--z-sticky);right:0;text-align:left;top:calc(100% + 8px);min-width:230px;padding:6px;background:var(--bg);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow)}
 /* Chrome keeps a closed details' content in the page, where an animation or transition never
    finishes, so the panel animates only while open and its entries have no transition. */
-.menu[open] .menu-panel{animation:rise .22s var(--ease)}
+.pop[open] .menu-panel{animation:rise .22s var(--ease)}
+/* At 320 px the mode button sits left of the avatar, so its panel takes only the width it needs. */
+.mode .menu-panel{min-width:0;width:max-content}
 .menu-panel ul{list-style:none;margin:0;padding:0 0 0 12px}
 .menu-panel a,.menu-panel button{appearance:none;border:none;background:none;width:100%;min-height:44px;display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:var(--r-s);color:var(--ink);text-decoration:none;font-weight:500;font-size:16px;text-align:left;cursor:pointer}
 .menu-panel a:hover,.menu-panel button:hover{background:var(--surface-2)}
-.menu-panel a[aria-current]{background:var(--accent-soft);box-shadow:inset 3px 0 0 var(--accent)}
+.menu-panel a[aria-current],.menu-panel button[aria-pressed=true]{background:var(--accent-soft);box-shadow:inset 3px 0 0 var(--accent)}
 .menu-head{padding:10px 12px 2px;font-size:13px;font-weight:500;color:var(--ink-2)}
 .menu-panel form{margin-top:6px;padding-top:6px;border-top:1px solid var(--line)}
 @media (max-width:560px){

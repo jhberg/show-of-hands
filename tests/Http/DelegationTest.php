@@ -152,7 +152,7 @@ final class DelegationTest extends HttpTestCase
         self::assertStringContainsString('Lou hat bereits abgestimmt. Wenn du hier selbst auf Ja oder Nein tippst, kommt dein Stimmrecht sofort zu dir zurück und das Gewicht der Stimme von Lou wird angepasst.', $html);
         self::assertStringContainsString('Übertragung zurücknehmen, ohne abzustimmen', $html);
         // The own ballot is gone: no button pressed, no hint, no delegation block.
-        self::assertSame(2, substr_count($html, 'aria-pressed="false"'));
+        self::assertSame(2, substr_count((string) strstr($html, '<main'), 'aria-pressed="false"'));
         self::assertStringNotContainsString('Tippe auf Ja oder Nein.', $html);
         self::assertStringNotContainsString('deleg-toggle', $html);
         self::assertStringContainsString('<b>2</b> von 4 Stimmrechten abgegeben', $html);

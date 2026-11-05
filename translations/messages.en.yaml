@@ -7,6 +7,13 @@ locale:
   en: English
   switch: 'Language: {current}. Switch to {next}'
 
+color_mode:
+  label: Appearance
+  switch: 'Appearance: {current}. Change'
+  light: Light
+  dark: Dark
+  system: Match system
+
 login:
   lead: 'Sign in with your Google account: your {brand} account, or your private one if it is registered. Only people on the member list can vote.'
   google: Sign in with Google

@@ -22,6 +22,7 @@ final readonly class Member
         public ?string $locale = null,
         public bool $isActive = true,
         public ?string $displayName = null,
+        public ?ColorMode $colorMode = null,
     ) {}
 
     /** The display name, or the full name without one. */
