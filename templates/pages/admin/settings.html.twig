@@ -4,13 +4,13 @@
 
 {% block body %}
 {{ include('partials/header.html.twig', {active: 'admin', section: 'settings'}) }}
-<main class="main wide">
+<main class="main">
     {{ include('partials/admin/tabs.html.twig', {section: 'settings'}) }}
     <h1>{{ 'admin.settings.title'|trans }}</h1>
     {{ include('partials/admin/settings_form.html.twig') }}
     {{ include('partials/admin/voice_groups.html.twig') }}
     {# Read-only: these values come from config.php. #}
-    <section class="panel soft narrow" aria-labelledby="sign-in-title">
+    <section class="panel soft" aria-labelledby="sign-in-title">
         <h2 id="sign-in-title">{{ 'admin.settings.sign_in.title'|trans }}</h2>
         <div class="form mt-6">
             <div class="field">

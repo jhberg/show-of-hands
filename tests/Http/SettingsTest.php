@@ -69,12 +69,14 @@ final class SettingsTest extends HttpTestCase
 
         self::assertStringContainsString('<a href="/admin/settings" class="on" aria-current="page">Einstellungen</a>', $html);
         self::assertStringContainsString('Bei 2 Mitgliedern sind 2 Ja-Stimmen nötig. Wer nicht abstimmt, gilt als Enthaltung', $html);
-        self::assertStringContainsString('<option value="two_thirds" selected>zwei Dritteln</option>', $html);
-        self::assertStringContainsString('<option value="eligible" selected>aller Stimmberechtigten</option>', $html);
+        self::assertStringContainsString('<option value="two_thirds" selected>Zwei Drittel</option>', $html);
+        self::assertStringContainsString('<option value="eligible" selected>Alle Stimmberechtigten</option>', $html);
+        self::assertStringContainsString('<label class="set-title" for="s-share">Erforderliche Mehrheit</label>', $html);
+        self::assertStringContainsString('<label class="set-title" for="s-base">Bezugsgröße</label>', $html);
         self::assertMatchesRegularExpression('/name="delegation" value="1" checked/', $html);
         self::assertStringContainsString('<option value="2" selected>2</option>', $html);
         self::assertStringContainsString('also bis zu 3 Stimmrechte.', $html);
-        self::assertStringContainsString('<option value="14" selected>14</option>', $html);
+        self::assertStringContainsString('<option value="14" selected>14 Tagen</option>', $html);
         self::assertStringContainsString('value="Sopran 1"', $html);
         self::assertStringContainsString('value="example.org" readonly', $html);
         self::assertStringContainsString('value="test-client" readonly', $html);
@@ -102,7 +104,7 @@ final class SettingsTest extends HttpTestCase
         $html = $this->page();
         self::assertStringContainsString('Einstellungen gespeichert.', $html);
         self::assertStringContainsString('also bis zu 4 Stimmrechte.', $html);
-        self::assertStringContainsString('<option value="half" selected>mehr als der Hälfte</option>', $html);
+        self::assertStringContainsString('<option value="half" selected>Mehr als die Hälfte</option>', $html);
         self::assertStringContainsString('Bei 2 abgegebenen Stimmen sind 2 Ja-Stimmen nötig. Wer nicht abstimmt, zählt nicht mit.', $html);
     }
 
@@ -111,7 +113,7 @@ final class SettingsTest extends HttpTestCase
         $response = $this->post('/admin/settings', ['delegation' => '1', 'show_open_names' => '1', 'max_received' => '1', 'retention_days' => '7', 'majority' => 'two_thirds', 'majority_base' => 'eligible'], htmx: true);
 
         self::assertSame(200, $response->getStatusCode());
-        self::assertStringStartsWith('<form class="panel form narrow mt-18" id="settings"', trim($this->body($response)));
+        self::assertStringStartsWith('<form class="panel form mt-18" id="settings"', trim($this->body($response)));
         self::assertSame('{"toast":"Einstellungen gespeichert."}', $response->getHeaderLine('HX-Trigger'));
         self::assertSame(1, $this->settings()->maxReceived());
         self::assertSame(7, $this->settings()->retentionDays());
@@ -151,7 +153,7 @@ final class SettingsTest extends HttpTestCase
             $html = $this->body($response);
 
             self::assertSame(422, $response->getStatusCode());
-            self::assertStringStartsWith('<section class="panel narrow" id="voice-groups"', trim($html));
+            self::assertStringStartsWith('<section class="panel" id="voice-groups"', trim($html));
             self::assertSame(json_encode(['toast' => $message]), $response->getHeaderLine('HX-Trigger'));
             self::assertStringContainsString('<p class="field-error" id="g-error">' . $message . '</p>', $html);
             self::assertMatchesRegularExpression('/id="g-' . $field . '"[^>]*autofocus aria-invalid="true"/', $html);

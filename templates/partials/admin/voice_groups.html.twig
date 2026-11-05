@@ -5,7 +5,7 @@
     leaving a changed name, so the panel never shows an older state than the database.
 #}
 {% set sync = '#voice-groups:drop' %}
-<section class="panel narrow" id="voice-groups" aria-labelledby="voice-groups-title" hx-target="this" hx-swap="outerHTML">
+<section class="panel" id="voice-groups" aria-labelledby="voice-groups-title" hx-target="this" hx-swap="outerHTML">
     <h2 id="voice-groups-title">{{ 'admin.settings.groups.title'|trans }}</h2>
     <p class="help">{{ 'admin.settings.groups.lead'|trans }}</p>
     <ul class="glist mt-12">
