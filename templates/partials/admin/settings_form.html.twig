@@ -1,5 +1,17 @@
 {# The settings form. The majority's example counts with today's member count, as if every member voted. #}
-<form class="panel form narrow mt-18" id="settings" method="post" action="/admin/settings" hx-post="/admin/settings" hx-target="this" hx-swap="outerHTML">
+{#
+    A setting's title and explanation; its control refers to the explanation by the id <id>-help.
+    In a checkbox row the whole row is the label, so a tap anywhere on it toggles the box; the
+    box takes its name from the title alone (<id>-title).
+#}
+{% macro head(id, title, help, in_label = false) -%}
+    <span class="set-text">
+        {%- if in_label %}<span class="set-title" id="{{ id }}-title">{{ title }}</span>{% else %}<label class="set-title" for="{{ id }}">{{ title }}</label>{% endif -%}
+        <span class="help" id="{{ id }}-help">{{ help }}</span>
+    </span>
+{%- endmacro %}
+{% import _self as s %}
+<form class="panel form mt-18" id="settings" method="post" action="/admin/settings" hx-post="/admin/settings" hx-target="this" hx-swap="outerHTML">
     {{ include('partials/csrf_field.html.twig') }}
     <fieldset>
         <legend>{{ 'admin.settings.majority.legend'|trans }}</legend>
@@ -14,14 +26,17 @@
             cast: 'admin.settings.majority.base.cast'|trans,
         } %}
         {% set base = settings.majority.base.value %}
-        <div class="inline-sel">
-            <label for="s-share">{{ 'admin.settings.majority.before'|trans }}</label>
-            <select id="s-share" name="majority">
+        <div class="set">
+            {{ s.head('s-share', 'admin.settings.majority.share.title'|trans, 'admin.settings.majority.share.help'|trans) }}
+            <select id="s-share" name="majority" aria-describedby="s-share-help">
                 {% for share in majority_shares %}
                     <option value="{{ share.value }}"{% if share == settings.majority.share %} selected{% endif %}>{{ share_labels[share.value] }}</option>
                 {% endfor %}
             </select>
-            <select id="s-base" name="majority_base" aria-label="{{ 'admin.settings.majority.base_label'|trans }}">
+        </div>
+        <div class="set">
+            {{ s.head('s-base', 'admin.settings.majority.base.title'|trans, 'admin.settings.majority.base.help'|trans) }}
+            <select id="s-base" name="majority_base" aria-describedby="s-base-help">
                 {% for choice in majority_bases %}
                     <option value="{{ choice.value }}"{% if choice.value == base %} selected{% endif %}>{{ base_labels[choice.value] }}</option>
                 {% endfor %}
@@ -31,39 +46,36 @@
     </fieldset>
     <fieldset>
         <legend>{{ 'admin.settings.delegation.legend'|trans }}</legend>
-        <label class="check">
-            <input type="checkbox" name="delegation" value="1"{% if settings.delegationEnabled %} checked{% endif %}>
-            <span><b>{{ 'admin.settings.delegation.enabled'|trans }}</b><br><span class="help">{{ 'admin.settings.delegation.help'|trans }}</span></span>
+        <label class="set check-set" for="s-delegation">
+            {{ s.head('s-delegation', 'admin.settings.delegation.enabled'|trans, 'admin.settings.delegation.help'|trans, true) }}
+            <input type="checkbox" id="s-delegation" aria-labelledby="s-delegation-title" aria-describedby="s-delegation-help" name="delegation" value="1"{% if settings.delegationEnabled %} checked{% endif %}>
         </label>
-        <div class="inline-sel">
-            <label for="s-max">{{ 'admin.settings.delegation.max_before'|trans }}</label>
-            <select id="s-max" name="max_received">
+        <div class="set">
+            {{ s.head('s-max', 'admin.settings.delegation.max.title'|trans, 'admin.settings.delegation.max.help'|trans({weight: settings.maxReceived + 1})) }}
+            <select id="s-max" name="max_received" aria-describedby="s-max-help">
                 {% for choice in max_received_choices %}
                     <option value="{{ choice }}"{% if choice == settings.maxReceived %} selected{% endif %}>{{ choice }}</option>
                 {% endfor %}
             </select>
-            <span>{{ 'admin.settings.delegation.max_after'|trans({weight: settings.maxReceived + 1}) }}</span>
         </div>
     </fieldset>
     <fieldset>
         <legend>{{ 'admin.settings.visibility.legend'|trans }}</legend>
-        <label class="check">
-            <input type="checkbox" name="show_open_names" value="1"{% if settings.showOpenNames %} checked{% endif %}>
-            <span><b>{{ 'admin.settings.visibility.show_open_names'|trans }}</b><br><span class="help">{{ 'admin.settings.visibility.help'|trans }}</span></span>
+        <label class="set check-set" for="s-open-names">
+            {{ s.head('s-open-names', 'admin.settings.visibility.show_open_names'|trans, 'admin.settings.visibility.help'|trans, true) }}
+            <input type="checkbox" id="s-open-names" aria-labelledby="s-open-names-title" aria-describedby="s-open-names-help" name="show_open_names" value="1"{% if settings.showOpenNames %} checked{% endif %}>
         </label>
     </fieldset>
     <fieldset>
         <legend>{{ 'admin.settings.retention.legend'|trans }}</legend>
-        <div class="inline-sel">
-            <label for="s-ret">{{ 'admin.settings.retention.before'|trans }}</label>
-            <select id="s-ret" name="retention_days">
+        <div class="set">
+            {{ s.head('s-ret', 'admin.settings.retention.title'|trans, 'admin.settings.retention.help'|trans) }}
+            <select id="s-ret" name="retention_days" aria-describedby="s-ret-help">
                 {% for choice in retention_days_choices %}
-                    <option value="{{ choice }}"{% if choice == settings.retentionDays %} selected{% endif %}>{{ choice }}</option>
+                    <option value="{{ choice }}"{% if choice == settings.retentionDays %} selected{% endif %}>{{ 'admin.settings.retention.days'|trans({days: choice}) }}</option>
                 {% endfor %}
             </select>
-            <span>{{ 'admin.settings.retention.after'|trans }}</span>
         </div>
-        <p class="help">{{ 'admin.settings.retention.help'|trans }}</p>
     </fieldset>
     <div class="row">
         {# The id keeps the focus here when htmx swaps the panel. #}

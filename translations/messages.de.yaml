@@ -365,15 +365,17 @@ admin:
     title: Einstellungen
     majority:
       legend: Mehrheit
-      before: Eine Abstimmung braucht Ja-Stimmen von
       share:
-        half: mehr als der Hälfte
-        two_thirds: zwei Dritteln
-        three_quarters: drei Vierteln
-      base_label: Bezugsgröße der Mehrheit
+        title: Erforderliche Mehrheit
+        help: Der Anteil an Ja-Stimmen, den eine Abstimmung zum Bestehen braucht.
+        half: Mehr als die Hälfte
+        two_thirds: Zwei Drittel
+        three_quarters: Drei Viertel
       base:
-        eligible: aller Stimmberechtigten
-        cast: der abgegebenen Stimmen
+        title: Bezugsgröße
+        help: Wovon der Anteil berechnet wird.
+        eligible: Alle Stimmberechtigten
+        cast: Abgegebene Stimmen
       example: '{base, select, cast {Bei {eligible, plural, one {# abgegebenen Stimme} other {# abgegebenen Stimmen}}} other {Bei {eligible, plural, one {# Mitglied} other {# Mitgliedern}}}} {needed, plural, one {ist # Ja-Stimme} other {sind # Ja-Stimmen}} nötig.'
       abstention: '{base, select, cast {Wer nicht abstimmt, zählt nicht mit.} other {Wer nicht abstimmt, gilt als Enthaltung und zählt nicht als Ja.}}'
       text: Die Regel gilt für Aufnahmen und für Ausnahmen in der Probezeit. Eine Änderung gilt für Abstimmungen, die danach angelegt werden.
@@ -381,17 +383,18 @@ admin:
       legend: Stimmübertragung
       enabled: Mitglieder dürfen ihre Stimme übertragen
       help: Übertragungen sind für alle sichtbar und lassen sich nicht weiterreichen. Wer selbst abstimmt, holt die Stimme automatisch zurück.
-      max_before: Eine Person kann höchstens
-      max_after: 'Stimmen zusätzlich erhalten, also bis zu {weight} Stimmrechte.'
+      max:
+        title: Höchstzahl übertragener Stimmen
+        help: 'So viele Stimmen kann eine Person höchstens zusätzlich erhalten, also bis zu {weight} Stimmrechte.'
     visibility:
       legend: Sichtbarkeit
       show_open_names: Alle Mitglieder sehen, wer noch nicht abgestimmt hat
       help: Sonst sehen Mitglieder nur die Anzahl. Vorstand und Verwaltung sehen die Namen immer.
     retention:
       legend: Aufbewahrung
-      before: Abgeschlossene Abstimmungen werden
-      after: Tage nach dem Abschluss samt Ergebnis automatisch gelöscht.
-      help: Danach gibt es weder Ergebnis noch Beteiligung noch den Namen der Person, über die abgestimmt wurde. Entwürfe und offene Abstimmungen bleiben.
+      title: Löschen nach
+      help: So lange nach dem Abschluss bleibt eine Abstimmung, dann wird sie samt Ergebnis automatisch gelöscht. Danach gibt es weder Ergebnis noch Beteiligung noch den Namen der Person, über die abgestimmt wurde. Entwürfe und offene Abstimmungen bleiben.
+      days: '{days, plural, one {# Tag} other {# Tagen}}'
     save: Speichern
     groups:
       title: Stimmgruppen

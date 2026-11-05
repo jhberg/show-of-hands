@@ -24,7 +24,7 @@ test('an admin changes a setting and maintains the voice groups', async ({ page 
   await expect(page.getByLabel('OAuth-Client-ID')).toHaveAttribute('readonly', '');
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
 
-  const retention = page.getByLabel('Abgeschlossene Abstimmungen werden');
+  const retention = page.getByLabel('Löschen nach');
   await retention.selectOption('30');
   await page.getByRole('button', { name: 'Speichern' }).click();
   await expect(toast).toHaveText('Einstellungen gespeichert.');
