@@ -123,6 +123,44 @@ final class MigratorTest extends TestCase
         self::assertFalse(self::scalar($pdo, "SELECT 1 FROM sqlite_master WHERE name = 'u'"));
     }
 
+    public function testRebuildingATableKeepsTheRowsThatReferenceIt(): void
+    {
+        $this->migration('0001_init.sql', 'CREATE TABLE parent (id INTEGER PRIMARY KEY, label TEXT);
+            CREATE TABLE child (parent_id INTEGER NOT NULL REFERENCES parent (id) ON DELETE CASCADE);
+            INSERT INTO parent VALUES (1, \'a\'); INSERT INTO child VALUES (1);');
+        $this->migration('0002_rebuild.sql', 'CREATE TABLE parent_new (id INTEGER PRIMARY KEY, label TEXT NOT NULL);
+            INSERT INTO parent_new SELECT id, label FROM parent;
+            DROP TABLE parent;
+            ALTER TABLE parent_new RENAME TO parent;');
+        $pdo = ConnectionFactory::open($this->dir . '/app.sqlite');
+
+        $this->migrator($pdo)->migrate();
+
+        self::assertSame(1, self::scalar($pdo, 'SELECT COUNT(*) FROM child'), 'Dropping the old table cascaded.');
+        self::assertSame(1, self::scalar($pdo, 'PRAGMA foreign_keys'));
+        $pdo->exec('DELETE FROM parent');
+        self::assertSame(0, self::scalar($pdo, 'SELECT COUNT(*) FROM child'), 'The rebuilt table cascades again.');
+    }
+
+    public function testRefusesAMigrationThatBreaksAForeignKey(): void
+    {
+        $this->migration('0001_init.sql', 'CREATE TABLE parent (id INTEGER PRIMARY KEY);
+            CREATE TABLE child (parent_id INTEGER NOT NULL REFERENCES parent (id));
+            INSERT INTO parent VALUES (1); INSERT INTO child VALUES (1);');
+        $this->migration('0002_orphan.sql', 'DELETE FROM parent;');
+        $pdo = ConnectionFactory::open($this->dir . '/app.sqlite');
+
+        try {
+            $this->migrator($pdo)->migrate();
+            self::fail('The migration left a child without its parent.');
+        } catch (\RuntimeException $e) {
+            self::assertSame('Migration 0002_orphan.sql failed: It leaves 1 broken foreign key reference(s).', $e->getMessage());
+        }
+        self::assertSame(1, $this->migrator($pdo)->version());
+        self::assertSame(1, self::scalar($pdo, 'SELECT COUNT(*) FROM parent'));
+        self::assertSame(1, self::scalar($pdo, 'PRAGMA foreign_keys'));
+    }
+
     public function testARolledBackReleaseLeavesTheNewerMigrationsAlone(): void
     {
         $this->migration('0001_init.sql', 'CREATE TABLE t (n INTEGER);');

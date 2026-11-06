@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import AxeBuilder from '@axe-core/playwright';
+import { noViolations } from './axe';
 import { openAdmin } from './header';
 
 // Runs after every other journey (see playwright.config.ts), because its new polls join the
@@ -11,12 +11,6 @@ async function signIn(page: Page, email: string) {
   await page.goto('/dev-login');
   await page.getByRole('button', { name: email }).click();
   await expect(page).toHaveURL('/');
-}
-
-// The confirmations fade in; axe would measure their colours halfway.
-async function noViolations(page: Page) {
-  await page.waitForFunction(() => document.getAnimations().length === 0);
-  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
 }
 
 test('an admin creates, publishes, and after an accidental close reopens a poll', async ({ page }, testInfo) => {

@@ -1,11 +1,12 @@
 import { expect, test, type Page } from '@playwright/test';
-import AxeBuilder from '@axe-core/playwright';
+import { noViolations } from './axe';
 
 // Members from bin/console seed:demo who have neither voted nor delegated on "Klara Wendt"
-// (poll 1). The phone and desktop projects run in parallel, so each uses its own members.
+// (poll 1). The phone, desktop, and iPhone projects run in parallel, so each uses its own members.
 const PAIRS = {
   phone: { from: 'ida.brandl@example.org', fromName: 'Ida Brandl', to: 'Hedi Graf (Alt 2)', toName: 'Hedi Graf', toFirst: 'Hedi' },
   desktop: { from: 'ella.moser@example.org', fromName: 'Ella Moser', to: 'Frieda Haas (Alt 1)', toName: 'Frieda Haas', toFirst: 'Frieda' },
+  iphone: { from: 'matti.busch@example.org', fromName: 'Matti Busch', to: 'Pia Lechner (Sopran 2)', toName: 'Pia Lechner', toFirst: 'Pia' },
 };
 const PAIRS_WITHOUT_JS = {
   phone: { from: 'emma.pohl@example.org', to: 'Carla Mertens (Chorleitung)', toName: 'Carla Mertens' },
@@ -31,7 +32,7 @@ test('a member delegates, votes to take it back, delegates again, and revokes', 
   const select = page.getByLabel('An wen?');
   await expect(select.locator('option', { hasText: 'Greta Sommerfeld' })).toHaveCount(0);
   await expect(select.locator('option', { hasText: 'Mara Kessler (Sopran 1) · hat abgestimmt' })).toHaveCount(1);
-  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+  await noViolations(page);
 
   await page.getByRole('button', { name: 'Stimme übertragen' }).click();
   await expect(page.getByRole('status')).toHaveText('Bitte eine Person auswählen.');
@@ -44,7 +45,7 @@ test('a member delegates, votes to take it back, delegates again, and revokes', 
   const entry = page.locator('.dlist li', { hasText: pair.fromName });
   await expect(entry).toContainText(pair.toName);
   await expect(entry).toContainText('noch nicht abgegeben');
-  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+  await noViolations(page);
 
   await page.getByRole('link', { name: 'Alle Abstimmungen' }).click();
   await expect(page.getByRole('link', { name: /Klara Wendt/ })).toContainText(`Übertragen an ${pair.toFirst}`);
@@ -69,6 +70,7 @@ test.describe('without JavaScript', () => {
   test.use({ javaScriptEnabled: false });
 
   test('a member delegates through plain forms', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name === 'iphone', 'Plain forms need no second engine.');
     const pair = PAIRS_WITHOUT_JS[testInfo.project.name as keyof typeof PAIRS_WITHOUT_JS];
     await signIn(page, pair.from);
     await page.goto('/polls/1');

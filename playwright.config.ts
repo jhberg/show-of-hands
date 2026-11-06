@@ -1,12 +1,15 @@
 import { defineConfig, devices } from '@playwright/test';
 
 const phone = devices['Pixel 7'];
+// Safari's engine. Many members vote on an iPhone, so the voting journeys run there too.
+const iphone = devices['iPhone 15'];
 const desktop = { ...devices['Desktop Chrome'], viewport: { width: 1280, height: 800 } };
 const members = /members\.spec/;
 const settings = /settings\.spec/;
 const polls = /admin-polls\.spec/;
 const a11y = /a11y\.spec/;
 const live = /live\.spec/;
+const voting = [/vote\.spec/, /delegation\.spec/];
 
 // Runs inside the e2e Compose service, against the seeded e2e-app on port 8081.
 // See compose.yaml: docker compose --profile e2e up --exit-code-from e2e e2e
@@ -24,9 +27,10 @@ export default defineConfig({
   projects: [
     { name: 'phone', use: phone, testIgnore: [live, members, settings, polls, a11y] },
     { name: 'desktop', use: desktop, testIgnore: [live, members, settings, polls, a11y] },
+    { name: 'iphone', use: iphone, testMatch: voting },
     // The live journey expects a refresh to bring nothing new, so it waits until no vote changes its poll.
-    { name: 'live-phone', use: phone, testMatch: live, dependencies: ['phone', 'desktop'] },
-    { name: 'live-desktop', use: desktop, testMatch: live, dependencies: ['phone', 'desktop'] },
+    { name: 'live-phone', use: phone, testMatch: live, dependencies: ['phone', 'desktop', 'iphone'] },
+    { name: 'live-desktop', use: desktop, testMatch: live, dependencies: ['phone', 'desktop', 'iphone'] },
     { name: 'members-phone', use: phone, testMatch: members, dependencies: ['live-phone', 'live-desktop'] },
     { name: 'members-desktop', use: desktop, testMatch: members, dependencies: ['live-phone', 'live-desktop'] },
     // Saving the settings writes every value, so the two devices take turns, after everything else.

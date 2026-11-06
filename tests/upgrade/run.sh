@@ -96,6 +96,7 @@ cp "$root/tests/e2e/config.php" "$work/site/config/config.php"
 printf 'name;email;group\nRobin Example;robin.example@example.org;S1\n' >"$work/site/config/members.csv"
 old_version="$(sql 'PRAGMA user_version')"
 members="$(sql 'SELECT COUNT(*) FROM members')"
+addresses="$(sql 'SELECT COUNT(*) FROM member_emails')"
 polls="$(sql 'SELECT COUNT(*) FROM polls')"
 
 step "Add data: a member votes Yes on poll 2"
@@ -120,6 +121,7 @@ diff <(find "$work/site/migrations" -name '[0-9][0-9][0-9][0-9]_*.sql' -exec bas
     || fail "MIGRATIONS.txt does not list the release's migrations"
 echo "Schema version $old_version -> $new_version"
 [ "$(sql 'SELECT COUNT(*) FROM members')" = "$members" ] || fail "members changed"
+[ "$(sql 'SELECT COUNT(*) FROM member_emails')" = "$addresses" ] || fail "sign-in addresses changed"
 [ "$(sql 'SELECT COUNT(*) FROM polls')" = "$polls" ] || fail "polls changed"
 backup="$work/site/data/backup/app-v$old_version.sqlite"
 if [ "$new_version" -gt "$old_version" ]; then

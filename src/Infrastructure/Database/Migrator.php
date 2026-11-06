@@ -99,10 +99,7 @@ final class Migrator
 
     public function version(): int
     {
-        $statement = $this->pdo->query('PRAGMA user_version');
-        $version = $statement === false ? 0 : $statement->fetchColumn();
-
-        return is_numeric($version) ? (int) $version : 0;
+        return $this->pragma('user_version');
     }
 
     /**
@@ -136,16 +133,44 @@ final class Migrator
         if ($sql === false) {
             throw new \RuntimeException("Cannot read {$file}.");
         }
+        // A migration that rebuilds a table drops the old one, and with foreign keys on, that deletes
+        // every row referencing it (ON DELETE CASCADE). SQLite's procedure for schema changes
+        // (https://www.sqlite.org/lang_altertable.html#otheralter): foreign keys off outside the
+        // transaction, which ignores the pragma, a foreign_key_check before the commit, then on again.
+        $foreignKeys = $this->pragma('foreign_keys') === 1;
+        $this->pdo->exec('PRAGMA foreign_keys = OFF');
         $this->pdo->exec('BEGIN IMMEDIATE');
         try {
             $this->pdo->exec($sql);
+            if ($foreignKeys) {
+                $this->requireIntactForeignKeys();
+            }
             // user_version is part of the database header, so it commits or rolls back with the schema.
             $this->pdo->exec('PRAGMA user_version = ' . $number);
             $this->pdo->exec('COMMIT');
         } catch (\Throwable $e) {
             $this->pdo->exec('ROLLBACK');
             throw new \RuntimeException('Migration ' . basename($file) . ' failed: ' . $e->getMessage(), 0, $e);
+        } finally {
+            $this->pdo->exec('PRAGMA foreign_keys = ' . ($foreignKeys ? 'ON' : 'OFF'));
         }
+    }
+
+    private function requireIntactForeignKeys(): void
+    {
+        $statement = $this->pdo->query('PRAGMA foreign_key_check');
+        $broken = $statement === false ? [] : $statement->fetchAll();
+        if ($broken !== []) {
+            throw new \RuntimeException('It leaves ' . count($broken) . ' broken foreign key reference(s).');
+        }
+    }
+
+    private function pragma(string $name): int
+    {
+        $statement = $this->pdo->query('PRAGMA ' . $name);
+        $value = $statement === false ? 0 : $statement->fetchColumn();
+
+        return is_numeric($value) ? (int) $value : 0;
     }
 
     /**
