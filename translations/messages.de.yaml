@@ -59,6 +59,7 @@ nav:
   admin: Verwaltung
   logout: Abmelden
   menu: Menü
+  skip: Zum Inhalt springen
 
 role:
   board: Vorstand
@@ -206,12 +207,15 @@ turnout:
   count: '{total, plural, one {von # Stimmrecht abgegeben} other {von # Stimmrechten abgegeben}}'
   bar: Abgegebene Stimmrechte
   summary: '{voted, plural, one {# Mitglied hat} other {# Mitglieder haben}} abgestimmt{delegated, plural, =0 {} one {, # hat die Stimme übertragen} other {, # haben die Stimme übertragen}}{missing, plural, =0 {. Alle haben mitgemacht.} one {, # fehlt noch.} other {, # fehlen noch.}}'
+  summary_closed: '{voted, plural, one {# Mitglied hat} other {# Mitglieder haben}} abgestimmt{delegated, plural, =0 {} one {, # hat die Stimme übertragen} other {, # haben die Stimme übertragen}}{missing, plural, =0 {. Alle haben mitgemacht.} one {, # fehlte.} other {, # fehlten.}}'
   missing: Noch nicht abgestimmt
+  missing_closed: Nicht abgestimmt
   no_group: Ohne Gruppe
   names_hidden: Die Namen sehen nur Vorstand und Verwaltung.
   all_voted: Alle Mitglieder haben abgestimmt.
   delegations: Übertragene Stimmen
   pending: noch nicht abgegeben
+  pending_closed: nicht abgegeben
   lock: Zwischenstände gibt es nicht. Das Ergebnis erscheint erst, wenn der Vorstand die Abstimmung abschließt.
 
 board:

@@ -34,13 +34,19 @@ test('a member delegates, votes to take it back, delegates again, and revokes', 
   await expect(select.locator('option', { hasText: 'Mara Kessler (Sopran 1) · hat abgestimmt' })).toHaveCount(1);
   await noViolations(page);
 
-  await page.getByRole('button', { name: 'Stimme übertragen' }).click();
+  // Without a choice, the field names the problem and takes the focus.
+  await page.getByRole('button', { name: 'Stimme übertragen' }).press('Enter');
   await expect(page.getByRole('status')).toHaveText('Bitte eine Person auswählen.');
+  await expect(select).toHaveAttribute('aria-invalid', 'true');
+  await expect(select).toHaveAccessibleDescription('Bitte eine Person auswählen.');
+  await expect(select).toBeFocused();
 
+  // The panel goes away with its button, so the focus moves to the notice that replaced it.
   await select.selectOption({ label: pair.to });
-  await page.getByRole('button', { name: 'Stimme übertragen' }).click();
+  await page.getByRole('button', { name: 'Stimme übertragen' }).press('Enter');
   await expect(page.getByRole('status')).toHaveText(`Stimme an ${pair.toName} übertragen.`);
   await expect(page.getByText(`Du hast deine Stimme an ${pair.toName} übertragen.`)).toBeVisible();
+  await expect(page.locator('.notice', { hasText: 'Du hast deine Stimme an' })).toBeFocused();
   await expect(page.getByText(`${pair.toFirst} hat noch nicht abgestimmt.`)).toBeVisible();
   const entry = page.locator('.dlist li', { hasText: pair.fromName });
   await expect(entry).toContainText(pair.toName);
@@ -61,9 +67,11 @@ test('a member delegates, votes to take it back, delegates again, and revokes', 
   await page.getByRole('button', { name: 'Stimme übertragen' }).click();
   await expect(page.getByRole('button', { name: /^Ja/ })).toHaveAttribute('aria-pressed', 'false');
 
-  await page.getByRole('button', { name: 'Übertragung zurücknehmen, ohne abzustimmen' }).click();
+  await page.getByRole('button', { name: 'Übertragung zurücknehmen, ohne abzustimmen' }).press('Enter');
   await expect(page.getByRole('status')).toHaveText('Übertragung zurückgenommen. Dein Stimmrecht liegt wieder bei dir.');
   await expect(page.getByText('Tippe auf Ja oder Nein.')).toBeVisible();
+  // The notice with the button went away, so the focus starts over at the ballot.
+  await expect(page.getByRole('heading', { name: 'Deine Stimme' })).toBeFocused();
 });
 
 test.describe('without JavaScript', () => {
@@ -77,6 +85,10 @@ test.describe('without JavaScript', () => {
 
     await page.getByRole('button', { name: 'Stimme an ein anderes Mitglied übertragen' }).click();
     await expect(page).toHaveURL('/polls/1?delegate=1#deleg');
+    // Without a choice, the page answers with the message at the field.
+    await page.getByRole('button', { name: 'Stimme übertragen' }).click();
+    await expect(page.getByLabel('An wen?')).toHaveAttribute('aria-invalid', 'true');
+    await expect(page.locator('#deleg-to-error')).toHaveText('Bitte eine Person auswählen.');
     await page.getByLabel('An wen?').selectOption({ label: pair.to });
     await page.getByRole('button', { name: 'Stimme übertragen' }).click();
     await expect(page).toHaveURL('/polls/1');

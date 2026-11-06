@@ -247,8 +247,8 @@ final class CloseTest extends HttpTestCase
         self::assertStringContainsString('Nicht aufgenommen', $html);
         self::assertStringContainsString('<span class="r"><i></i>2 nicht abgegeben · 50,0 %</span>', $html);
         self::assertStringContainsString('2 von 4 Stimmrechten wurden abgegeben, 1 davon übertragen.', $html);
-        self::assertStringContainsString('1 Mitglied hat abgestimmt, 2 haben die Stimme übertragen, 1 fehlt noch.', $html);
-        self::assertMatchesRegularExpression('#<span>Max Example</span><svg.*?</svg><span>Kim Example</span><span class="chip">noch nicht abgegeben</span>#s', $html);
+        self::assertStringContainsString('1 Mitglied hat abgestimmt, 2 haben die Stimme übertragen, 1 fehlte.', $html);
+        self::assertMatchesRegularExpression('#<span>Max Example</span><svg.*?</svg><span>Kim Example</span><span class="chip">nicht abgegeben</span>#s', $html);
     }
 
     public function testTwoThirdsExactlyIsEnoughAndTheMarkerLabelFlipsNearTheEnd(): void
@@ -277,7 +277,7 @@ final class CloseTest extends HttpTestCase
         $this->close(poll: $poll);
 
         $html = $this->page(poll: $poll);
-        self::assertStringContainsString('<p class="note"><b>May Robin sing at the concert?</b></p>', $html);
+        self::assertStringContainsString('<p class="note"><b lang="de">May Robin sing at the concert?</b></p>', $html);
         self::assertStringContainsString('Ausnahme genehmigt<span class="pct num">75,0 % Ja</span>', $html);
     }
 

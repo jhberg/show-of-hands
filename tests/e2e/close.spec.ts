@@ -32,9 +32,10 @@ test('a board member closes a poll and the result replaces the ballot', async ({
   await expect(confirm).toBeFocused();
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
 
-  await confirm.click();
+  await page.keyboard.press('Enter');
   await expect(page.getByRole('status')).toHaveText('Abstimmung abgeschlossen. Das Ergebnis ist jetzt sichtbar.');
-  await expect(page.getByRole('heading', { name: 'Ergebnis' })).toBeVisible();
+  // The board's buttons went away, so the focus moves to the result.
+  await expect(page.getByRole('heading', { name: 'Ergebnis' })).toBeFocused();
   await expect(page.locator('.verdict')).toContainText('Ausnahme abgelehnt');
   await expect(page.locator('.verdict')).toContainText('8,0 % Ja');
   await expect(page.getByRole('heading', { name: 'Deine Stimme' })).toHaveCount(0);

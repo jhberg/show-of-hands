@@ -6,7 +6,7 @@
     htmx keeps the focus across the swap. A refreshed <main> is "still": what it shows does not
     rise into view again.
 #}
-<main class="main{% if live %} still{% endif %}" hx-sync="this:drop">
+<main class="main{% if live %} still{% endif %}" id="main" tabindex="-1" hx-sync="this:drop">
     {% if live_url is not null %}
         {#
             Fetches the fresh <main> every 15 seconds, and at once when the page shows again. It gives

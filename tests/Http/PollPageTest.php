@@ -50,7 +50,7 @@ final class PollPageTest extends HttpTestCase
         self::assertSame(200, $response->getStatusCode());
         self::assertStringContainsString('Alle Abstimmungen', $html);
         self::assertStringContainsString('Abstimmung über die Aufnahme von', $html);
-        self::assertStringContainsString('<h1>Robin Example</h1>', $html);
+        self::assertStringContainsString('<h1 lang="de">Robin Example</h1>', $html);
         self::assertStringContainsString('Sopran 1 · Vorsingen am Di., 3. November 2026', $html);
         self::assertStringContainsString('<i class="dot"></i>Offen', $html);
         self::assertStringContainsString('Robin sings after the break.', $html);
@@ -78,7 +78,7 @@ final class PollPageTest extends HttpTestCase
 
         self::assertStringContainsString('Abstimmung über eine Ausnahme in der Probezeit von', $html);
         self::assertStringContainsString('Sopran 1 · Datum offen', $html);
-        self::assertStringContainsString('<p class="q">May Robin sing at the concert?</p>', $html);
+        self::assertStringContainsString('<p class="q"><span lang="de">May Robin sing at the concert?</span></p>', $html);
         self::assertStringNotContainsString('<b>May Robin sing at the concert?</b>', $html);
         self::assertStringContainsString('<small>zustimmen</small>', $html);
         self::assertStringContainsString('<small>ablehnen</small>', $html);
@@ -92,10 +92,52 @@ final class PollPageTest extends HttpTestCase
         $html = $this->body($this->request('GET', "/polls/{$poll}"));
 
         self::assertStringContainsString('Sopran 1 · Entscheidung bis So., 8. November 2026', $html);
-        self::assertStringContainsString('<p class="note"><b>May Robin sing at the concert?</b></p>', $html);
+        self::assertStringContainsString('<p class="note"><b lang="de">May Robin sing at the concert?</b></p>', $html);
         self::assertStringContainsString('<span class="chip closed">Abgeschlossen</span>', $html);
         self::assertStringNotContainsString('class="ballot"', $html);
         self::assertStringNotContainsString('Zwischenstände', $html);
+    }
+
+    public function testAnEnglishPageMarksWhatTheChoirWroteAsItsOwnLanguage(): void
+    {
+        $poll = $this->addPoll(kind: PollKind::Exception, question: 'Darf Robin mitsingen?', note: 'Nach der Pause.');
+        $this->signIn('kim@example.org');
+
+        $html = $this->body($this->request('GET', "/polls/{$poll}", cookies: ['soh_locale' => 'en']));
+
+        self::assertStringContainsString('<html lang="en"', $html);
+        self::assertStringContainsString('<h1 lang="de">Robin Example</h1>', $html);
+        self::assertStringContainsString('<p class="q"><span lang="de">Darf Robin mitsingen?</span></p>', $html);
+        self::assertStringContainsString('<p class="note" lang="de">Nach der Pause.</p>', $html);
+    }
+
+    public function testTheSkipLinkLeadsPastTheHeaderToMain(): void
+    {
+        $poll = $this->addPoll();
+        $this->signIn('kim@example.org');
+
+        foreach (['/', "/polls/{$poll}"] as $path) {
+            $html = $this->body($this->request('GET', $path));
+            self::assertMatchesRegularExpression('#<body>\s*<a class="skip" href="\#main">Zum Inhalt springen</a>\s*<header#', $html, $path);
+            self::assertStringContainsString('<main class="main" id="main" tabindex="-1"', $html, $path);
+        }
+    }
+
+    public function testAClosedPollsTurnoutSpeaksInThePast(): void
+    {
+        $poll = $this->addPoll();
+        $this->signIn('kim@example.org');
+        $this->vote($poll, 'yes');
+        self::assertStringContainsString('1 Mitglied hat abgestimmt, 2 fehlen noch.', $this->body($this->request('GET', "/polls/{$poll}")));
+
+        $this->service(PollCloser::class)->close($poll, new \DateTimeImmutable());
+
+        $html = $this->body($this->request('GET', "/polls/{$poll}"));
+        self::assertStringContainsString('1 Mitglied hat abgestimmt, 2 fehlten.', $html);
+        self::assertStringContainsString('<h3>Nicht abgestimmt <span class="n num">2</span></h3>', $html);
+        $html = $this->body($this->request('GET', "/polls/{$poll}", cookies: ['soh_locale' => 'en']));
+        self::assertStringContainsString('1 member voted, 2 did not vote.', $html);
+        self::assertStringContainsString('<h3>Did not vote <span class="n num">2</span></h3>', $html);
     }
 
     public function testADraftLooksLikeAPollThatDoesNotExist(): void

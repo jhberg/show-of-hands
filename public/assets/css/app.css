@@ -33,7 +33,8 @@ code{font-family:var(--mono);font-size:.9em}
 .top{position:sticky;top:0;z-index:var(--z-sticky);background:var(--bg);border-bottom:1px solid var(--line)}
 .top-in{max-width:960px;margin:0 auto;padding:0 16px;min-height:58px;display:flex;align-items:center;gap:14px}
 .brand{display:flex;align-items:baseline;gap:10px;min-width:0;overflow:hidden;text-decoration:none;color:var(--ink);white-space:nowrap}
-.wm{font-weight:700;font-size:19px;letter-spacing:.03em}
+/* A long choir name ends in an ellipsis rather than a hard cut. */
+.wm{font-weight:700;font-size:19px;letter-spacing:.03em;min-width:0;overflow:hidden;text-overflow:ellipsis}
 .wm i{font-style:normal;color:var(--accent-text);position:relative;top:1px}
 .brand small{font-size:14px;color:var(--ink-2);font-weight:500}
 .nav{display:flex;gap:2px;margin-left:4px}
@@ -242,7 +243,8 @@ section.board .help{max-width:60ch}
 .form{display:grid;gap:16px}
 .field{display:grid;gap:6px}
 .field label,.set-title{font-weight:500;font-size:15px}
-input[type=text],input[type=email],input[type=date],input[type=search],select,textarea{font:inherit;font-size:16px;padding:11px 12px;border:1px solid var(--line);border-radius:var(--r-s);background:var(--bg);color:var(--ink);width:100%;min-height:46px}
+/* Fields draw their border in --field-line, which keeps 3:1 against the page for WCAG 1.4.11. */
+input[type=text],input[type=email],input[type=date],input[type=search],select,textarea{font:inherit;font-size:16px;padding:11px 12px;border:1px solid var(--field-line);border-radius:var(--r-s);background:var(--bg);color:var(--ink);width:100%;min-height:46px}
 input[readonly]{background:var(--surface);color:var(--ink-2)}
 input::placeholder{color:var(--ink-3)}
 input:focus,select:focus,textarea:focus{outline:3px solid var(--focus);outline-offset:0;border-color:var(--accent)}
@@ -267,6 +269,9 @@ legend{font-weight:700;font-size:17px;padding:0;margin-bottom:6px}
 /* toast */
 .toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(8px);background:var(--ink);color:var(--bg);padding:11px 18px;border-radius:999px;font-size:15px;font-weight:500;z-index:var(--z-toast);box-shadow:var(--shadow);opacity:0;pointer-events:none;transition:opacity var(--t) var(--ease),transform var(--t) var(--ease);max-width:calc(100% - 32px);text-align:center;width:max-content}
 .toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+/* Without JavaScript nothing hides a toast the server rendered, so it fades out by itself. */
+html:not(.js) .toast.on{animation:toast-out var(--t) var(--ease) 4s forwards}
+@keyframes toast-out{to{opacity:0;visibility:hidden}}
 
 /* A refresh of the poll page shows these again; they rose into view when they first appeared. */
 .still .reg,.still .deleg-panel,.still .warnbox{animation:none}
@@ -274,6 +279,8 @@ legend{font-weight:700;font-size:17px;padding:0;margin-bottom:6px}
 @keyframes fade{from{opacity:0}to{opacity:1}}
 @media (prefers-reduced-motion: reduce){
   *,*::before,*::after{animation:none!important;transition:none!important}
+  /* The toast still goes away, without a fade. */
+  html:not(.js) .toast.on{animation:toast-out 1ms 4s forwards!important}
 }
 
 /* additions to the mockup */
@@ -331,6 +338,17 @@ a.gbtn{color:var(--ink);text-decoration:none}
 .dev-other input{flex:1;min-width:200px;width:auto}
 .logout{display:contents}
 .mt-0{margin-top:0}
+/* Long words and URLs in what admins and members typed break instead of widening the page. */
+.note,.q,.vote-head h1,.page-head h1,.name,.dlist li,.vlist .t b,.alist .who b{overflow-wrap:anywhere}
+/* The skip link waits above the page until the keyboard reaches it. */
+.skip{position:absolute;left:8px;top:8px;z-index:calc(var(--z-sticky) + 1);padding:10px 14px;border-radius:var(--r-s);background:var(--bg);color:var(--ink);font-weight:500;box-shadow:var(--shadow);transform:translateY(calc(-100% - 16px))}
+.skip:focus{transform:none}
+/* main takes the focus from the skip link only to start the tab order there. */
+.main:focus{outline:none}
+/* A heading that takes the focus after an action draws its ring around its words only. */
+h2[tabindex]{width:fit-content}
+/* The question asks only about an exception. Without :has(), the field stays visible. */
+#poll-form:has(input[name=kind][value=admission]:checked) [data-kind-only=exception]{display:none}
 .mt-6{margin-top:6px}
 .mt-10{margin-top:10px}
 .mt-12{margin-top:12px}
@@ -345,11 +363,14 @@ html:not(.js) .js-only{display:none}
 .panel > section{padding:0;border-bottom:none}
 /* A refused save names the problem at its field, beside the toast. */
 .field-error{font-size:14px;color:var(--nein);font-weight:500}
-input[aria-invalid=true]{border-color:var(--nein)}
+:is(input,select,textarea)[aria-invalid=true]{border-color:var(--nein)}
 /* Tap targets reach 44 px on touch screens. */
 @media (pointer:coarse){
   .btn.sm,.btn.icon,.nav a{min-height:44px}
   .btn.icon{min-width:44px}
   .alist .acts{grid-template-columns:repeat(3,44px)}
   .link{min-height:44px;display:inline-flex;align-items:center}
+  /* Padding grows the tap area, the negative margin keeps the layout where it was. */
+  .back{padding-block:11px;margin-block:-11px 3px}
+  .brand{padding-block:8px;margin-block:-8px}
 }

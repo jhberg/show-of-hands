@@ -6,6 +6,7 @@ import { openAdmin } from './header';
 // lists the others read. Each device works on polls of its own name.
 const ADMIN = 'mara.kessler@example.org';
 const MEMBER = 'rosa.kuehn@example.org';
+const LONG_NOTE = 'Unterlagen: https://example.org/vorsingen/protokolle/2026/herbst/aufnahme-ergebnisse-und-anmerkungen-des-vorstands.pdf';
 
 async function signIn(page: Page, email: string) {
   await page.goto('/dev-login');
@@ -29,6 +30,8 @@ test('an admin creates, publishes, and after an accidental close reopens a poll'
   await expect(page.getByLabel('Frage, über die abgestimmt wird')).toBeVisible();
   await expect(page.getByLabel('Entscheidung bis')).toBeVisible();
   await page.getByLabel('Name der Person in der Probezeit').fill(name);
+  // A long word or address must not widen the poll page on the phone.
+  await page.getByLabel('Hinweis für die Mitglieder (optional)').fill(LONG_NOTE);
   await page.getByRole('button', { name: 'Als Entwurf speichern' }).click();
   await expect(toast).toHaveText('Bitte die Frage formulieren, über die abgestimmt wird.');
   await expect(page.getByLabel('Frage, über die abgestimmt wird')).toBeFocused();
@@ -43,15 +46,18 @@ test('an admin creates, publishes, and after an accidental close reopens a poll'
   await expect(page.locator('#share-link')).toHaveText(new RegExp(`${pollPath}$`));
   await noViolations(page);
 
-  await page.getByRole('button', { name: 'Abstimmung freischalten' }).click();
+  await page.getByRole('button', { name: 'Abstimmung freischalten' }).press('Enter');
   await expect(toast).toHaveText('Freigeschaltet. Mitglieder können jetzt abstimmen.');
-  await expect(page.getByRole('heading', { name: /^Offen seit / })).toBeVisible();
+  // The button went away with the draft, so the focus moves to the new status.
+  await expect(page.getByRole('heading', { name: /^Offen seit / })).toBeFocused();
   await expect(page.getByText('Ergebnis: wird erst nach dem Abschluss berechnet.', { exact: false })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Beteiligung' })).toBeVisible();
   await noViolations(page);
 
   // The admin is also on the board, so they vote and close on the poll page.
   await page.getByRole('link', { name: 'Zur Abstimmungsseite' }).click();
+  await expect(page.getByText(LONG_NOTE)).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(page.viewportSize()!.width);
   await page.getByRole('button', { name: /^Ja/ }).click();
   // The poll page drops a tap while the vote is on its way, so the close waits for its answer.
   await expect(toast).toHaveText('Stimme registriert: Ja.');
@@ -66,9 +72,10 @@ test('an admin creates, publishes, and after an accidental close reopens a poll'
   const confirm = page.getByRole('button', { name: 'Ja, wieder öffnen' });
   await expect(confirm).toBeFocused();
   await noViolations(page);
-  await confirm.click();
+  await page.keyboard.press('Enter');
   await expect(toast).toHaveText('Abstimmung wieder geöffnet. Alle Mitglieder sehen den Hinweis.');
   await expect(page).toHaveURL(detail);
+  await expect(page.getByRole('heading', { name: /^Offen seit / })).toBeFocused();
   await expect(page.getByText(/Diese Abstimmung wurde am .* wieder geöffnet\./)).toBeVisible();
 
   // Every member sees the notice, and the admin's vote is still there.
@@ -110,15 +117,17 @@ test('an admin deletes a draft after the confirmation and edits only the note of
 test.describe('without JavaScript', () => {
   test.use({ javaScriptEnabled: false });
 
-  test('the form shows the question once the save names it missing', async ({ page }, testInfo) => {
+  test('the form shows the question as soon as the exception is chosen', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'polls-desktop', 'One project is enough for a flow that saves nothing.');
     await signIn(page, ADMIN);
     await page.goto('/admin/polls/1');
     await expect(page.locator('#share-link')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Kopieren' })).toBeHidden();
     await page.goto('/admin/polls/new');
-    await page.getByLabel('Ausnahme in der Probezeit').check();
     await expect(page.getByLabel('Frage, über die abgestimmt wird')).toBeHidden();
+    await page.getByLabel('Ausnahme in der Probezeit').check();
+    // CSS follows the checked kind, so the field shows before any save.
+    await expect(page.getByLabel('Frage, über die abgestimmt wird')).toBeVisible();
     await page.getByLabel('Name der Person, die sich bewirbt').fill('Noah Example');
     await page.getByRole('button', { name: 'Als Entwurf speichern' }).click();
 

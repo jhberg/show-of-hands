@@ -66,6 +66,7 @@ final readonly class PollPage
      * @param string|null $toastKey a message that may name the member's choice as {choice}
      * @param array<string, string> $toastParams the message's other placeholders
      * @param bool $live whether the page's own refresh asks, which must not move the focus
+     * @param string|null $delegationError the message the open delegation panel shows at its field
      */
     public function fragment(
         ServerRequestInterface $request,
@@ -77,8 +78,9 @@ final readonly class PollPage
         bool $delegationOpen = false,
         bool $confirmClose = false,
         bool $live = false,
+        ?string $delegationError = null,
     ): ResponseInterface {
-        $data = $this->data($poll, $member, $delegationOpen, $confirmClose) + ['live' => $live];
+        $data = $this->data($poll, $member, $delegationOpen, $confirmClose, $delegationError) + ['live' => $live];
         if ($toastKey !== null) {
             $toast = $this->translator->trans($toastKey, $toastParams + $this->choiceParams($data['choice']));
             $response = $response->withHeader('HX-Trigger', json_encode(['toast' => $toast], JSON_THROW_ON_ERROR));
@@ -105,7 +107,7 @@ final readonly class PollPage
         array $toastParams = [],
         bool $delegationOpen = false,
     ): ResponseInterface {
-        if ($request->getHeaderLine('HX-Request') === 'true') {
+        if (Htmx::isRequest($request)) {
             // Re-read, because the poll may have closed in the meantime.
             $poll = $this->polls->findPublished($poll->id);
             if ($poll === null) {
@@ -117,6 +119,21 @@ final readonly class PollPage
         $this->flash->toast($toastKey, $toastParams, page: self::path($poll));
 
         return Redirect::to($response, $request, self::path($poll) . ($delegationOpen ? '?delegate=1' : ''));
+    }
+
+    /**
+     * A delegation refused for what the member entered: the open panel names the problem at the
+     * field, with status 422, and the toast says it too. Without htmx the whole page answers the
+     * POST, because a redirect would lose the message at the field.
+     */
+    public function refuseDelegation(ServerRequestInterface $request, ResponseInterface $response, Poll $poll, Member $member, string $errorKey): ResponseInterface
+    {
+        if (Htmx::isRequest($request)) {
+            return $this->fragment($request, $response, $poll, $member, $errorKey, delegationOpen: true, delegationError: $errorKey)->withStatus(422);
+        }
+        $data = $this->data($poll, $member, true, false, $errorKey) + ['live' => false, 'toast' => $this->translator->trans($errorKey)];
+
+        return $this->renderer->render($request, $response, 'pages/poll.html.twig', $data, 422);
     }
 
     /**
@@ -141,9 +158,9 @@ final readonly class PollPage
     }
 
     /**
-     * @return array{poll: Poll, group_label: string, choice: Choice|null, turnout: Turnout, missing_by_group: list<array{group: VoiceGroup|null, members: non-empty-list<Member>}>, show_names: bool, recipient: Member|null, recipient_voted: bool|null, senders: list<string>, delegation: array{open: bool, max_received: int, targets: list<array{id: int, name: string, group_label: string|null, voted: bool}>}|null, board: array{confirm: bool, pending: int}|null, deletion_day: string|null, live_url: string|null}
+     * @return array{poll: Poll, group_label: string, choice: Choice|null, turnout: Turnout, missing_by_group: list<array{group: VoiceGroup|null, members: non-empty-list<Member>}>, show_names: bool, recipient: Member|null, recipient_voted: bool|null, senders: list<string>, delegation: array{open: bool, error: string|null, max_received: int, targets: list<array{id: int, name: string, group_label: string|null, voted: bool}>}|null, board: array{confirm: bool, pending: int}|null, deletion_day: string|null, live_url: string|null}
      */
-    private function data(Poll $poll, Member $member, bool $delegationOpen, bool $confirmClose): array
+    private function data(Poll $poll, Member $member, bool $delegationOpen, bool $confirmClose, ?string $delegationError = null): array
     {
         $groups = $this->voiceGroups->all();
         $locale = $this->translator->getLocale();
@@ -176,7 +193,7 @@ final readonly class PollPage
         }
         $delegation = null;
         if ($poll->isOpen() && $member->isActive && $recipient === null && $senders === [] && $this->settings->delegationEnabled()) {
-            $delegation = $this->delegationBlock($groups, $members, $member, $delegations, array_flip($participantIds), $showNames, $delegationOpen);
+            $delegation = $this->delegationBlock($groups, $members, $member, $delegations, array_flip($participantIds), $showNames, $delegationOpen) + ['error' => $delegationError];
         }
 
         return [

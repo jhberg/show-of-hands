@@ -44,7 +44,7 @@ final readonly class DelegationAction
         $body = $request->getParsedBody();
         $to = is_array($body) && is_string($body['to'] ?? null) && ctype_digit($body['to']) ? (int) $body['to'] : null;
         if ($to === null) {
-            return $this->page->answer($request, $response, $poll, $member, 'toast.delegation.choose', delegationOpen: true);
+            return $this->page->refuseDelegation($request, $response, $poll, $member, 'toast.delegation.choose');
         }
 
         try {

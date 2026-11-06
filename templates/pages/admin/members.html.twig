@@ -4,7 +4,7 @@
 
 {% block body %}
 {{ include('partials/header.html.twig', {active: 'admin', section: 'members'}) }}
-<main class="main">
+<main class="main" id="main" tabindex="-1">
     {{ include('partials/admin/tabs.html.twig', {section: 'members'}) }}
     {{ include('partials/admin/members.html.twig') }}
 </main>

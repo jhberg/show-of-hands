@@ -124,15 +124,22 @@ final class DelegationTest extends HttpTestCase
     {
         $this->signIn('kim@example.org');
 
+        // Without JavaScript the page answers the POST, with the message at the field and in the toast.
         $response = $this->send('/delegation', ['to' => '']);
-        self::assertSame(303, $response->getStatusCode());
-        self::assertSame("/polls/{$this->poll}?delegate=1", $response->getHeaderLine('Location'));
-        $html = $this->page('?delegate=1');
-        self::assertStringContainsString('Bitte eine Person auswählen.', $html);
+        self::assertSame(422, $response->getStatusCode());
+        $html = $this->body($response);
+        self::assertStringContainsString('<select id="deleg-to" name="to" aria-invalid="true" aria-describedby="deleg-to-error" autofocus>', $html);
+        self::assertStringContainsString('<p class="field-error" id="deleg-to-error">Bitte eine Person auswählen.</p>', $html);
+        self::assertStringContainsString('class="toast on" role="status" aria-live="polite">Bitte eine Person auswählen.</div>', $html);
 
         $htmx = $this->send('/delegation', ['to' => ''], htmx: true);
+        self::assertSame(422, $htmx->getStatusCode());
         self::assertSame(['toast' => 'Bitte eine Person auswählen.'], json_decode($htmx->getHeaderLine('HX-Trigger'), true));
         self::assertStringContainsString('aria-expanded="true"', $this->body($htmx));
+        self::assertStringContainsString('<p class="field-error" id="deleg-to-error">Bitte eine Person auswählen.</p>', $this->body($htmx));
+
+        // The page's next load, or its refresh, shows the panel without the message.
+        self::assertStringNotContainsString('deleg-to-error', $this->page('?delegate=1'));
         self::assertSame([], $this->delegations()->forPoll($this->poll)->all());
     }
 

@@ -4,7 +4,7 @@
 
 {% block body %}
 {{ include('partials/header.html.twig', {active: 'admin', section: 'polls'}) }}
-<main class="main">
+<main class="main" id="main" tabindex="-1">
     {{ include('partials/admin/tabs.html.twig', {section: 'polls'}) }}
     <a class="back" href="/admin/polls">{{ icon('arrow') }}{{ 'poll.back'|trans }}</a>
     {{ include('partials/admin/poll_detail.html.twig') }}

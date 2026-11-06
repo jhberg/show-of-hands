@@ -4,7 +4,7 @@
 
 {% block body %}
 {{ include('partials/header.html.twig', {active: 'admin', section: 'settings'}) }}
-<main class="main">
+<main class="main" id="main" tabindex="-1">
     {{ include('partials/admin/tabs.html.twig', {section: 'settings'}) }}
     <h1>{{ 'admin.settings.title'|trans }}</h1>
     {{ include('partials/admin/settings_form.html.twig') }}

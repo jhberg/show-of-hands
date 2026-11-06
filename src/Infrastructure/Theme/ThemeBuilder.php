@@ -16,7 +16,7 @@ use ShowOfHands\Infrastructure\Config\Brand;
 final class ThemeBuilder
 {
     /** Bump when the derivation or the rendered stylesheet changes, so browsers drop their cached /theme.css. */
-    public const VERSION = 3;
+    public const VERSION = 4;
 
     public const TEXT_CONTRAST = 4.5;
     public const UI_CONTRAST = 3.0;
@@ -66,6 +66,8 @@ final class ThemeBuilder
         $t['on-accent'] = self::onAccent($t['accent'], $n(0.22, 0.03));
         $t['accent-hover'] = self::readableHover(Color::inGamut($accent->l - 0.05, $accent->c * 0.97, $accent->h), $t['on-accent']);
         $t['focus'] = self::darken($a(0.62, 0.15), [$t['bg']], self::UI_CONTRAST);
+        // Form fields need a border that shows where to type, unlike the dividers in --line.
+        $t['field-line'] = self::darken($n(0.6, 0.02), [$t['bg'], $t['surface']], self::UI_CONTRAST);
 
         // Yes and No keep fixed colours, so a result never reads differently between choirs.
         return $t + [
@@ -106,6 +108,7 @@ final class ThemeBuilder
         $t['on-accent'] = self::onAccent($t['accent'], $n(0.2, 0.03));
         $t['accent-hover'] = self::readableHover(Color::inGamut($accentL + 0.05, $accent->c, $accent->h), $t['on-accent']);
         $t['focus'] = self::lighten($a(0.8, 0.15), [$t['bg']], self::UI_CONTRAST);
+        $t['field-line'] = self::lighten($n(0.58, 0.02), [$t['bg'], $t['surface']], self::UI_CONTRAST);
 
         return $t + [
             'ja' => Color::inGamut(0.78, 0.13, 152),

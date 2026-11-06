@@ -44,6 +44,19 @@ final class ThemeBuilderTest extends TestCase
         }
     }
 
+    /**
+     * WCAG 1.4.11: a field's border shows where to type, so brand:check and the test above hold it
+     * to 3:1 against the page and a panel, in both modes.
+     */
+    public function testChecksAndRendersTheFieldBorder(): void
+    {
+        $theme = (new ThemeBuilder())->build(new Brand('Example', 'Example', '', Brand::DEFAULT_ACCENT, Brand::DEFAULT_INK));
+
+        $checked = array_filter($theme->contrastReport(), static fn(array $row): bool => $row['text'] === 'field-line' && $row['min'] === ThemeBuilder::UI_CONTRAST);
+        self::assertCount(4, $checked);
+        self::assertStringContainsString('--field-line:' . $theme->light['field-line']->hex() . ';', $theme->css());
+    }
+
     public function testKeepsTheBrandAccentInLightMode(): void
     {
         $theme = (new ThemeBuilder())->build(new Brand('Example', 'Example', '', '#0f766e', '#134e4a'));

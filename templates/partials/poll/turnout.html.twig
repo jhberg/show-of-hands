@@ -1,3 +1,5 @@
+{# A closed poll speaks in the past. #}
+{% set closed = not poll.isOpen %}
 <section class="part">
     <div class="part-head">
         <h2>{{ 'turnout.title'|trans }}</h2>
@@ -7,9 +9,10 @@
     <div class="prog" role="progressbar" aria-valuenow="{{ turnout.castWeight }}" aria-valuemin="0" aria-valuemax="{{ turnout.eligible }}" aria-label="{{ 'turnout.bar'|trans }}">
         <svg aria-hidden="true" focusable="false"><rect height="100%" width="{{ turnout.percent }}%" rx="6"/></svg>
     </div>
-    <p class="help">{{ 'turnout.summary'|trans({voted: turnout.voted, delegated: turnout.delegations|length, missing: turnout.missing|length}) }}</p>
+    {% set counts = {voted: turnout.voted, delegated: turnout.delegations|length, missing: turnout.missing|length} %}
+    <p class="help">{{ closed ? 'turnout.summary_closed'|trans(counts) : 'turnout.summary'|trans(counts) }}</p>
     {% if turnout.missing is not empty %}
-        <h3>{{ 'turnout.missing'|trans }} <span class="n num">{{ turnout.missing|length }}</span></h3>
+        <h3>{{ closed ? 'turnout.missing_closed'|trans : 'turnout.missing'|trans }} <span class="n num">{{ turnout.missing|length }}</span></h3>
         {% if show_names %}
             <div class="grp">
                 {% for entry in missing_by_group %}
@@ -32,7 +35,7 @@
                 <li>
                     <span>{{ entry.from.shownName }}</span>{{ icon('arrow') }}<span>{{ entry.to.shownName }}</span>
                     {#- Whether the recipient voted reveals turnout, so it follows the names setting. #}
-                    {%- if show_names and not entry.to_voted %}<span class="chip">{{ 'turnout.pending'|trans }}</span>{% endif -%}
+                    {%- if show_names and not entry.to_voted %}<span class="chip">{{ closed ? 'turnout.pending_closed'|trans : 'turnout.pending'|trans }}</span>{% endif -%}
                 </li>
             {% endfor %}
         </ul>

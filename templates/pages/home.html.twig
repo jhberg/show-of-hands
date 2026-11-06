@@ -15,7 +15,7 @@
 {% block body %}
 {% import _self as lists %}
 {{ include('partials/header.html.twig', {active: 'home'}) }}
-<main class="main">
+<main class="main" id="main" tabindex="-1">
     <h1>{{ 'home.greeting'|trans({name: first_name}) }}</h1>
     <p class="lead">{{ 'home.lead'|trans }}</p>
     <div class="sec">
