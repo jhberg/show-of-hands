@@ -24,7 +24,7 @@ No database server, no Node, no cron job, and no shell are needed.
 
 The app checks `config/config.php` on every request. If a value is missing or wrong, the page lists every problem with the key's name.
 
-Only `public/` is reachable from the web. Code, configuration, and data sit next to it, outside the document root. `data/` carries its own `.htaccess` that denies all access, should a host serve the whole folder anyway.
+Only `public/` is reachable from the web. Code, configuration, and data sit next to it, outside the document root. Should a host serve the whole folder anyway, the installation folder's `.htaccess` lets only `public/` through. `config/` and `data/` also carry their own `.htaccess` that denies all access, for hosts without `mod_rewrite`.
 
 ## Google sign-in
 
@@ -105,14 +105,32 @@ The app derives its whole colour scheme, light and dark, from the accent and ink
 
 ## Updates
 
-1. Download the new release ZIP. Its `VERSION` file names the version, as does the one in your installation.
+1. Download the new release ZIP. Its `VERSION` file names the version, as does the one in your installation. Read its section in `CHANGELOG.md`. A new setting in `config.example.php` is optional unless the notes say otherwise.
 2. Pick a quiet moment, not a vote during rehearsal: while the files are being replaced, a request can meet old and new code at once.
-3. Unpack the ZIP over the installation and let it replace existing files. The ZIP contains no `config/config.php`, no `config/members.csv`, no `public/brand/`, and no database, so your configuration, branding, and data stay.
-4. Open the site. The first request copies the database to `data/backup/app-v<N>.sqlite` and brings the schema up to date. Housekeeping deletes that copy a day later.
+3. Download a copy of `data/app.sqlite`, as [Backups](#backups) describes.
+4. Unpack the ZIP over the installation and let it replace existing files. The ZIP contains no `config/config.php`, no `config/members.csv`, no `config/translations/`, no `public/brand/`, and no database, so your configuration, branding, and data stay.
+5. Open the site. If the release brings database changes, the first request copies the database to `data/backup/app-v<N>.sqlite` and then brings the schema up to date. `<N>` is the schema version before the update. Housekeeping deletes that copy a day later.
 
-If the update fails, the page shows an error and the log in `data/logs/app.log` names it. To go back, unpack the previous release and copy the backup over `data/app.sqlite`. While the migration fails, housekeeping keeps the backup. Files a release no longer uses may stay behind after an update. They do no harm.
+If the update fails, the page shows an error and the log in `data/logs/app.log` names it. Housekeeping keeps the copy in `data/backup/` while the database changes fail. It also keeps it after you unpacked the previous release, as long as the database is newer than that release. To go back:
 
-Read the release notes before you update. A new setting in `config.example.php` is optional unless the notes say otherwise.
+1. Unpack the previous release ZIP over the installation.
+2. Move `data/backup/app-v<N>.sqlite` to `data/app.sqlite`, replacing the file there. `<N>` is the number at the start of the last line in the previous release's `MIGRATIONS.txt` file, without leading zeros: `0009_…` means `app-v9.sqlite`. If no such copy exists, the release brought no database changes, or it made them more than a day ago and housekeeping deleted the copy. In the first case, skip this step. In the second, upload the copy you downloaded before the update as `data/app.sqlite`: everything since then is lost.
+3. Open the site. It works as before the update, with the data it had then.
+
+Move the copy rather than copy it: the next update must make a fresh one. The newer release's migration files stay in `migrations/`. They do no harm: each release runs only the migrations its `MIGRATIONS.txt` file lists. Other files a release no longer uses may stay behind after an update as well.
+
+## Backups
+
+The app makes no backups of its own. The copy an update makes is gone a day later. Download your own copy of `data/app.sqlite`:
+
+- before every update,
+- and regularly, for example once a month and after you changed many members.
+
+Download it at a quiet moment, when nobody votes, so the copy does not catch a write halfway. By FTP or SFTP, open the installation folder, then `data/`, and download `app.sqlite`. In Plesk, open "Files", go to `data/` inside the installation folder, and choose "Download" in the file's menu. If a file `app.sqlite-journal` lies next to it, a write is under way: wait a moment and download again.
+
+The copy holds everything the database holds: the members with their addresses, the polls, who voted, and the ballots of open polls and of polls closed today. With `config/config.php`, anyone can read from it who voted what in those polls (see [Privacy](#privacy)). Keep it private: on your own computer or an encrypted drive, not on a shared drive and not in an email.
+
+To restore a copy, upload it as `data/app.sqlite`. Everything since the copy is lost. A copy from an older release works: the next request brings its schema up to date.
 
 ## Privacy
 
@@ -127,7 +145,7 @@ The app keeps the secret ballot and stores as little as it can.
 - Ballots: deleted once the closing day of their poll has ended. Until then, an admin may reopen the poll. Afterwards, only the frozen result counts.
 - Closed polls, with their result and turnout: deleted after the retention period the admins choose (7, 14, or 30 days).
 - Sessions: deleted after `session.lifetime_days` without a visit.
-- The database copy an update makes: deleted a day after the update.
+- The database copy an update makes: deleted a day after the update. Copies you download yourself are yours to delete (see [Backups](#backups)).
 
 SQLite runs with `secure_delete`, so deleted ballots leave no trace in the file.
 
@@ -160,9 +178,9 @@ docker compose run --rm app bin/build-release [ref]        # release ZIP of a gi
 docker compose run --rm app tests/upgrade/run.sh <from-ref> [to-ref]   # install one release, update to the next
 ```
 
-The upgrade test builds the release ZIPs of both refs, installs the first with sample data and a vote, unpacks the second over it, and checks the migration, the data, the templates, and the deletion of the backup.
+The upgrade test builds the release ZIPs of both refs, installs the first with sample data and a vote, unpacks the second over it, and checks the migration, the data, the templates, the `.htaccess` files, and the deletion of the backup. Then it unpacks a broken update with a failing migration and goes back as [Updates](#updates) describes.
 
-GitHub Actions runs `composer check`, `composer test`, the Playwright journeys, and the upgrade test from the last release tag on pushes to `main` and on pull requests. A tag `v<version>` also builds the release ZIP and publishes it as a GitHub release.
+GitHub Actions runs `composer check`, `composer test`, the Playwright journeys, and the upgrade test from the last release tag on pushes to `main` and on pull requests. A tag `v<version>` also builds the release ZIP and publishes it as a GitHub release, with the version's section of `CHANGELOG.md` as its notes. To release, add that section, run `bin/build-release` to check the ZIP, then tag the commit `v<version>` and push the tag.
 
 Set `APP_PORT` to serve on another port than 8080.
 

@@ -59,6 +59,19 @@ final readonly class Paths
         return $this->data() . '/cache/twig/' . $release;
     }
 
+    /**
+     * The migrations a release ships, from the MIGRATIONS.txt file that bin/build-release writes next
+     * to VERSION. Null in a git checkout, which has no such file.
+     *
+     * @return ?list<string> file names
+     */
+    public function releaseMigrations(): ?array
+    {
+        $names = @file($this->root . '/MIGRATIONS.txt', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+
+        return $names === false ? null : $names;
+    }
+
     public function sessions(): string
     {
         return $this->data() . '/sessions';

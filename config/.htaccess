@@ -1,0 +1,3 @@
+# The document root is public/. Should a host serve the whole folder anyway, nothing in config/ goes out:
+# not config.php with its secrets, and not members.csv with names and addresses.
+Require all denied

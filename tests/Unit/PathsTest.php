@@ -32,4 +32,16 @@ final class PathsTest extends TestCase
     {
         self::assertSame($this->tempDir() . '/data/cache/twig/dev', (new Paths($this->tempDir()))->templateCache());
     }
+
+    public function testAReleaseListsItsMigrations(): void
+    {
+        file_put_contents($this->tempDir() . '/MIGRATIONS.txt', "0001_init.sql\n0002_polls.sql\n");
+
+        self::assertSame(['0001_init.sql', '0002_polls.sql'], (new Paths($this->tempDir()))->releaseMigrations());
+    }
+
+    public function testACheckoutListsNoMigrations(): void
+    {
+        self::assertNull((new Paths($this->tempDir()))->releaseMigrations());
+    }
 }

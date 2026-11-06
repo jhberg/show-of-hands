@@ -2,7 +2,10 @@
 # Upgrade test: installs the release ZIP of one ref, adds data, unpacks the release ZIP of a later
 # ref over it, and checks that the data survived and the pages render the new templates. When the
 # later ref brings migrations, it also checks that they ran and that lazy maintenance deletes the
-# pre-migration backup once it is a day old.
+# pre-migration backup once it is a day old. Then it unpacks a broken update with a failing
+# migration over the later release and goes back as the README says: the later release unpacked
+# again, the backup moved over the database. The site must work again, and a fixed update that
+# replaces the broken migration under its number must go through.
 #
 #   docker compose run --rm app tests/upgrade/run.sh <from-ref> [to-ref]
 #
@@ -89,6 +92,8 @@ mkdir "$work/site"
 unzip -q "$old_zip" -d "$work/site"
 cp "$root/tests/e2e/config.php" "$work/site/config/config.php"
 (cd "$work/site" && php bin/console seed:demo >/dev/null)
+# The instance's member file, which the update must leave as it is. Invented, like all test data.
+printf 'name;email;group\nRobin Example;robin.example@example.org;S1\n' >"$work/site/config/members.csv"
 old_version="$(sql 'PRAGMA user_version')"
 members="$(sql 'SELECT COUNT(*) FROM members')"
 polls="$(sql 'SELECT COUNT(*) FROM polls')"
@@ -102,7 +107,8 @@ stop_server
 
 step "Unpack $(basename "$new_zip") over the installation"
 unzip -q -o "$new_zip" -d "$work/site"
-[ -f "$work/site/config/config.php" ] || fail "the update removed config/config.php"
+cmp -s "$root/tests/e2e/config.php" "$work/site/config/config.php" || fail "the update changed config/config.php"
+grep -q '^Robin Example;' "$work/site/config/members.csv" || fail "the update changed config/members.csv"
 start_server
 
 # The schema version is the number of the newest migration the release ships.
@@ -110,6 +116,8 @@ latest="$(find "$work/site/migrations" -name '[0-9][0-9][0-9][0-9]_*.sql' -exec 
 latest=$((10#${latest%%_*}))
 new_version="$(sql 'PRAGMA user_version')"
 [ "$new_version" = "$latest" ] || fail "schema version is $new_version, expected $latest"
+diff <(find "$work/site/migrations" -name '[0-9][0-9][0-9][0-9]_*.sql' -exec basename {} \; | sort) "$work/site/MIGRATIONS.txt" >/dev/null \
+    || fail "MIGRATIONS.txt does not list the release's migrations"
 echo "Schema version $old_version -> $new_version"
 [ "$(sql 'SELECT COUNT(*) FROM members')" = "$members" ] || fail "members changed"
 [ "$(sql 'SELECT COUNT(*) FROM polls')" = "$polls" ] || fail "polls changed"
@@ -142,5 +150,56 @@ if [ "$new_version" -gt "$old_version" ]; then
     run_maintenance
     [ ! -f "$backup" ] || fail "maintenance kept the backup after a day"
 fi
+
+step "The release keeps everything but public/ private"
+listing="$(unzip -Z1 "$new_zip")"
+for rule in .htaccess config/.htaccess data/.htaccess; do
+    grep -qx "$rule" <<<"$listing" || fail "the release has no $rule"
+done
+grep -q '^Require all denied' "$work/site/config/.htaccess" || fail "config/.htaccess denies nothing"
+grep -q '^Require all denied' "$work/site/data/.htaccess" || fail "data/.htaccess denies nothing"
+grep -q '^ *RewriteRule !^public/ - \[F\]' "$work/site/.htaccess" || fail "the root .htaccess lets more than public/ through"
+
+step "A broken update: one migration works, the next fails"
+release_version="$(cat "$work/site/VERSION")"
+probe_version=$((new_version + 1))
+broken_version=$((new_version + 2))
+probe="$(printf '%04d' "$probe_version")_rollback_probe.sql"
+broken="$(printf '%04d' "$broken_version")_rollback_broken.sql"
+fixed="$(printf '%04d' "$broken_version")_rollback_fixed.sql"
+# A release that adds two migrations, written over the installation as unpacking its ZIP would.
+printf 'CREATE TABLE rollback_probe (n INTEGER);\n' >"$work/site/migrations/$probe"
+printf 'INSERT INTO missing_table VALUES (1);\n' >"$work/site/migrations/$broken"
+printf '%s\n' "$probe" "$broken" >>"$work/site/MIGRATIONS.txt"
+echo "$release_version-broken" >"$work/site/VERSION"
+status="$(curl -s -o /dev/null -w '%{http_code}' -b "$work/cookies" "$url/polls/2")"
+[ "$status" = 500 ] || fail "the broken update answered $status, expected 500"
+grep -q "$broken failed" "$work/site/data/logs/app.log" || fail "the log does not name the failed migration"
+[ "$(sql 'PRAGMA user_version')" = "$probe_version" ] || fail "the working migration of the broken update did not run"
+backup="$work/site/data/backup/app-v$new_version.sqlite"
+[ -f "$backup" ] || fail "no backup before the broken update"
+
+step "Go back: unpack the release again, move the backup over the database"
+unzip -q -o "$new_zip" -d "$work/site"
+touch -d '25 hours ago' "$backup"
+run_maintenance
+[ -f "$backup" ] || fail "maintenance deleted the backup the way back needs"
+mv "$backup" "$work/site/data/app.sqlite"
+shows /polls/2 'Deine Stimme ist registriert: Nein.' || fail "the site does not work after going back"
+shows /polls/5 'Aufgenommen' || fail "the closed poll lost its result after going back"
+[ "$(sql 'PRAGMA user_version')" = "$new_version" ] || fail "schema version is $(sql 'PRAGMA user_version') after going back, expected $new_version"
+[ "$(sql "SELECT COUNT(*) FROM sqlite_master WHERE name = 'rollback_probe'")" = 0 ] || fail "the broken update's migration ran again"
+vote 2 yes
+shows /polls/2 'Deine Stimme ist registriert: Ja.' || fail "voting failed after going back"
+
+step "A fixed update replaces the broken migration under its number"
+# The broken file stays behind from the failed update; the fixed release no longer lists it.
+printf 'CREATE TABLE rollback_fixed (n INTEGER);\n' >"$work/site/migrations/$fixed"
+printf '%s\n' "$probe" "$fixed" >>"$work/site/MIGRATIONS.txt"
+echo "$release_version-fixed" >"$work/site/VERSION"
+shows /polls/2 'Deine Stimme ist registriert: Ja.' || fail "the fixed update failed"
+[ "$(sql 'PRAGMA user_version')" = "$broken_version" ] || fail "the fixed update did not reach schema version $broken_version"
+[ "$(sql "SELECT COUNT(*) FROM sqlite_master WHERE name = 'rollback_fixed'")" = 1 ] || fail "the fixed migration did not run"
+[ -f "$backup" ] || fail "no fresh backup before the fixed update"
 
 echo "Upgrade from $from to $to passed."

@@ -6,8 +6,8 @@
 # The ref defaults to HEAD. The version is `git describe --tags --match 'v*'` of the ref without
 # the leading "v", so the tag v1.2.0 builds show-of-hands-1.2.0.zip. The script prints the ZIP's
 # path. The ZIP holds only committed files of that ref, never the working tree, and no instance
-# files: no config.php, no public/brand/, no database. Its contents unpack straight into the
-# installation folder, for a new install and for an update.
+# files: no config.php, no members.csv, no config/translations/, no public/brand/, no database. Its
+# contents unpack straight into the installation folder, for a new install and for an update.
 set -euo pipefail
 
 root="$(cd "$(dirname "$0")/.." && pwd)"
@@ -37,18 +37,26 @@ cp bin/console "$work/release/bin/"
 cp config/config.example.php "$work/release/config/"
 # Older refs, which tests/upgrade/run.sh builds with this script too, have no member file template.
 if [ -f config/members.example.csv ]; then cp config/members.example.csv "$work/release/config/"; fi
-# data/ ships empty except for the rule that keeps it private should a host serve the whole folder.
-cp data/.htaccess "$work/release/data/"
+if [ -f CHANGELOG.md ]; then cp CHANGELOG.md "$work/release/"; fi
+# The rules that keep everything but public/ private should a host serve the whole folder. data/ ships
+# empty except for its rule. Older refs lack the root and config/ rules.
+for rule in .htaccess config/.htaccess data/.htaccess; do
+    if [ -f "$rule" ]; then cp "$rule" "$work/release/$rule"; fi
+done
 printf '%s\n' "$version" > "$work/release/VERSION"
+# The release's migrations. The migrator runs only these, so a release unpacked over a newer one, to
+# go back after a failed update, leaves the newer migration files alone.
+find migrations -name '[0-9][0-9][0-9][0-9]_*.sql' -exec basename {} \; | sort > "$work/release/MIGRATIONS.txt"
 
 mkdir -p "$root/build"
 rm -f "$zip_file"
 cd "$work/release"
-# VERSION goes last. Unzipping writes in archive order, and VERSION picks the template cache: a
-# request during an update must still compile into the old release's cache, which maintenance
-# deletes later, never old templates into the new release's cache.
-zip -q -r -X "$zip_file" . -x VERSION
-zip -q -X "$zip_file" VERSION
+# MIGRATIONS.txt and VERSION go last. Unzipping writes in archive order. MIGRATIONS.txt releases the new
+# migrations, so they run only once the code that expects them is in place. VERSION picks the
+# template cache: a request during an update must still compile into the old release's cache, which
+# maintenance deletes later, never old templates into the new release's cache.
+zip -q -r -X "$zip_file" . -x MIGRATIONS.txt VERSION
+zip -q -X "$zip_file" MIGRATIONS.txt VERSION
 echo "Built build/$(basename "$zip_file") from $ref." >&2
 # The path alone on stdout, for scripts such as tests/upgrade/run.sh.
 echo "$zip_file"
