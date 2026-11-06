@@ -181,7 +181,7 @@ final class AppFactory
             Config::class => $config,
             ResponseFactoryInterface::class => autowire(ResponseFactory::class),
             \PDO::class => static fn(): \PDO => ConnectionFactory::open($paths->database()),
-            Migrator::class => static fn(\PDO $pdo): Migrator => new Migrator($pdo, $paths->migrations(), $paths->data()),
+            Migrator::class => static fn(\PDO $pdo): Migrator => new Migrator($pdo, $paths->migrations(), $paths->data(), $paths->releaseMigrations()),
             Session::class => static fn(): Session => Session::native($paths->sessions(), $config->sessionLifetimeDays, $config->isHttps()),
             Clock::class => autowire(SystemClock::class),
             BallotToken::class => static fn(): BallotToken => new BallotToken($config->secret),

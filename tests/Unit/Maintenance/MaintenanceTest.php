@@ -176,6 +176,17 @@ final class MaintenanceTest extends TestCase
         self::assertFileExists($backup);
     }
 
+    public function testKeepsTheBackupWhileAnOlderReleaseRunsOnTheNewerDatabase(): void
+    {
+        $backup = $this->file('backup/app-v1.sqlite', self::NOW - 7 * 86400);
+        // The database came this far with the failed update; the release unpacked since lists less.
+        $this->migrator = new Migrator($this->pdo, dirname(__DIR__, 3) . '/migrations', $this->dir, ['0001_init.sql']);
+
+        $this->maintenance()->run();
+
+        self::assertFileExists($backup);
+    }
+
     public function testRunsAtMostOnceAnHour(): void
     {
         $session = fn(): string => $this->file('sessions/sess_' . bin2hex(random_bytes(4)), 0);

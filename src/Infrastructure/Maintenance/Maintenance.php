@@ -64,8 +64,9 @@ final readonly class Maintenance
             $this->sessionsDir . '/sess_*',
             $now->getTimestamp() - $this->sessionLifetimeDays * self::DAY,
         );
-        // While a migration is pending, it failed, and the backup is the way back.
-        $backups = $this->migrator->pending() === []
+        // While a migration is pending, it failed, and the backup is the way back. It stays the way back
+        // after the previous release was unpacked, until an admin moved it over the database.
+        $backups = $this->migrator->pending() === [] && !$this->migrator->isAheadOfRelease()
             ? $this->deleteOlderThan($this->backupDir . '/' . Migrator::BACKUP_GLOB, $now->getTimestamp() - self::BACKUP_KEEP_SECONDS)
             : 0;
 

@@ -34,9 +34,12 @@ final class MigratorTest extends TestCase
         return $statement->fetchColumn();
     }
 
-    private function migrator(\PDO $pdo): Migrator
+    /**
+     * @param ?list<string> $releaseMigrations
+     */
+    private function migrator(\PDO $pdo, ?array $releaseMigrations = null): Migrator
     {
-        return new Migrator($pdo, $this->dir . '/migrations', $this->dir);
+        return new Migrator($pdo, $this->dir . '/migrations', $this->dir, $releaseMigrations);
     }
 
     public function testOpensConnectionsWithThePragmas(): void
@@ -118,6 +121,51 @@ final class MigratorTest extends TestCase
         }
         self::assertCount(1, glob($this->dir . '/backup/*.sqlite') ?: [], 'A retried migration reuses the backup.');
         self::assertFalse(self::scalar($pdo, "SELECT 1 FROM sqlite_master WHERE name = 'u'"));
+    }
+
+    public function testARolledBackReleaseLeavesTheNewerMigrationsAlone(): void
+    {
+        $this->migration('0001_init.sql', 'CREATE TABLE t (n INTEGER);');
+        // Left behind by a failed update, after the previous release was unpacked over it.
+        $this->migration('0002_broken.sql', 'INSERT INTO missing VALUES (1);');
+        $migrator = $this->migrator(ConnectionFactory::open($this->dir . '/app.sqlite'), ['0001_init.sql']);
+
+        self::assertSame(1, $migrator->migrate());
+        self::assertSame([], $migrator->pending());
+        self::assertSame(0, $migrator->migrate());
+        self::assertSame(1, $migrator->version());
+        self::assertFalse($migrator->isAheadOfRelease());
+    }
+
+    public function testAFixedReleaseIgnoresTheBrokenFileUnderItsNumber(): void
+    {
+        $this->migration('0001_init.sql', 'CREATE TABLE t (n INTEGER);');
+        $this->migration('0002_broken.sql', 'INSERT INTO missing VALUES (1);');
+        $this->migration('0002_fixed.sql', 'INSERT INTO t VALUES (2);');
+        $pdo = ConnectionFactory::open($this->dir . '/app.sqlite');
+
+        self::assertSame(2, $this->migrator($pdo, ['0001_init.sql', '0002_fixed.sql'])->migrate());
+        self::assertSame(2, self::scalar($pdo, 'SELECT n FROM t'));
+    }
+
+    public function testKnowsWhenTheDatabaseIsAheadOfTheRelease(): void
+    {
+        $this->migration('0001_init.sql', 'CREATE TABLE t (n INTEGER);');
+        $this->migration('0002_more.sql', 'CREATE TABLE u (n INTEGER);');
+        $pdo = ConnectionFactory::open($this->dir . '/app.sqlite');
+        $this->migrator($pdo)->migrate();
+
+        self::assertTrue($this->migrator($pdo, ['0001_init.sql'])->isAheadOfRelease());
+        self::assertFalse($this->migrator($pdo, ['0001_init.sql', '0002_more.sql'])->isAheadOfRelease());
+        self::assertFalse($this->migrator($pdo)->isAheadOfRelease(), 'A checkout runs whatever it has.');
+    }
+
+    public function testRefusesAListedMigrationThatIsMissing(): void
+    {
+        $this->migration('0001_init.sql', 'CREATE TABLE t (n INTEGER);');
+
+        $this->expectExceptionMessage('The release lists 0002_more.sql, but migrations/ has no such file.');
+        $this->migrator(ConnectionFactory::open($this->dir . '/app.sqlite'), ['0001_init.sql', '0002_more.sql'])->migrate();
     }
 
     public function testRefusesTwoMigrationsWithTheSameNumber(): void
