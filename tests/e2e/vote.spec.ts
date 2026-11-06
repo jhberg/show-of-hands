@@ -1,11 +1,13 @@
 import { expect, test, type Page } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 
-// Members from bin/console seed:demo who have not voted on "Mila Sandberg" yet. The phone and
-// desktop projects run in parallel against the same data, so each uses its own members.
+// Members from bin/console seed:demo who have not voted on "Mila Sandberg" yet. The phone,
+// desktop, and iPhone projects run in parallel against the same data, so each uses its own
+// members. The name lists show a display name where a member has one.
 const VOTERS = {
   phone: { name: 'Theo Reinhardt', email: 'theo.reinhardt@example.org' },
   desktop: { name: 'Matti Busch', email: 'matti.busch@example.org' },
+  iphone: { name: 'Lotte B.', email: 'charlotte.brenner-waldheim@example.org' },
 };
 const VOTERS_WITHOUT_JS = {
   phone: { name: 'Erik Voss', email: 'erik.voss@example.org' },
@@ -74,6 +76,7 @@ test.describe('without JavaScript', () => {
   test.use({ javaScriptEnabled: false });
 
   test('a member votes through a plain form post', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name === 'iphone', 'A plain form post needs no second engine.');
     const voter = VOTERS_WITHOUT_JS[testInfo.project.name as keyof typeof VOTERS_WITHOUT_JS];
     await signIn(page, voter.email);
     await page.goto('/polls/2');

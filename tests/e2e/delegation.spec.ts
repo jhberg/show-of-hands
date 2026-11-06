@@ -2,10 +2,11 @@ import { expect, test, type Page } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 
 // Members from bin/console seed:demo who have neither voted nor delegated on "Klara Wendt"
-// (poll 1). The phone and desktop projects run in parallel, so each uses its own members.
+// (poll 1). The phone, desktop, and iPhone projects run in parallel, so each uses its own members.
 const PAIRS = {
   phone: { from: 'ida.brandl@example.org', fromName: 'Ida Brandl', to: 'Hedi Graf (Alt 2)', toName: 'Hedi Graf', toFirst: 'Hedi' },
   desktop: { from: 'ella.moser@example.org', fromName: 'Ella Moser', to: 'Frieda Haas (Alt 1)', toName: 'Frieda Haas', toFirst: 'Frieda' },
+  iphone: { from: 'matti.busch@example.org', fromName: 'Matti Busch', to: 'Pia Lechner (Sopran 2)', toName: 'Pia Lechner', toFirst: 'Pia' },
 };
 const PAIRS_WITHOUT_JS = {
   phone: { from: 'emma.pohl@example.org', to: 'Carla Mertens (Chorleitung)', toName: 'Carla Mertens' },
@@ -69,6 +70,7 @@ test.describe('without JavaScript', () => {
   test.use({ javaScriptEnabled: false });
 
   test('a member delegates through plain forms', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name === 'iphone', 'Plain forms need no second engine.');
     const pair = PAIRS_WITHOUT_JS[testInfo.project.name as keyof typeof PAIRS_WITHOUT_JS];
     await signIn(page, pair.from);
     await page.goto('/polls/1');
