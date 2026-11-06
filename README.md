@@ -128,30 +128,42 @@ The app makes no backups of its own. The copy an update makes is gone a day late
 
 Download it at a quiet moment, when nobody votes, so the copy does not catch a write halfway. By FTP or SFTP, open the installation folder, then `data/`, and download `app.sqlite`. In Plesk, open "Files", go to `data/` inside the installation folder, and choose "Download" in the file's menu. If a file `app.sqlite-journal` lies next to it, a write is under way: wait a moment and download again.
 
-The copy holds everything the database holds: the members with their addresses, the polls, who voted, and the ballots of open polls and of polls closed today. With `config/config.php`, anyone can read from it who voted what in those polls (see [Privacy](#privacy)). Keep it private: on your own computer or an encrypted drive, not on a shared drive and not in an email.
+The copy holds everything the database holds: the members with their addresses, the polls, who voted, and the ballots of open polls and of polls closed today. With `config/config.php`, anyone can read from it who voted what in those polls (see [How your vote stays secret](#how-your-vote-stays-secret)). Keep it private: on your own computer or an encrypted drive, not on a shared drive and not in an email.
 
 To restore a copy, upload it as `data/app.sqlite`. Everything since the copy is lost. A copy from an older release works: the next request brings its schema up to date.
 
+## How your vote stays secret
+
+Within the choir, everyone sees who has voted. Nobody sees what they chose.
+
+**What the database holds.** A vote goes into two tables that nothing links. `participation` records who has voted in which poll, for the turnout. `ballots` records the choices: each row holds only the poll, a token, and Yes or No. It has no member id, no timestamp, and no row number that would give away the order of the votes. The token is an HMAC of the poll and the member, keyed with `app.secret` from `config/config.php`. With it, the app finds a member's own ballot, so they can change their vote. Without the secret, a token does not tell whose ballot it is. A delegation records who handed their vote to whom, never a choice.
+
+**When counting happens.** Only when the board closes the poll. While a poll is open, no page, admin view, or log line shows how many voted Yes or No, not even to admins. The only ballot the app reads then is the member's own, to show them their choice. The close counts all ballots once and freezes the result in the poll. Every vote, delegation, and close takes the database's write lock before it checks the poll, so no ballot slips in after the count.
+
+**What the board and admins see.** The same as every member: the turnout, the delegations, and the result after the close. Where admins hide from members who has not voted yet, the board and admins still see it. Board members close polls; admins set up polls, members, and settings. Neither role sees a choice, or how many voted Yes or No before the close. An admin also cannot take a member's place: while a poll is open, or closed today and so still reopenable, admins cannot add or replace a sign-in address of an existing member, and cannot set a member inactive who took part.
+
+**When ballots are deleted.** Once the closing day of their poll has ended. Until then, an admin can reopen a poll closed by mistake, which needs the ballots. Afterwards only the frozen result remains, until the retention period deletes the poll. SQLite runs with `secure_delete`, so a changed or deleted ballot leaves no trace in the file.
+
+**Where the choice travels.** Only in the POST body of the form, so it never appears in a URL or a server's access log. Pages for signed-in members carry `Cache-Control: no-store`, and htmx keeps no copies of earlier pages. The app's log records errors without request data.
+
+**The limit.** Whoever holds both the database and `config/config.php`, such as the web host's administrator, can recompute the tokens of an open poll or one closed today and read who voted what. That is the price of votes a member can change. Deleting ballots after the closing day keeps that window short. Keep both files off shared drives, and keep database copies private (see [Backups](#backups)).
+
 ## Privacy
 
-The app keeps the secret ballot and stores as little as it can.
+The app stores as little as it can.
 
-**What it stores.** Members with their name, up to two email addresses, voice group, roles, and chosen language and colour mode. Polls with their name, question, note, and date. For each poll: who has voted, who delegated their vote to whom, and the ballots. Ballots carry no member: each holds only a token and the choice. The token is an HMAC of the poll and the member, keyed with `app.secret`, so the member can change their own vote and nobody can read the choice from the database alone. The member file `config/members.csv` holds names and addresses as well. Delete it once you no longer need to import from it.
+**What it stores.** Members with their name, up to two email addresses, voice group, roles, and chosen language and colour mode. Polls with their name, question, note, and date. For each poll: who has voted, who delegated their vote to whom, and the ballots, which carry no member (see [How your vote stays secret](#how-your-vote-stays-secret)). The member file `config/members.csv` holds names and addresses as well. Delete it once you no longer need to import from it.
 
-**What others see.** Nobody sees a count while a poll is open: not members, not the board, not admins. The app counts once, when the board closes the poll. Members see who has voted and who delegated to whom, as in a show of hands. Admins can hide from members who has not voted yet. The board and admins always see it.
+**What others see.** Members see who has voted and who delegated to whom, as in a show of hands. Admins can hide from members who has not voted yet. Nobody sees how many voted Yes or No before the board closes the poll.
 
 **How long it keeps it.** Housekeeping runs on requests, at most once an hour; hosts with cron can run `bin/console purge` instead.
 
-- Ballots: deleted once the closing day of their poll has ended. Until then, an admin may reopen the poll. Afterwards, only the frozen result counts.
+- Ballots: deleted once the closing day of their poll has ended.
 - Closed polls, with their result and turnout: deleted after the retention period the admins choose (7, 14, or 30 days).
 - Sessions: deleted after `session.lifetime_days` without a visit.
 - The database copy an update makes: deleted a day after the update. Copies you download yourself are yours to delete (see [Backups](#backups)).
 
-SQLite runs with `secure_delete`, so deleted ballots leave no trace in the file.
-
-**The cost of changeable votes.** Whoever holds both the database and `config/config.php`, such as the web host's administrator, can recompute the tokens of an open or just-closed poll and read who voted what. Deleting ballots the day after closing keeps that window short. Keep both files off shared drives and out of backups you hand around.
-
-**Cookies and outside services.** The app sets a session cookie (`HttpOnly`, `Secure`, `SameSite=Lax`) and, once someone switches the language or the colour mode, a cookie for that choice. It loads no third-party scripts or fonts and sends no analytics. The only outside service is Google, for sign-in. The choice travels only in a form's POST body, so it never appears in a URL or a server's access log. The app's log records errors without request data.
+**Cookies and outside services.** The app sets a session cookie (`HttpOnly`, `Secure`, `SameSite=Lax`) and, once someone switches the language or the colour mode, a cookie for that choice. It loads no third-party scripts or fonts and sends no analytics. The only outside service is Google, for sign-in.
 
 ## Development
 
@@ -180,7 +192,7 @@ docker compose run --rm app tests/upgrade/run.sh <from-ref> [to-ref]   # install
 
 The upgrade test builds the release ZIPs of both refs, installs the first with sample data and a vote, unpacks the second over it, and checks the migration, the data, the templates, the `.htaccess` files, and the deletion of the backup. Then it unpacks a broken update with a failing migration and goes back as [Updates](#updates) describes.
 
-GitHub Actions runs `composer check`, `composer test`, the Playwright journeys, and the upgrade test from the last release tag on pushes to `main` and on pull requests. A tag `v<version>` also builds the release ZIP and publishes it as a GitHub release, with the version's section of `CHANGELOG.md` as its notes. To release, add that section, run `bin/build-release` to check the ZIP, then tag the commit `v<version>` and push the tag.
+GitHub Actions runs `composer audit`, `composer check`, `composer test`, the Playwright journeys (in Chromium, and the voting journeys also in WebKit on an iPhone profile), and the upgrade test from the last release tag on pushes to `main` and on pull requests. A tag `v<version>` also builds the release ZIP and publishes it as a GitHub release, with the version's section of `CHANGELOG.md` as its notes. To release, add that section, run `bin/build-release` to check the ZIP, then tag the commit `v<version>` and push the tag.
 
 Set `APP_PORT` to serve on another port than 8080.
 
