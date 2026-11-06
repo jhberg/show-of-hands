@@ -106,6 +106,8 @@ toast:
     removed: '{name} removed.'
     remove_tomorrow: '{name} took part in a poll closed today. You can remove them from tomorrow.'
     remove_after_close: '{name} took part in an open poll. You can remove them from the day after it closes.'
+    new_address_after_close: While a poll is open, addresses cannot be added or replaced. That works again from the day after it closes.
+    new_address_tomorrow: A poll was closed today. Adding or replacing addresses works again from tomorrow.
     deactivated: '{name} is now inactive and no longer an eligible voter.'
     activated: '{name} is active again and an eligible voter.'
     deactivate_after_close: '{name} took part in an open poll. You can set them inactive once it closes.'

@@ -69,6 +69,27 @@ test('an admin adds, finds, edits, and removes a member', async ({ page }, testI
   await expect(row).toHaveCount(0);
 });
 
+test('an admin cannot add an address to a member while a poll is open', async ({ page }) => {
+  // The seed data has open polls, and Lina voted in one. A second address of the admin's own
+  // would let them sign in as her and read her vote.
+  await signIn(page, ADMIN);
+  await page.goto('/admin/members?q=lina');
+  const row = page.locator('#member-list > li', { hasText: 'Lina Hofer' });
+  await row.getByRole('link', { name: 'Bearbeiten' }).click();
+  const second = page.getByLabel('Weitere E-Mail-Adresse (optional)');
+  await second.fill('mara.private@example.net');
+  await page.getByRole('button', { name: 'Speichern' }).click();
+
+  const message = 'Solange eine Abstimmung läuft, lassen sich keine Adressen hinzufügen oder ersetzen. Das geht wieder ab dem Tag nach ihrem Abschluss.';
+  await expect(page.getByRole('status')).toHaveText(message);
+  await expect(page.locator('#mf-email2-error')).toHaveText(message);
+  await expect(second).toHaveAttribute('aria-invalid', 'true');
+  await expect(second).toBeFocused();
+
+  await page.getByRole('link', { name: 'Abbrechen' }).click();
+  await expect(row).not.toContainText('mara.private@example.net');
+});
+
 test.describe('without JavaScript', () => {
   test.use({ javaScriptEnabled: false });
 

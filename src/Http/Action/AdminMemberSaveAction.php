@@ -11,8 +11,11 @@ use ShowOfHands\Http\MemberForm;
 use ShowOfHands\Http\MembersPage;
 use ShowOfHands\Http\Middleware\MemberMiddleware;
 use ShowOfHands\Http\Session;
+use ShowOfHands\Infrastructure\Clock\Clock;
+use ShowOfHands\Infrastructure\Config\Config;
 use ShowOfHands\Infrastructure\Persistence\DuplicateEmailException;
 use ShowOfHands\Infrastructure\Persistence\MemberRepository;
+use ShowOfHands\Infrastructure\Persistence\NewAddressTooSoonException;
 use ShowOfHands\Infrastructure\Persistence\VoiceGroupRepository;
 use Slim\Exception\HttpNotFoundException;
 
@@ -20,7 +23,8 @@ use Slim\Exception\HttpNotFoundException;
  * Adds a member (POST /admin/members) or saves one (POST /admin/members/{id}). A refused save
  * shows the form again with status 422, the values as entered, and the message at its field.
  * Admins keep their own admin role whatever the form says, and the address they signed in with. The list afterwards shows every member,
- * so the new or edited one is in it.
+ * so the new or edited one is in it. While a poll is open, or was closed today, a save that gives
+ * an existing member a new address is refused; new members may be added at any time.
  */
 final readonly class AdminMemberSaveAction
 {
@@ -29,6 +33,8 @@ final readonly class AdminMemberSaveAction
         private MemberRepository $members,
         private VoiceGroupRepository $voiceGroups,
         private Session $session,
+        private Clock $clock,
+        private Config $config,
     ) {}
 
     /**
@@ -66,9 +72,11 @@ final readonly class AdminMemberSaveAction
         try {
             if ($id === null) {
                 $this->members->add($details->name, $details->emails, $group, $form->board, $admin, $details->displayName);
-            } elseif (!$this->members->update($id, $details->name, $details->emails, $group, $form->board, $admin, $details->displayName)) {
+            } elseif (!$this->members->update($id, $details->name, $details->emails, $group, $form->board, $admin, $details->displayName, $this->clock->now(), new \DateTimeZone($this->config->timezone))) {
                 throw new HttpNotFoundException($request);
             }
+        } catch (NewAddressTooSoonException $e) {
+            return $this->page->show($request, $response, $actor, '', $form->newAddressRefused($this->members->emailsOf($id), $e->open), status: 422);
         } catch (DuplicateEmailException $e) {
             $ownerName = $this->members->findByEmail($e->email)[0]->name ?? $e->email;
 

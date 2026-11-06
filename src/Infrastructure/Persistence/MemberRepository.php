@@ -193,21 +193,32 @@ final readonly class MemberRepository
     /**
      * Replaces the member's name, display name, addresses, group, and roles.
      *
+     * While a poll is open, or was closed today and may still be reopened, no address is added or
+     * replaced: its owner could sign in as the member and read or change their vote. Removing
+     * one stays allowed.
+     *
      * @param list<string> $emails normalized addresses, the first one first
      *
      * @return bool false when the member no longer exists
      *
      * @throws DuplicateEmailException when another member already uses one of the addresses
+     * @throws NewAddressTooSoonException when an address is new while a poll is in reach
      */
-    public function update(int $id, string $name, array $emails, ?string $voiceGroupKey, bool $isBoard, bool $isAdmin, ?string $displayName): bool
+    public function update(int $id, string $name, array $emails, ?string $voiceGroupKey, bool $isBoard, bool $isAdmin, ?string $displayName, \DateTimeImmutable $now, \DateTimeZone $zone): bool
     {
         self::assertAddressCount($emails);
 
-        return Transaction::immediate($this->pdo, function () use ($id, $name, $emails, $voiceGroupKey, $isBoard, $isAdmin, $displayName): bool {
+        return Transaction::immediate($this->pdo, function () use ($id, $name, $emails, $voiceGroupKey, $isBoard, $isAdmin, $displayName, $now, $zone): bool {
             $update = $this->pdo->prepare('UPDATE members SET name = ?, display_name = ?, voice_group_key = ?, is_board = ?, is_admin = ? WHERE id = ?');
             $update->execute([$name, $displayName, $voiceGroupKey, (int) $isBoard, (int) $isAdmin, $id]);
             if ($update->rowCount() === 0) {
                 return false;
+            }
+            if (array_diff($emails, $this->emailsOf($id)) !== []) {
+                $open = PollsTakenPart::hold($this->pdo, null, $now, $zone);
+                if ($open !== null) {
+                    throw new NewAddressTooSoonException($id, open: $open);
+                }
             }
             $this->assertAddressesFree($emails, $id);
             $this->pdo->prepare('DELETE FROM member_emails WHERE member_id = ?')->execute([$id]);

@@ -106,6 +106,8 @@ toast:
     removed: '{name} entfernt.'
     remove_tomorrow: '{name} hat an einer heute abgeschlossenen Abstimmung teilgenommen und kann erst ab morgen entfernt werden.'
     remove_after_close: '{name} hat an einer laufenden Abstimmung teilgenommen und kann erst ab dem Tag nach ihrem Abschluss entfernt werden.'
+    new_address_after_close: Solange eine Abstimmung läuft, lassen sich keine Adressen hinzufügen oder ersetzen. Das geht wieder ab dem Tag nach ihrem Abschluss.
+    new_address_tomorrow: Heute wurde eine Abstimmung abgeschlossen. Adressen hinzufügen oder ersetzen geht erst ab morgen wieder.
     deactivated: '{name} ist jetzt inaktiv und zählt nicht mehr zu den Stimmberechtigten.'
     activated: '{name} ist wieder aktiv und stimmberechtigt.'
     deactivate_after_close: '{name} hat an einer offenen Abstimmung teilgenommen und kann erst nach ihrem Abschluss inaktiv gesetzt werden.'
