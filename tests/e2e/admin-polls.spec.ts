@@ -59,6 +59,8 @@ test('an admin creates, publishes, and after an accidental close reopens a poll'
   // The admin is also on the board, so they vote and close on the poll page.
   await page.getByRole('link', { name: 'Zur Abstimmungsseite' }).click();
   await page.getByRole('button', { name: /^Ja/ }).click();
+  // The poll page drops a tap while the vote is on its way, so the close waits for its answer.
+  await expect(toast).toHaveText('Stimme registriert: Ja.');
   await page.getByRole('button', { name: 'Abstimmung abschließen' }).click();
   await page.getByRole('button', { name: 'Abschließen und Ergebnis anzeigen' }).click();
   await expect(page.getByRole('heading', { name: 'Ergebnis' })).toBeVisible();

@@ -46,6 +46,12 @@ error:
   server:
     title: Etwas ist schiefgelaufen
     text: Die Seite konnte nicht geladen werden. Versuche es gleich noch einmal. Wenn der Fehler bleibt, sag der Verwaltung Bescheid.
+  busy:
+    title: Gerade ist viel los
+    text: Nicht gespeichert. Geh zurück und tippe noch einmal.
+  busy_load:
+    title: Gerade ist viel los
+    text: Die Seite konnte gerade nicht geladen werden. Lade sie gleich noch einmal.
 
 nav:
   label: Bereiche
@@ -62,6 +68,8 @@ toast:
   signed_in: Du bist als {name} angemeldet.
   signed_in_via: Angemeldet als {name} über {address}.
   sign_in_failed: Die Anmeldung hat nicht geklappt. Bitte versuche es noch einmal.
+  not_saved: Nicht gespeichert, bitte nochmal tippen.
+  not_loaded: Nicht geladen, bitte nochmal tippen.
   ballot:
     registered: 'Stimme registriert: {choice}.'
     changed: 'Stimme geändert: {choice}.'

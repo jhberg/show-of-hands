@@ -7,6 +7,8 @@
     forbidden: 'error.forbidden.title'|trans,
     csrf: 'error.csrf.title'|trans,
     server: 'error.server.title'|trans,
+    busy: 'error.busy.title'|trans,
+    busy_load: 'error.busy_load.title'|trans,
 }[kind] %}
 {% set text = {
     bad_request: 'error.bad_request.text'|trans,
@@ -14,6 +16,8 @@
     forbidden: 'error.forbidden.text'|trans,
     csrf: 'error.csrf.text'|trans,
     server: 'error.server.text'|trans,
+    busy: 'error.busy.text'|trans,
+    busy_load: 'error.busy_load.text'|trans,
 }[kind] %}
 
 {% block title %}{{ title }} · {{ parent() }}{% endblock %}
