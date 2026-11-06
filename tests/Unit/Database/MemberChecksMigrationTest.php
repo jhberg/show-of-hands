@@ -92,9 +92,10 @@ final class MemberChecksMigrationTest extends TestCase
         self::assertSame([], $this->rows('SELECT * FROM delegations'));
     }
 
+    /** Against the current schema, so a new locale fails here until a migration adds it. */
     public function testAcceptsOnlyTheLocalesAndColourModesTheAppWrites(): void
     {
-        $this->migrateUpTo(self::MIGRATION);
+        (new Migrator($this->pdo, self::migrationsDir(), $this->dir))->migrate();
         $insert = $this->pdo->prepare('INSERT INTO members (name, locale, color_mode) VALUES (?, ?, ?)');
         foreach (Locales::SUPPORTED as $locale) {
             foreach (ColorMode::cases() as $mode) {
