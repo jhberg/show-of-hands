@@ -38,7 +38,8 @@ test('a deep link returns to the poll after sign-in', async ({ page }) => {
   await page.getByRole('link', { name: 'Mit Google anmelden' }).click();
   await page.getByRole('button', { name: ADMIN_PRIVATE.email }).click();
 
-  await expect(page).toHaveURL('/polls/2');
+  // Waits for the load event: until the stylesheet hides the phone menu, both admin entries show.
+  await page.waitForURL('/polls/2');
   await expect(page.getByRole('status')).toHaveText(`Angemeldet als ${ADMIN_PRIVATE.name} über ${ADMIN_PRIVATE.email}.`);
   await expect(page.getByRole('heading', { level: 1, name: 'Mila Sandberg' })).toBeVisible();
   await expect(adminEntry(page)).toBeVisible();
