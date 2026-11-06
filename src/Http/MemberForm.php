@@ -94,6 +94,19 @@ final readonly class MemberForm
     }
 
     /**
+     * The form with the message at the new address, while a poll is open or was closed today.
+     *
+     * @param list<string> $saved the member's saved addresses
+     * @param bool $open whether a poll is still open
+     */
+    public function newAddressRefused(array $saved, bool $open): self
+    {
+        $field = in_array(EmailAddress::normalize($this->email), $saved, true) ? 'email2' : 'email';
+
+        return $this->withError($field, $open ? 'toast.member.new_address_after_close' : 'toast.member.new_address_tomorrow');
+    }
+
+    /**
      * @param array<string, string> $params
      */
     private function withError(string $field, string $messageKey, array $params = []): self

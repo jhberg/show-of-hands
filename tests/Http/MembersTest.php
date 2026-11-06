@@ -7,7 +7,9 @@ namespace ShowOfHands\Tests\Http;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Psr\Http\Message\ResponseInterface;
 use ShowOfHands\Domain\Choice;
+use ShowOfHands\Domain\PollStatus;
 use ShowOfHands\Infrastructure\Clock\Clock;
+use ShowOfHands\Infrastructure\Config\Config;
 use ShowOfHands\Infrastructure\Persistence\BallotRepository;
 use ShowOfHands\Infrastructure\Persistence\DelegationRepository;
 use ShowOfHands\Infrastructure\Persistence\MemberRepository;
@@ -49,6 +51,16 @@ final class MembersTest extends HttpTestCase
     private function members(): MemberRepository
     {
         return $this->service(MemberRepository::class);
+    }
+
+    /**
+     * The app's time and time zone, as the repository's update takes them.
+     *
+     * @return array{\DateTimeImmutable, \DateTimeZone}
+     */
+    private function now(): array
+    {
+        return [$this->service(Clock::class)->now(), new \DateTimeZone($this->service(Config::class)->timezone)];
     }
 
     private function number(string $sql, int $poll): int
@@ -330,7 +342,7 @@ final class MembersTest extends HttpTestCase
         self::assertSame(200, $this->request('GET', '/admin/members')->getStatusCode());
 
         $this->signIn('kim@example.net');
-        $this->service(MemberRepository::class)->update($this->kim, 'Kim Example', ['kim@example.org'], 'S1', false, true, null);
+        $this->service(MemberRepository::class)->update($this->kim, 'Kim Example', ['kim@example.org'], 'S1', false, true, null, ...$this->now());
 
         self::assertSame('/login', $this->request('GET', '/')->getHeaderLine('Location'));
     }
@@ -339,8 +351,8 @@ final class MembersTest extends HttpTestCase
     {
         $this->signIn('lou@example.org');
         $members = $this->members();
-        $members->update($this->lou, 'Lou Example', ['lou@example.net'], 'T1', false, false, null);
-        $members->update($this->max, 'Max Example', ['max@example.org', 'lou@example.org'], null, true, false, null);
+        $members->update($this->lou, 'Lou Example', ['lou@example.net'], 'T1', false, false, null, ...$this->now());
+        $members->update($this->max, 'Max Example', ['max@example.org', 'lou@example.org'], null, true, false, null, ...$this->now());
 
         self::assertSame('/login', $this->request('GET', '/')->getHeaderLine('Location'));
     }
@@ -444,6 +456,98 @@ final class MembersTest extends HttpTestCase
         $this->send('/' . $this->lou . '/delete');
 
         self::assertNull($this->members()->find($this->lou));
+    }
+
+    /**
+     * A new address would let its owner sign in as the member and read or change their vote.
+     * While any poll is open, no existing member gets one, whether they voted or not.
+     */
+    public function testNoMemberGetsANewAddressWhileAPollIsOpen(): void
+    {
+        $this->addPoll();
+        $message = 'Solange eine Abstimmung läuft, lassen sich keine Adressen hinzufügen oder ersetzen. Das geht wieder ab dem Tag nach ihrem Abschluss.';
+
+        $response = $this->send('/' . $this->lou, ['name' => 'Lou Example', 'email' => 'lou@example.org', 'email2' => 'kim@example.com', 'group' => 'T1']);
+        self::assertSame(422, $response->getStatusCode());
+        self::assertStringContainsString('<p class="field-error" id="mf-email2-error">' . $message . '</p>', $this->body($response));
+
+        // Replacing an address gives the member a new one too.
+        $response = $this->send('/' . $this->lou, ['name' => 'Lou Example', 'email' => 'lou@example.net', 'group' => 'T1'], htmx: true);
+        self::assertSame(422, $response->getStatusCode());
+        self::assertSame(['toast' => $message], json_decode($response->getHeaderLine('HX-Trigger'), true));
+        self::assertStringContainsString('<p class="field-error" id="mf-email-error">', $this->body($response));
+
+        self::assertSame(['lou@example.org'], $this->members()->emailsOf($this->lou));
+        self::assertNull($this->members()->findByEmail('kim@example.com'));
+    }
+
+    public function testNoMemberGetsANewAddressOnTheDayAPollClosed(): void
+    {
+        $poll = $this->addPoll();
+        $this->service(PollCloser::class)->close($poll, new \DateTimeImmutable('2026-11-03T19:00:00Z'));
+        $body = ['name' => 'Lou Example', 'email' => 'lou@example.org', 'email2' => 'kim@example.com', 'group' => 'T1'];
+
+        $response = $this->send('/' . $this->lou, $body);
+        self::assertSame(422, $response->getStatusCode());
+        self::assertStringContainsString('Heute wurde eine Abstimmung abgeschlossen. Adressen hinzufügen oder ersetzen geht erst ab morgen wieder.', $this->body($response));
+        self::assertSame(['lou@example.org'], $this->members()->emailsOf($this->lou));
+
+        // Past midnight in Berlin, the poll can no longer be reopened.
+        $this->app = $this->createApp(overrides: [Clock::class => FixedClock::at('2026-11-03T23:30:00Z')]);
+        self::assertSame(303, $this->send('/' . $this->lou, $body)->getStatusCode());
+        self::assertSame(['lou@example.org', 'kim@example.com'], $this->members()->emailsOf($this->lou));
+    }
+
+    public function testAddressesCanBeAddedWhileNoPollIsOpen(): void
+    {
+        $this->addPoll(status: PollStatus::Draft);
+
+        $response = $this->send('/' . $this->lou, ['name' => 'Lou Example', 'email' => 'lou@example.net', 'email2' => 'lou@example.com', 'group' => 'T1']);
+
+        self::assertSame(303, $response->getStatusCode());
+        self::assertSame(['lou@example.net', 'lou@example.com'], $this->members()->emailsOf($this->lou));
+    }
+
+    public function testWhileAPollIsOpenAddressesCanBeRemovedAndTheOtherFieldsSaved(): void
+    {
+        $poll = $this->addPoll();
+        $this->service(BallotRepository::class)->cast($poll, $this->kim, Choice::Yes);
+
+        // The admin's own form: the second address goes, the roles and the group change.
+        $response = $this->send('/' . $this->kim, ['name' => 'Kim Renamed', 'display_name' => 'Kim R.', 'email' => 'Kim@Example.org', 'group' => 'B1', 'admin' => '1'], htmx: true);
+
+        self::assertSame(200, $response->getStatusCode());
+        self::assertStringContainsString('Mitglied gespeichert.', $response->getHeaderLine('HX-Trigger'));
+        $kim = $this->members()->find($this->kim);
+        self::assertSame(['Kim Renamed', 'Kim R.', 'B1', false], [$kim?->name, $kim?->displayName, $kim?->voiceGroupKey, $kim?->isBoard]);
+        self::assertSame(['kim@example.org'], $this->members()->emailsOf($this->kim));
+    }
+
+    /**
+     * The choir uses the app when votes are due, so admins often notice only then that members
+     * are missing from the list.
+     */
+    public function testNewMembersCanBeAddedWhileAPollIsOpen(): void
+    {
+        $this->addPoll();
+
+        $response = $this->send('', ['name' => 'Ned Example', 'email' => 'ned@example.org', 'email2' => 'ned@example.net', 'group' => 'T1']);
+
+        self::assertSame(303, $response->getStatusCode());
+        $ned = $this->members()->findByEmail('ned@example.net')[0] ?? null;
+        self::assertSame('Ned Example', $ned?->name);
+    }
+
+    public function testTheRefusalReadsInEnglish(): void
+    {
+        $this->addPoll();
+        $this->members()->setLocale($this->kim, 'en');
+
+        $response = $this->send('/' . $this->kim, ['name' => 'Kim Example', 'email' => 'kim@example.org', 'email2' => 'kim@example.com', 'group' => 'S1', 'admin' => '1', 'board' => '1']);
+
+        self::assertSame(422, $response->getStatusCode());
+        self::assertStringContainsString('<p class="field-error" id="mf-email2-error">While a poll is open, addresses cannot be added or replaced. That works again from the day after it closes.</p>', $this->body($response));
+        self::assertSame(['kim@example.org', 'kim@example.net'], $this->members()->emailsOf($this->kim));
     }
 
     public function testTheListReadsTheEnglishWording(): void
