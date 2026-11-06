@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import AxeBuilder from '@axe-core/playwright';
+import { noViolations } from './axe';
 
 // Members from bin/console seed:demo who have not voted on "Mila Sandberg" yet. The phone,
 // desktop, and iPhone projects run in parallel against the same data, so each uses its own
@@ -33,7 +33,7 @@ test('a member votes, changes the vote, and sees the turnout', async ({ page }, 
   await expect(page.getByText('Tippe auf Ja oder Nein.')).toBeVisible();
   const missing = page.locator('.names');
   await expect(missing.getByText(voter.name)).toBeVisible();
-  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+  await noViolations(page);
 
   const yes = page.getByRole('button', { name: /^Ja/ });
   const no = page.getByRole('button', { name: /^Nein/ });
@@ -44,7 +44,7 @@ test('a member votes, changes the vote, and sees the turnout', async ({ page }, 
   await expect(page.getByText('Deine Stimme ist registriert: Ja.')).toBeVisible();
   await expect(missing.getByText(voter.name)).toHaveCount(0);
   await expect(page).toHaveURL('/polls/2');
-  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+  await noViolations(page);
 
   await no.click();
   await expect(page.getByRole('status')).toHaveText('Stimme geändert: Nein.');
