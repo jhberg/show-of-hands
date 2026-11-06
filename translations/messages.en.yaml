@@ -46,6 +46,12 @@ error:
   server:
     title: Something went wrong
     text: The page could not be loaded. Try again in a moment. If the error stays, tell the admins.
+  busy:
+    title: Busy right now
+    text: Not saved. Go back and tap again.
+  busy_load:
+    title: Busy right now
+    text: The page could not be loaded just now. Reload it in a moment.
 
 nav:
   label: Sections
@@ -62,6 +68,8 @@ toast:
   signed_in: '{name}, you are signed in.'
   signed_in_via: Signed in as {name} with {address}.
   sign_in_failed: Sign-in did not work. Please try again.
+  not_saved: Not saved, please tap again.
+  not_loaded: Did not load, please tap again.
   ballot:
     registered: 'Vote registered: {choice}.'
     changed: 'Vote changed: {choice}.'

@@ -29,6 +29,19 @@
     show(event.detail && event.detail.value);
   });
 
+  // A request that fails (no network, or the server answers an error htmx does not swap in)
+  // leaves the page as it was, so the toast asks the member to tap again. A 403 never gets here:
+  // the server answers it with HX-Refresh. The poll page's refresh fails quietly and tries again.
+  function failed(event) {
+    var config = event.detail.requestConfig;
+    var toast = document.getElementById('toast');
+    if (!toast || config && config.elt.hasAttribute('data-live')) return;
+    show(toast.getAttribute(config && config.verb === 'get' ? 'data-not-loaded' : 'data-not-saved'));
+  }
+
+  document.addEventListener('htmx:responseError', failed);
+  document.addEventListener('htmx:sendError', failed);
+
   // The poll form's labels, placeholders, and question field follow the chosen kind. The server
   // renders them for the kind it knows; the other kind's words wait in data attributes.
   document.addEventListener('change', function (event) {

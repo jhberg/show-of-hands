@@ -14,7 +14,10 @@ use Slim\Exception\HttpMethodNotAllowedException;
 use Slim\Exception\HttpNotFoundException;
 
 /**
- * Renders 400, 403, 404, and 500 as pages in the app's style, and logs unexpected errors.
+ * Renders 400, 403, 404, 500, and 503 as pages in the app's style, and logs unexpected errors.
+ *
+ * htmx swaps none of them in. A 403 answers htmx with HX-Refresh instead, because it most often
+ * means the session expired: the reloaded page sends the member to the login.
  */
 final readonly class ErrorHandler
 {
@@ -32,10 +35,15 @@ final readonly class ErrorHandler
             $error instanceof CsrfException => [403, 'csrf'],
             $error instanceof HttpForbiddenException => [403, 'forbidden'],
             $error instanceof HttpNotFoundException, $error instanceof HttpMethodNotAllowedException => [404, 'not_found'],
+            // A page load writes too, for its lazy maintenance, but the member has nothing to tap again.
+            self::isBusy($error) => [503, $request->getMethod() === 'GET' ? 'busy_load' : 'busy'],
             default => [500, 'server'],
         };
-        if ($status === 500) {
+        if ($status === 500 || $status === 503) {
             $this->log->error($error);
+        }
+        if ($status === 403 && Htmx::isRequest($request)) {
+            return $this->responses->createResponse(403)->withHeader('HX-Refresh', 'true');
         }
 
         try {
@@ -50,5 +58,14 @@ final readonly class ErrorHandler
 
             return $response;
         }
+    }
+
+    /**
+     * Whether SQLite gave up waiting for another request's write, after its busy_timeout.
+     */
+    private static function isBusy(\Throwable $error): bool
+    {
+        // pdo_sqlite puts SQLite's result code in errorInfo[1]: 5 is SQLITE_BUSY, 6 SQLITE_LOCKED.
+        return $error instanceof \PDOException && in_array($error->errorInfo[1] ?? null, [5, 6], true);
     }
 }

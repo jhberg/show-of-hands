@@ -1,1 +1,2 @@
-<div id="toast" class="toast{% if toast %} on{% endif %}" role="status" aria-live="polite">{{ toast }}</div>
+{# app.js shows data-not-saved or data-not-loaded when an htmx request fails. #}
+<div id="toast" data-not-saved="{{ 'toast.not_saved'|trans }}" data-not-loaded="{{ 'toast.not_loaded'|trans }}" class="toast{% if toast %} on{% endif %}" role="status" aria-live="polite">{{ toast }}</div>
