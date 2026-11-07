@@ -52,9 +52,9 @@ mkdir -p "$root/build"
 rm -f "$zip_file"
 cd "$work/release"
 # MIGRATIONS.txt and VERSION go last. Unzipping writes in archive order. MIGRATIONS.txt releases the new
-# migrations, so they run only once the code that expects them is in place. VERSION picks the
-# template cache: a request during an update must still compile into the old release's cache, which
-# maintenance deletes later, never old templates into the new release's cache.
+# migrations, so they run only once the code that expects them is in place. VERSION picks the cache
+# directory (templates, translations, container): a request during an update must still compile into
+# the old release's cache, which maintenance deletes later, never old code into the new release's cache.
 zip -q -r -X "$zip_file" . -x MIGRATIONS.txt VERSION
 zip -q -X "$zip_file" MIGRATIONS.txt VERSION
 echo "Built build/$(basename "$zip_file") from $ref." >&2

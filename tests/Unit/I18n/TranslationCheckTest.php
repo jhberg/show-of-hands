@@ -49,7 +49,7 @@ final class TranslationCheckTest extends TestCase
         $this->write('translations/messages.de.yaml', "a: 'Hallo {name}'\nb: '{n, plural, one {# Mitglied} other {# Mitglieder}}'\n");
         $this->write('overrides/messages.de.yaml', "a: 'Servus {name}'\n");
 
-        $translator = TranslatorFactory::create(["{$this->dir}/translations", "{$this->dir}/overrides"], 'de');
+        $translator = TranslatorFactory::create(["{$this->dir}/translations", "{$this->dir}/overrides"], 'de', "{$this->dir}/cache");
 
         self::assertSame('Servus Kim', $translator->trans('a', ['name' => 'Kim']));
         self::assertSame('3 Mitglieder', $translator->trans('b', ['n' => 3]));

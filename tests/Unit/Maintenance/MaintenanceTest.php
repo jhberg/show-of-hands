@@ -47,7 +47,7 @@ final class MaintenanceTest extends TestCase
     {
         $clock = FixedClock::at('@' . $now);
 
-        return new Maintenance(new SettingsRepository($this->pdo), $this->migrator, $this->ballots(), new PollRepository($this->pdo), $clock, $this->dir . '/sessions', $this->dir . '/backup', $this->dir . '/cache/twig/1.1.0', 30, 'Europe/Berlin');
+        return new Maintenance(new SettingsRepository($this->pdo), $this->migrator, $this->ballots(), new PollRepository($this->pdo), $clock, $this->dir . '/sessions', $this->dir . '/backup', $this->dir . '/cache/1.1.0', $this->dir . '/app.sqlite', 30, 'Europe/Berlin');
     }
 
     private function ballots(): BallotRepository
@@ -113,18 +113,38 @@ final class MaintenanceTest extends TestCase
         self::assertFileExists($fresh);
     }
 
-    public function testDeletesTheTemplateCachesOfEarlierReleases(): void
+    public function testRestrictsADatabaseAnEarlierReleaseCreated(): void
     {
-        mkdir($this->dir . '/cache/twig/1.0.0/ab', 0o777, true);
-        mkdir($this->dir . '/cache/twig/1.1.0/cd', 0o777, true);
-        $old = $this->file('cache/twig/1.0.0/ab/template.php', self::NOW);
-        $current = $this->file('cache/twig/1.1.0/cd/template.php', self::NOW);
+        chmod($this->dir . '/app.sqlite', 0o644);
 
         $this->maintenance()->run();
 
-        self::assertDirectoryDoesNotExist($this->dir . '/cache/twig/1.0.0');
-        self::assertFileDoesNotExist($old);
-        self::assertFileExists($current);
+        self::assertSame(0o600, fileperms($this->dir . '/app.sqlite') & 0o777);
+    }
+
+    public function testDeletesTheCachesOfOtherReleases(): void
+    {
+        $old = [];
+        foreach (['1.0.0/twig/ab/template.php', '1.0.0/translations/catalogue.de.php', '1.0.0/container/CompiledContainer.php', 'dev/twig/ab/template.php', 'twig/1.0.0/ab/template.php'] as $file) {
+            mkdir(dirname($this->dir . '/cache/' . $file), 0o777, true);
+            $old[] = $this->file('cache/' . $file, self::NOW);
+        }
+        $current = [];
+        foreach (['1.1.0/twig/cd/template.php', '1.1.0/translations/catalogue.de.php', '1.1.0/container/CompiledContainer.php'] as $file) {
+            mkdir(dirname($this->dir . '/cache/' . $file), 0o777, true);
+            $current[] = $this->file('cache/' . $file, self::NOW);
+        }
+
+        $this->maintenance()->run();
+
+        // The last one is where 0.1.0 compiled its templates.
+        self::assertSame(['1.1.0'], array_map(basename(...), glob($this->dir . '/cache/*') ?: []));
+        foreach ($old as $file) {
+            self::assertFileDoesNotExist($file);
+        }
+        foreach ($current as $file) {
+            self::assertFileExists($file);
+        }
     }
 
     public function testDeletesTheBallotsOfPollsWhoseCloseDayHasEnded(): void

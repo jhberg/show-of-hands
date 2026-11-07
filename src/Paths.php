@@ -9,11 +9,20 @@ namespace ShowOfHands;
  */
 final readonly class Paths
 {
+    /**
+     * The release's version from the VERSION file that bin/build-release writes, or null in a git
+     * checkout. Maintenance deletes the caches of every other version, so a name like ".." never gets through.
+     */
+    public ?string $release;
+
     public function __construct(
         public string $root,
         public ?string $dataOverride = null,
         public ?string $configOverride = null,
-    ) {}
+    ) {
+        $release = trim((string) @file_get_contents($root . '/VERSION'));
+        $this->release = preg_match('/^[A-Za-z0-9][A-Za-z0-9._-]*$/', $release) === 1 ? $release : null;
+    }
 
     /**
      * SHOW_OF_HANDS_CONFIG and SHOW_OF_HANDS_DATA point a second copy, such as the one the
@@ -44,19 +53,33 @@ final readonly class Paths
     }
 
     /**
-     * The compiled templates of this release. A release ZIP restores its files' build times, which
-     * can be older than the old release's cache, so Twig's freshness check alone would keep serving
-     * the old templates after an update. Each release compiles into its own directory instead.
+     * The caches of this release: compiled templates, translations, and the service container.
+     * A release ZIP restores its files' build times, which can be older than the old release's
+     * cache, so a freshness check alone would keep serving the old files after an update. Each
+     * release caches into its own directory instead, and a checkout into dev.
      */
+    public function cache(): string
+    {
+        return $this->data() . '/cache/' . ($this->release ?? 'dev');
+    }
+
     public function templateCache(): string
     {
-        $release = trim((string) @file_get_contents($this->root . '/VERSION'));
-        // Maintenance deletes the directory's siblings, so a name like ".." must never get through.
-        if (preg_match('/^[A-Za-z0-9][A-Za-z0-9._-]*$/', $release) !== 1) {
-            $release = 'dev';
-        }
+        return $this->cache() . '/twig';
+    }
 
-        return $this->data() . '/cache/twig/' . $release;
+    public function translationCache(): string
+    {
+        return $this->cache() . '/translations';
+    }
+
+    /**
+     * Where the web app compiles its service container, or null in a checkout, whose code changes
+     * under a compiled container without a new version.
+     */
+    public function containerCache(): ?string
+    {
+        return $this->release === null ? null : $this->cache() . '/container';
     }
 
     /**
@@ -70,6 +93,11 @@ final readonly class Paths
         $names = @file($this->root . '/MIGRATIONS.txt', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
 
         return $names === false ? null : $names;
+    }
+
+    public function log(): string
+    {
+        return $this->data() . '/logs/app.log';
     }
 
     public function sessions(): string

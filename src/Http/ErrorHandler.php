@@ -40,7 +40,7 @@ final readonly class ErrorHandler
             default => [500, 'server'],
         };
         if ($status === 500 || $status === 503) {
-            $this->log->error($error);
+            $this->log->error($error, $request);
         }
         if ($status === 403 && Htmx::isRequest($request)) {
             return $this->responses->createResponse(403)->withHeader('HX-Refresh', 'true');
@@ -52,7 +52,7 @@ final readonly class ErrorHandler
                 'details' => $this->showDetails && $status === 500 ? (string) $error : null,
             ], $status);
         } catch (\Throwable $renderError) {
-            $this->log->error($renderError);
+            $this->log->error($renderError, $request);
             $response = $this->responses->createResponse($status)->withHeader('Content-Type', 'text/plain; charset=utf-8');
             $response->getBody()->write($status === 500 ? 'Internal error.' : 'Error ' . $status . '.');
 

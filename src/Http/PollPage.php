@@ -54,7 +54,7 @@ final readonly class PollPage
     {
         $data = $this->data($poll, $member, self::delegationOpen($request), self::confirmClose($request)) + ['live' => false];
         // The flash holds only the message key. The choice it names comes from the member's own ballot.
-        $data['toast'] = $this->flash->take($this->choiceParams($data['choice']), self::path($poll));
+        $data['toast'] = $this->flash->take($this->choiceParams($data['choice']), self::path($poll), $this->otherChoiceParams($data['choice']));
 
         return $this->renderer->render($request, $response, 'pages/poll.html.twig', $data);
     }
@@ -83,6 +83,10 @@ final readonly class PollPage
         $data = $this->data($poll, $member, $delegationOpen, $confirmClose, $delegationError) + ['live' => $live];
         if ($toastKey !== null) {
             $toast = $this->translator->trans($toastKey, $toastParams + $this->choiceParams($data['choice']));
+            $other = $this->otherChoiceParams($data['choice']);
+            if ($other !== null) {
+                $toast = Flash::sameLength($toast, $this->translator->trans($toastKey, $toastParams + $other), static fn(string $raw): string => json_encode($raw, JSON_THROW_ON_ERROR));
+            }
             $response = $response->withHeader('HX-Trigger', json_encode(['toast' => $toast], JSON_THROW_ON_ERROR));
         }
 
@@ -260,6 +264,16 @@ final readonly class PollPage
     public static function path(Poll $poll): string
     {
         return '/polls/' . $poll->id;
+    }
+
+    /**
+     * The {choice} placeholder for the choice the member did not make, or null before they voted.
+     *
+     * @return array<string, string>|null
+     */
+    private function otherChoiceParams(?Choice $choice): ?array
+    {
+        return $choice === null ? null : $this->choiceParams($choice === Choice::Yes ? Choice::No : Choice::Yes);
     }
 
     /**

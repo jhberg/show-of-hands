@@ -25,6 +25,14 @@ final class ThemeBuilder
     private const REF_ACCENT_C = 0.155;
     private const REF_INK_C = 0.035;
 
+    /**
+     * The version in the stylesheet's URL: it changes with the derivation and with the brand.
+     */
+    public static function version(Brand $brand): string
+    {
+        return substr(sha1(json_encode([self::VERSION, $brand->accent, $brand->ink, $brand->fontFamily, $brand->fontFiles], JSON_THROW_ON_ERROR)), 0, 12);
+    }
+
     public function build(Brand $brand): Theme
     {
         $accent = Color::fromHex($brand->accent);

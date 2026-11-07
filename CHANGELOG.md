@@ -30,3 +30,5 @@ The first release.
 - Housekeeping on requests deletes ballots the day after their poll closed, closed polls after the retention period, old sessions, and the copy an update makes.
 - Updates migrate the database on the first request, after a copy to `data/backup/`. A failed update can go back to the previous release, see "Updates" in the README.
 - `.htaccess` rules keep `config/` and `data/` private, should a host serve the whole installation folder.
+- Files the app creates in `data/` are readable by its own user only. If PHP cannot write to `data/`, the page says which folders to fix. The error log keeps at most about 2 MB.
+- Pages render faster: the app caches the translations and its service container per release, and browsers keep the scripts and styles for a year.

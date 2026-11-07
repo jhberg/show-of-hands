@@ -9,6 +9,7 @@ use ShowOfHands\Infrastructure\Database\Migrator;
 use ShowOfHands\Infrastructure\Persistence\BallotRepository;
 use ShowOfHands\Infrastructure\Persistence\PollRepository;
 use ShowOfHands\Infrastructure\Persistence\SettingsRepository;
+use ShowOfHands\Infrastructure\Storage\DataDirectory;
 
 /**
  * Housekeeping that hosts without cron cannot schedule. A request runs it at most once an hour.
@@ -20,7 +21,8 @@ use ShowOfHands\Infrastructure\Persistence\SettingsRepository;
  * - Deletes the ballots of closed polls once their close day has ended in the choir's time
  *   zone. Until then an admin may reopen the poll; afterwards the frozen tally is all it needs.
  * - Deletes closed polls once their retention period has passed, with result, turnout, and names.
- * - Deletes the compiled templates of every other release.
+ * - Deletes the caches of every other release: templates, translations, and the service container.
+ * - Restricts the database to the app's user, also one an earlier release created with the host's umask.
  */
 final readonly class Maintenance
 {
@@ -37,7 +39,8 @@ final readonly class Maintenance
         private Clock $clock,
         private string $sessionsDir,
         private string $backupDir,
-        private string $templateCache,
+        private string $cacheDir,
+        private string $databaseFile,
         private int $sessionLifetimeDays,
         private string $timezone,
     ) {}
@@ -70,15 +73,16 @@ final readonly class Maintenance
             ? $this->deleteOlderThan($this->backupDir . '/' . Migrator::BACKUP_GLOB, $now->getTimestamp() - self::BACKUP_KEEP_SECONDS)
             : 0;
 
-        $this->deleteOtherTemplateCaches();
+        $this->deleteOtherCaches();
+        DataDirectory::restrict($this->databaseFile);
 
         return ['sessions' => $sessions, 'backups' => $backups, 'ballots' => $ballots, 'polls' => $polls];
     }
 
-    private function deleteOtherTemplateCaches(): void
+    private function deleteOtherCaches(): void
     {
-        foreach (glob(dirname($this->templateCache) . '/*', GLOB_ONLYDIR) ?: [] as $dir) {
-            if ($dir !== $this->templateCache) {
+        foreach (glob(dirname($this->cacheDir) . '/*', GLOB_ONLYDIR) ?: [] as $dir) {
+            if ($dir !== $this->cacheDir) {
                 self::deleteTree($dir);
             }
         }
