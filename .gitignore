@@ -28,5 +28,7 @@ HANDOVER.md
 .mcp.json
 /docs/plan
 **/.envrc
-/.obeya/
+/.obeya/*
+!/.obeya/theme.css
+!/.obeya/logo.svg
 .DS_Store
