@@ -1,21 +1,38 @@
 # Every job runs in the same Docker Compose services as local development, so CI and a
 # developer's machine use the same PHP, extensions, and Playwright.
+#
+# Every merge to main is a version: a pull request adds its section at the top of CHANGELOG.md, and
+# the push to main tags it and publishes the release. A tag the release job pushes with GITHUB_TOKEN
+# starts no workflow, so nothing listens for tags.
 name: CI
 
 on:
   push:
     branches: [main]
-    tags: ['v*']
   pull_request:
 
 permissions:
   contents: read
 
+# A newer push to a pull request replaces its running checks. Pushes to main never cancel or skip
+# each other: each one is a release.
 concurrency:
-  group: ci-${{ github.ref }}
+  group: ci-${{ github.event_name == 'pull_request' && github.ref || github.sha }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
+  changelog:
+    name: Changelog entry
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          # The previous version is a tag somewhere in the history.
+          fetch-depth: 0
+      - name: The pull request adds the next version at the top of CHANGELOG.md
+        run: bin/changelog check "${{ github.event.pull_request.base.sha }}"
+
   check:
     name: Check and test
     runs-on: ubuntu-latest
@@ -65,8 +82,8 @@ jobs:
           docker compose run --rm app tests/upgrade/run.sh "$previous" HEAD
 
   release:
-    name: Release ZIP
-    if: startsWith(github.ref, 'refs/tags/v')
+    name: Tag and release
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     needs: [check, e2e, upgrade]
     runs-on: ubuntu-latest
     permissions:
@@ -75,16 +92,26 @@ jobs:
       - uses: actions/checkout@v5
         with:
           fetch-depth: 0
+      - name: Tag the topmost version of CHANGELOG.md
+        id: tag
+        run: |
+          tag="v$(bin/changelog top)"
+          tagged="$(git rev-parse -q --verify "refs/tags/$tag^{commit}" || true)"
+          if [ -n "$tagged" ] && [ "$tagged" != "$GITHUB_SHA" ]; then
+            echo "::error::$tag exists already. Every change to main needs a new version at the top of CHANGELOG.md, through a pull request."
+            exit 1
+          fi
+          bin/changelog notes "${tag#v}" > notes.md
+          # Before the build, which names the ZIP after git describe. A re-run finds the tag on this commit.
+          [ -n "$tagged" ] || git tag "$tag" "$GITHUB_SHA"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
       - run: docker compose build app
-      - run: docker compose run --rm app bin/build-release "$GITHUB_REF_NAME"
+      - run: docker compose run --rm app bin/build-release "${{ steps.tag.outputs.tag }}"
       - name: Publish the GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.tag.outputs.tag }}
         run: |
-          # The notes are the version's section of CHANGELOG.md, from its heading to the next one.
-          awk -v version="${GITHUB_REF_NAME#v}" '/^## / { found = ($2 == version); next } found' CHANGELOG.md > notes.md
-          if ! grep -q '[^[:space:]]' notes.md; then
-            echo "CHANGELOG.md has no section for ${GITHUB_REF_NAME#v}." >&2
-            exit 1
-          fi
-          gh release create "$GITHUB_REF_NAME" build/show-of-hands-*.zip --title "$GITHUB_REF_NAME" --notes-file notes.md --verify-tag
+          # The tag goes out only with a ZIP to release, so a failed build leaves nothing to clean up.
+          git push origin "refs/tags/$TAG"
+          gh release create "$TAG" "build/show-of-hands-${TAG#v}.zip" --title "$TAG" --notes-file notes.md --verify-tag
