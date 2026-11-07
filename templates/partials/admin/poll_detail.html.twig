@@ -1,7 +1,8 @@
 {#
     A poll's detail: head, the panel for its status with its actions, the result or the note that
     none exists yet, and the turnout. Confirmations live in ?confirm=delete and ?confirm=reopen, so
-    they work without JavaScript; with htmx, links and buttons swap this element.
+    they work without JavaScript; with htmx, links and buttons swap this element. Publishing and
+    reopening move the focus to the status panel's heading, since their buttons go away.
 #}
 {% set url = '/admin/polls/' ~ poll.id %}
 {% set exception = poll.kind.value == 'exception' %}
@@ -9,19 +10,19 @@
     <div class="page-head">
         <div>
             <p class="kicker">{{ exception ? 'admin.polls.kind.exception'|trans : 'admin.polls.kind.admission'|trans }} · {{ group_label }} · {{ include('partials/poll/date.html.twig') }}</p>
-            <h1>{{ poll.subjectName }}</h1>
-            {% if exception %}<p class="note"><b>{{ poll.question ?? 'poll.question_missing'|trans }}</b></p>{% endif %}
-            {% if poll.note != '' %}<p class="note">{{ poll.note }}</p>{% endif %}
+            <h1 lang="{{ content_locale }}">{{ poll.subjectName }}</h1>
+            {% if exception %}<p class="note"><b{% if poll.question is not null %} lang="{{ content_locale }}"{% endif %}>{{ poll.question ?? 'poll.question_missing'|trans }}</b></p>{% endif %}
+            {% if poll.note != '' %}<p class="note" lang="{{ content_locale }}">{{ poll.note }}</p>{% endif %}
         </div>
         {{ include('partials/poll/status_chip.html.twig') }}
     </div>
 
     <div class="panel soft" id="poll-status">
         {% if poll.isDraft %}
-            <h2>{{ 'poll.status.draft'|trans }}</h2>
+            <h2 id="poll-status-title" tabindex="-1">{{ 'poll.status.draft'|trans }}</h2>
             <p class="help">{{ 'admin.polls.draft.help'|trans }}</p>
             <div class="actions">
-                <form method="post" action="{{ url }}/publish" hx-post="{{ url }}/publish">
+                <form method="post" action="{{ url }}/publish" data-focus="poll-status-title" hx-post="{{ url }}/publish">
                     {{ include('partials/csrf_field.html.twig') }}
                     <button class="btn primary">{{ 'admin.polls.draft.publish'|trans }}</button>
                 </form>
@@ -41,7 +42,7 @@
             {% endif %}
             {{ include('partials/admin/share_box.html.twig') }}
         {% elseif poll.isOpen %}
-            <h2>{{ poll.openedAt is null ? 'poll.status.open'|trans : 'admin.polls.open.title'|trans({moment: poll.openedAt|moment}) }}</h2>
+            <h2 id="poll-status-title" tabindex="-1">{{ poll.openedAt is null ? 'poll.status.open'|trans : 'admin.polls.open.title'|trans({moment: poll.openedAt|moment}) }}</h2>
             <p class="help">
                 {{- board_names is empty ? 'admin.polls.open.help'|trans : 'admin.polls.open.help_board'|trans({names: board_names|join(', ')}) -}}
                 {%- if poll.reopenedAt is not null %} {{ 'admin.polls.open.reopened'|trans({moment: poll.reopenedAt|moment}) }}{% endif -%}
@@ -52,7 +53,7 @@
             </div>
             {{ include('partials/admin/share_box.html.twig') }}
         {% else %}
-            <h2>{{ 'admin.polls.closed.title'|trans({moment: poll.closedAt|moment}) }}</h2>
+            <h2 id="poll-status-title" tabindex="-1">{{ 'admin.polls.closed.title'|trans({moment: poll.closedAt|moment}) }}</h2>
             <p class="help">
                 {{- 'admin.polls.closed.help'|trans({eligible: poll.tally.eligible ?? turnout.eligible}) -}}
                 {%- if deletion_day is not null %} {{ 'admin.polls.closed.deletion'|trans({date: deletion_day|day_date}) }}{% endif -%}
@@ -67,7 +68,7 @@
             </div>
             <p class="help mt-10">{{ can_reopen ? 'admin.polls.closed.reopen_today'|trans : 'admin.polls.closed.reopen_over'|trans }}</p>
             {% if can_reopen and confirm == 'reopen' %}
-                <form class="warnbox" method="post" action="{{ url }}/reopen" hx-post="{{ url }}/reopen">
+                <form class="warnbox" method="post" action="{{ url }}/reopen" data-focus="poll-status-title" hx-post="{{ url }}/reopen">
                     {{ include('partials/csrf_field.html.twig') }}
                     <p><b>{{ 'admin.polls.closed.reopen_question'|trans }}</b> {{ 'admin.polls.closed.reopen_text'|trans }}</p>
                     <div class="row">

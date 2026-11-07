@@ -1,7 +1,8 @@
 {#
-    The form that creates or edits a poll. Labels, placeholders, and the question field follow the
-    kind: app.js switches them in place when the radio changes, and without JavaScript the page shows
-    them for the kind the form was rendered with, for example after a save refused for a missing question.
+    The form that creates or edits a poll. Labels and placeholders follow the kind: app.js switches
+    them in place when the radio changes, and without JavaScript the page shows them for the kind the
+    form was rendered with. The question field follows the checked radio through CSS, with or without
+    JavaScript.
     An open poll offers only note and date. After a refused save, the message sits at its field.
 #}
 {% set exception = form.kind.value == 'exception' %}
@@ -35,7 +36,7 @@
                 {%- if focus == 'subject_name' %} autofocus{% endif %}{{ f.error(form, 'subject_name') }}>
             {% if form.errorField == 'subject_name' %}<p class="field-error" id="pf-subject_name-error">{{ form.errorKey|trans }}</p>{% endif %}
         </div>
-        <div class="field" data-kind-only="exception"{% if not exception %} hidden{% endif %}>
+        <div class="field" data-kind-only="exception">
             <label for="pf-question">{{ 'admin.polls.form.question'|trans }}</label>
             <textarea id="pf-question" name="question" rows="2" placeholder="{{ 'admin.polls.form.question_placeholder'|trans }}"
                 {%- if focus == 'question' %} autofocus{% endif %}{{ f.error(form, 'question') }}>{{ form.question }}</textarea>

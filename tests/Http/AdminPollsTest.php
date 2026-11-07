@@ -124,7 +124,8 @@ final class AdminPollsTest extends HttpTestCase
         $form = $this->get('/admin/polls/new');
         self::assertStringContainsString('<h1>Neue Abstimmung</h1>', $form);
         self::assertStringContainsString('<input type="radio" name="kind" value="admission" checked>', $form);
-        self::assertMatchesRegularExpression('#<div class="field" data-kind-only="exception" hidden>#', $form);
+        // The page renders the question field for every kind; CSS hides it while admission is checked.
+        self::assertStringContainsString('<div class="field" data-kind-only="exception">', $form);
         self::assertStringContainsString('data-admission="Name der Person, die sich bewirbt" data-exception="Name der Person in der Probezeit">Name der Person, die sich bewirbt</label>', $form);
         self::assertStringContainsString('Als Entwurf speichern', $form);
 
@@ -232,7 +233,7 @@ final class AdminPollsTest extends HttpTestCase
         $poll = $this->addPoll('Robin Example', PollStatus::Draft, date: '2026-11-10');
         $html = $this->get("/admin/polls/{$poll}");
         self::assertStringContainsString('<p class="kicker">Aufnahme · Sopran 1 · Vorsingen am Di., 10. November 2026</p>', $html);
-        self::assertStringContainsString('<h2>Entwurf</h2>', $html);
+        self::assertStringContainsString('<h2 id="poll-status-title" tabindex="-1">Entwurf</h2>', $html);
         self::assertStringContainsString('<code id="share-link">http://localhost:8080/polls/' . $poll . '</code>', $html);
         self::assertStringNotContainsString('Beteiligung', $html);
 
@@ -240,7 +241,7 @@ final class AdminPollsTest extends HttpTestCase
 
         self::assertSame(['toast' => 'Freigeschaltet. Mitglieder können jetzt abstimmen.'], json_decode($response->getHeaderLine('HX-Trigger'), true));
         self::assertSame("/admin/polls/{$poll}", $response->getHeaderLine('HX-Replace-Url'));
-        self::assertStringContainsString('<h2>Offen seit 3. November 2026 um 21:05 Uhr</h2>', $this->body($response));
+        self::assertStringContainsString('<h2 id="poll-status-title" tabindex="-1">Offen seit 3. November 2026 um 21:05 Uhr</h2>', $this->body($response));
         self::assertSame('open', $this->cell($poll, 'status'));
         self::assertSame('2026-11-03T20:05:00Z', $this->cell($poll, 'opened_at'));
 
@@ -277,9 +278,9 @@ final class AdminPollsTest extends HttpTestCase
 
         $html = $this->get("/admin/polls/{$poll}");
 
-        self::assertStringContainsString('<p class="note"><b>May Robin sing?</b></p>', $html);
-        self::assertStringContainsString('<p class="note">A note</p>', $html);
-        self::assertStringContainsString('<h2>Offen seit 1. November 2026 um 19:30 Uhr</h2>', $html);
+        self::assertStringContainsString('<p class="note"><b lang="de">May Robin sing?</b></p>', $html);
+        self::assertStringContainsString('<p class="note" lang="de">A note</p>', $html);
+        self::assertStringContainsString('<h2 id="poll-status-title" tabindex="-1">Offen seit 1. November 2026 um 19:30 Uhr</h2>', $html);
         self::assertStringContainsString('vom Vorstand direkt auf der Abstimmungsseite (Ada, Lou). Erst danach ist das Ergebnis sichtbar.</p>', $html);
         self::assertStringContainsString('<a class="btn ghost" href="/admin/polls/' . $poll . '/edit">Hinweis bearbeiten</a>', $html);
         self::assertStringContainsString('<b>Ergebnis:</b> wird erst nach dem Abschluss berechnet.', $html);
@@ -297,11 +298,11 @@ final class AdminPollsTest extends HttpTestCase
         $this->closeAt($poll, '2026-11-03T19:00:00Z');
 
         $html = $this->get("/admin/polls/{$poll}");
-        self::assertStringContainsString('<h2>Abgeschlossen am 3. November 2026 um 20:00 Uhr</h2>', $html);
+        self::assertStringContainsString('<h2 id="poll-status-title" tabindex="-1">Abgeschlossen am 3. November 2026 um 20:00 Uhr</h2>', $html);
         self::assertStringContainsString('Die Zahl der Stimmberechtigten (3) wurde beim Abschluss festgehalten. Die Abstimmung wird am 17. November 2026 samt Ergebnis automatisch gelöscht.', $html);
         self::assertStringContainsString('href="/admin/polls/' . $poll . '?confirm=reopen#poll-status"', $html);
         self::assertStringContainsString('Ein versehentlicher Abschluss lässt sich nur heute, am Tag des Abschlusses, zurücknehmen.', $html);
-        self::assertStringContainsString('<h2>Ergebnis</h2>', $html);
+        self::assertStringContainsString('<h2 id="result-title" tabindex="-1">Ergebnis</h2>', $html);
         self::assertStringContainsString('<span class="name">Ada Example</span>', $html);
         self::assertStringContainsString('<p><b>Wirklich wieder öffnen?</b> Das Ergebnis war bereits für alle sichtbar.', $this->get("/admin/polls/{$poll}?confirm=reopen"));
 

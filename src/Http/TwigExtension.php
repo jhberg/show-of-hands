@@ -16,9 +16,10 @@ use Twig\TwigFilter;
 use Twig\TwigFunction;
 
 /**
- * Twig globals for the brand, the locales, and the admin sections, the functions asset(), icon(), and csrf_token(),
- * the filters day_long, day_date, and day_short for dates without time, moment for a stored UTC
- * timestamp in the choir's time zone, percent, and name_list.
+ * Twig globals for the brand, the locales, the language of poll content, and the admin sections,
+ * the functions asset(), icon(), and csrf_token(), the filters day_long, day_date, and day_short
+ * for dates without time, moment for a stored UTC timestamp in the choir's time zone, percent,
+ * and name_list.
  */
 final class TwigExtension extends AbstractExtension implements GlobalsInterface
 {
@@ -33,6 +34,7 @@ final class TwigExtension extends AbstractExtension implements GlobalsInterface
         private readonly Session $session,
         private readonly Translator $translator,
         private readonly string $timezone,
+        private readonly string $contentLocale,
     ) {}
 
     public function getGlobals(): array
@@ -41,6 +43,8 @@ final class TwigExtension extends AbstractExtension implements GlobalsInterface
             'brand' => $this->brand,
             'brand_assets' => $this->assets,
             'locales' => Locales::SUPPORTED,
+            // Names, questions, and notes are written in the choir's language, whatever the page's is.
+            'content_locale' => $this->contentLocale,
             // The admin tabs and the phone menu list these, each with its title's translation key.
             'admin_sections' => [
                 ['key' => 'polls', 'path' => '/admin/polls', 'label' => 'admin.polls.title'],

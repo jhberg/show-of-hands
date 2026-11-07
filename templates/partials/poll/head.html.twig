@@ -1,16 +1,16 @@
 {% set admission = poll.kind.value == 'admission' %}
 <div class="vote-head">
     <p class="kicker">{{ admission ? 'poll.kicker.admission'|trans : 'poll.kicker.exception'|trans }}</p>
-    <h1>{{ poll.subjectName }}</h1>
+    <h1 lang="{{ content_locale }}">{{ poll.subjectName }}</h1>
     <p class="meta">{{ group_label }} · {{ include('partials/poll/date.html.twig') }}</p>
     {% if poll.showsQuestionInHead %}
-        <p class="note"><b>{{ poll.question ?? 'poll.question_missing'|trans }}</b></p>
+        <p class="note"><b{% if poll.question is not null %} lang="{{ content_locale }}"{% endif %}>{{ poll.question ?? 'poll.question_missing'|trans }}</b></p>
     {% endif %}
     <div class="status">
         {{- include('partials/poll/status_chip.html.twig') -}}
         {%- if poll.isReopened %}<span class="chip">{{ 'poll.status.reopened'|trans }}</span>{% endif -%}
     </div>
     {% if poll.note != '' %}
-        <p class="note">{{ poll.note }}</p>
+        <p class="note" lang="{{ content_locale }}">{{ poll.note }}</p>
     {% endif %}
 </div>

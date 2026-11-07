@@ -12,7 +12,8 @@
 {# Near the right end, the marker's label moves to its left side, so it stays inside the bar. #}
 {% set label_left = threshold > 78 %}
 <section class="result">
-    <h2>{{ 'result.title'|trans }}</h2>
+    {# Closing the poll moves the focus here, since the board's buttons go away. #}
+    <h2 id="result-title" tabindex="-1">{{ 'result.title'|trans }}</h2>
     <p class="verdict {{ accepted ? 'ja' : 'nein' }}">
         <span class="ok-ic">{{ icon(accepted ? 'check' : 'cross') }}</span>
         {{- include('partials/poll/verdict.html.twig') -}}

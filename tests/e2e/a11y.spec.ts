@@ -285,6 +285,38 @@ test('an admin opens the phone menu and closes it with Escape or a tap beside it
   await expect(members).toBeHidden();
 });
 
+// WCAG 2.4.11: an open menu must not cover the control the keyboard moved on to.
+test('the phone menu closes when the focus leaves it', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'a11y-phone', 'Only the phone has the menu.');
+  await signIn(page, ADMIN);
+  await page.goto('/polls/1');
+
+  const menu = page.locator('details.menu');
+  await expect(page.locator('html')).toHaveClass(/\bjs\b/);
+  await menu.locator('summary').focus();
+  await page.keyboard.press('Enter');
+  await expect(menu).toHaveAttribute('open');
+  for (let i = 0; i < 10 && (await menu.evaluate((el) => el.contains(document.activeElement))); i++) {
+    await page.keyboard.press('Tab');
+  }
+  await expect(page.getByRole('link', { name: 'Alle Abstimmungen' })).toBeFocused();
+  await expect(menu).not.toHaveAttribute('open');
+});
+
+test('the skip link leads past the header to the content', async ({ page }) => {
+  await signIn(page, ADMIN);
+  await page.goto('/admin/polls');
+
+  await page.keyboard.press('Tab');
+  const skip = page.getByRole('link', { name: 'Zum Inhalt springen' });
+  await expect(skip).toBeFocused();
+  await expect(skip).toBeInViewport();
+  await page.keyboard.press('Enter');
+  await expect(page.locator('main')).toBeFocused();
+  await page.keyboard.press('Tab');
+  expect(await page.evaluate(() => document.querySelector('main')!.contains(document.activeElement))).toBe(true);
+});
+
 // The member's choice of light or dark mode overrides the device's, and "Wie System" hands it back.
 test('a chosen colour mode overrides the system setting', async ({ page }) => {
   const errors = await watchErrors(page);

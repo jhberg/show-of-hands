@@ -1,11 +1,13 @@
 {% set admission = poll.kind.value == 'admission' %}
 <section class="ballot">
-    <h2>{{ 'ballot.title'|trans }}</h2>
+    {# Taking a delegation back moves the focus here, since its button goes away. #}
+    <h2 id="ballot-title" tabindex="-1">{{ 'ballot.title'|trans }}</h2>
     {% if poll.isReopened %}
         <div class="notice">{{ icon('info') }}<span><b>{{ 'poll.reopened.title'|trans({moment: poll.reopenedAt|moment}) }}</b> {{ 'poll.reopened.text'|trans }}</span></div>
     {% endif %}
     {% if recipient is not null %}
-        <div class="notice">{{ icon('arrow') }}<div>
+        {# Delegating moves the focus here, since the panel with its button goes away. #}
+        <div class="notice" id="deleg-notice" tabindex="-1">{{ icon('arrow') }}<div>
             <b>{{ 'ballot.delegated.title'|trans({name: recipient.shownName}) }}</b>
             {% if recipient_voted is null -%}
                 {{ 'ballot.delegated.back'|trans }}
@@ -14,7 +16,7 @@
             {%- else -%}
                 {{ 'ballot.delegated.not_voted'|trans({name: recipient.firstName}) }}
             {%- endif %}
-            <form method="post" action="/polls/{{ poll.id }}/delegation/revoke" hx-post="/polls/{{ poll.id }}/delegation/revoke" hx-target="closest main" hx-swap="outerHTML">
+            <form method="post" action="/polls/{{ poll.id }}/delegation/revoke" data-focus="ballot-title" hx-post="/polls/{{ poll.id }}/delegation/revoke" hx-target="closest main" hx-swap="outerHTML">
                 {{ include('partials/csrf_field.html.twig') }}
                 <button class="link" id="deleg-revoke">{{ 'ballot.delegated.revoke'|trans }}</button>
             </form>
@@ -27,8 +29,10 @@
     <p class="q">
         {%- if admission -%}
             {{ 'ballot.question.admission'|trans({name: poll.subjectName}) }}
+        {%- elseif poll.question is not null -%}
+            <span lang="{{ content_locale }}">{{ poll.question }}</span>
         {%- else -%}
-            {{ poll.question ?? 'poll.question_missing'|trans }}
+            {{ 'poll.question_missing'|trans }}
         {%- endif -%}
     </p>
     {% if member.isActive %}

@@ -42,8 +42,8 @@
   document.addEventListener('htmx:responseError', failed);
   document.addEventListener('htmx:sendError', failed);
 
-  // The poll form's labels, placeholders, and question field follow the chosen kind. The server
-  // renders them for the kind it knows; the other kind's words wait in data attributes.
+  // The poll form's labels and placeholders follow the chosen kind. The server renders them for the
+  // kind it knows; the other kind's words wait in data attributes. CSS shows the question field.
   document.addEventListener('change', function (event) {
     var radio = event.target;
     if (!(radio instanceof HTMLInputElement) || radio.name !== 'kind' || !radio.form || radio.form.id !== 'poll-form') return;
@@ -53,9 +53,6 @@
     });
     radio.form.querySelectorAll('[data-placeholder-' + kind + ']').forEach(function (el) {
       el.setAttribute('placeholder', el.getAttribute('data-placeholder-' + kind));
-    });
-    radio.form.querySelectorAll('[data-kind-only]').forEach(function (el) {
-      el.hidden = el.getAttribute('data-kind-only') !== kind;
     });
   });
 
@@ -86,10 +83,12 @@
 
   // The poll page's refresh waits while nobody sees the page, and while the member is choosing in
   // a field, such as whom to give their vote to, because the fresh <main> would reset the choice.
+  // A refused field counts as choosing, so the refresh keeps its message until the member acts.
   // The member may start choosing while a refresh is under way, so its answer checks again.
   function choosing(main) {
     var active = document.activeElement;
     return active !== null && main.contains(active) && active.matches('input, select, textarea') ||
+      main.querySelector('[aria-invalid=true]') !== null ||
       Array.prototype.some.call(main.querySelectorAll('select'), function (select) { return select.value !== ''; });
   }
 
@@ -99,8 +98,9 @@
     if (document.hidden || choosing(poller.closest('main'))) event.preventDefault();
   });
 
-  // Cancelling a panel or a confirmation swaps out the control that had the focus. data-focus
-  // names the control that opened it, so a keyboard user carries on from there.
+  // Cancelling a panel or a confirmation, and actions such as delegating or closing, swap out the
+  // control that had the focus. data-focus names where a keyboard user carries on: the control that
+  // opened the panel, or what the action brought, such as the result's heading.
   document.addEventListener('htmx:afterSettle', function (event) {
     var config = event.detail.requestConfig;
     var id = config && config.elt.getAttribute('data-focus');
@@ -122,7 +122,8 @@
   });
 
   // The phone menu and the colour mode panel are <details>, so they open without JavaScript. With
-  // it, a tap beside one or Escape closes it again, and Escape returns the focus to its button.
+  // it, a tap beside one, Escape, or the focus moving on closes it again, and Escape returns the
+  // focus to its button. An open panel would otherwise cover the control the focus moved to.
   document.addEventListener('click', function (event) {
     var open = document.querySelector('details.pop[open]');
     if (open && !(event.target instanceof Node && open.contains(event.target))) open.removeAttribute('open');
@@ -133,5 +134,13 @@
     if (!open || event.key !== 'Escape') return;
     open.removeAttribute('open');
     open.querySelector('summary').focus();
+  });
+
+  // Only a focus that lands outside closes it: Safari focuses nothing on a tap, and a tap on a
+  // link inside the panel must still reach the link.
+  document.addEventListener('focusout', function (event) {
+    var open = event.target instanceof Element ? event.target.closest('details.pop[open]') : null;
+    var next = event.relatedTarget;
+    if (open && next instanceof Node && !open.contains(next)) open.removeAttribute('open');
   });
 })();

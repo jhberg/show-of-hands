@@ -6,11 +6,13 @@
         <button class="btn ghost" id="deleg-toggle" aria-expanded="{{ delegation.open ? 'true' : 'false' }}">{{ icon('arrow') }}{{ 'delegation.toggle'|trans }}</button>
     </form>
     {% if delegation.open %}
-        <form class="deleg-panel" method="post" action="/polls/{{ poll.id }}/delegation" hx-post="/polls/{{ poll.id }}/delegation" hx-target="closest main" hx-swap="outerHTML">
+        <form class="deleg-panel" method="post" action="/polls/{{ poll.id }}/delegation" data-focus="deleg-notice" hx-post="/polls/{{ poll.id }}/delegation" hx-target="closest main" hx-swap="outerHTML">
             {{ include('partials/csrf_field.html.twig') }}
             <p class="help">{{ 'delegation.help'|trans }}{% if choice is not null %} <b>{{ 'delegation.withdraws'|trans }}</b>{% endif %}</p>
             <label for="deleg-to">{{ 'delegation.to'|trans }}</label>
-            <select id="deleg-to" name="to">
+            {# A refused delegation names the problem at the field, which takes the focus. #}
+            <select id="deleg-to" name="to"
+                {%- if delegation.error is not null %} aria-invalid="true" aria-describedby="deleg-to-error" autofocus{% endif %}>
                 <option value="">{{ 'delegation.choose'|trans }}</option>
                 {% for target in delegation.targets %}
                     <option value="{{ target.id }}">
@@ -19,6 +21,7 @@
                     </option>
                 {% endfor %}
             </select>
+            {% if delegation.error is not null %}<p class="field-error" id="deleg-to-error">{{ delegation.error|trans }}</p>{% endif %}
             <div class="row">
                 <button class="btn primary" id="deleg-submit">{{ 'delegation.submit'|trans }}</button>
                 <a class="btn" id="deleg-cancel" data-focus="deleg-toggle" href="/polls/{{ poll.id }}#deleg" hx-get="/polls/{{ poll.id }}" hx-target="closest main" hx-swap="outerHTML">{{ 'delegation.cancel'|trans }}</a>

@@ -59,6 +59,7 @@ nav:
   admin: Admin
   logout: Sign out
   menu: Menu
+  skip: Skip to content
 
 role:
   board: Board
@@ -206,12 +207,15 @@ turnout:
   count: '{total, plural, one {of # voting right cast} other {of # voting rights cast}}'
   bar: Voting rights cast
   summary: '{voted, plural, one {# member has} other {# members have}} voted{delegated, plural, =0 {} one {, # has delegated} other {, # have delegated}}{missing, plural, =0 {. Everyone took part.} one {, # is still missing.} other {, # are still missing.}}'
+  summary_closed: '{voted, plural, one {# member} other {# members}} voted{delegated, plural, =0 {} other {, # delegated}}{missing, plural, =0 {. Everyone took part.} other {, # did not vote.}}'
   missing: Not voted yet
+  missing_closed: Did not vote
   no_group: No group
   names_hidden: Only the board and the admins see the names.
   all_voted: All members have voted.
   delegations: Delegated votes
   pending: not cast yet
+  pending_closed: not cast
   lock: There are no interim results. The result appears only once the board closes the poll.
 
 board:

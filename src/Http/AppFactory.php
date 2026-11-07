@@ -211,7 +211,7 @@ final class AppFactory
                     'strict_variables' => $config->isDev(),
                 ]);
                 $twig->addExtension(new TranslationExtension($translator));
-                $twig->addExtension(new TwigExtension($config->brand, $assets, $themeVersion, $paths->templates() . '/icons', $session, $translator, $config->timezone));
+                $twig->addExtension(new TwigExtension($config->brand, $assets, $themeVersion, $paths->templates() . '/icons', $session, $translator, $config->timezone, $config->defaultLocale));
 
                 return $twig;
             },

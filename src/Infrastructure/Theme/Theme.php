@@ -15,7 +15,7 @@ final readonly class Theme
 
     /**
      * Text and background token pairs the stylesheet combines, with the contrast each needs.
-     * The focus ring is not text, so it needs 3:1 against the page.
+     * The focus ring and the field border are not text, so they need 3:1 against what they sit on.
      */
     private const PAIRS = [
         ['ink', 'bg'], ['ink', 'surface'], ['ink', 'surface-2'], ['ink', 'accent-soft'],
@@ -27,6 +27,7 @@ final readonly class Theme
         ['ja', 'bg'], ['ja', 'ja-soft'],
         ['nein', 'bg'], ['nein', 'nein-soft'],
         ['focus', 'bg', ThemeBuilder::UI_CONTRAST],
+        ['field-line', 'bg', ThemeBuilder::UI_CONTRAST], ['field-line', 'surface', ThemeBuilder::UI_CONTRAST],
     ];
 
     /**
