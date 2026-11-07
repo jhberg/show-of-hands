@@ -102,10 +102,11 @@ final class MaintenanceTest extends TestCase
         self::assertFileExists($other, 'Only session files are deleted.');
     }
 
-    public function testDeletesTheBackupADayAfterTheMigration(): void
+    public function testDeletesTheBackupAWeekAfterTheMigration(): void
     {
         $old = $this->file('backup/app-v1.sqlite', self::NOW - Maintenance::BACKUP_KEEP_SECONDS - 1);
         $fresh = $this->file('backup/app-v2.sqlite', self::NOW - Maintenance::BACKUP_KEEP_SECONDS + 60);
+        self::assertSame(7 * 86400, Maintenance::BACKUP_KEEP_SECONDS);
 
         self::assertSame(['sessions' => 0, 'backups' => 1, 'ballots' => 0, 'polls' => 0], $this->maintenance()->run());
 

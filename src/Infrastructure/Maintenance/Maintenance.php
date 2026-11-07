@@ -16,7 +16,7 @@ use ShowOfHands\Infrastructure\Storage\DataDirectory;
  *
  * - Deletes session files older than the session lifetime, because many hosts switch off
  *   PHP's own session garbage collection.
- * - Deletes the pre-migration backup 24 hours after the migration succeeded. It is the only
+ * - Deletes the pre-migration backup 7 days after the migration succeeded. It is the only
  *   copy of the database the app makes, and later ballots must not live on in it.
  * - Deletes the ballots of closed polls once their close day has ended in the choir's time
  *   zone. Until then an admin may reopen the poll; afterwards the frozen tally is all it needs.
@@ -27,7 +27,7 @@ use ShowOfHands\Infrastructure\Storage\DataDirectory;
 final readonly class Maintenance
 {
     public const INTERVAL_SECONDS = 3600;
-    public const BACKUP_KEEP_SECONDS = self::DAY;
+    public const BACKUP_KEEP_SECONDS = 7 * self::DAY;
 
     private const DAY = 86400;
 

@@ -52,6 +52,10 @@ error:
   busy_load:
     title: Busy right now
     text: The page could not be loaded just now. Reload it in a moment.
+  ahead:
+    title: Database does not match this release
+    text: The database is newer than this release. Move {backup} to data/app.sqlite, or install the newer release again.
+    text_no_backup: The database is newer than this release, and data/backup/ holds no matching copy. Install the newer release again, or upload your own copy from before the update as data/app.sqlite.
 
 nav:
   label: Sections

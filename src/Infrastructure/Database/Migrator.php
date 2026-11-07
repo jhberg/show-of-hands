@@ -11,7 +11,7 @@ use ShowOfHands\Infrastructure\Storage\DataDirectory;
  *
  * The schema version lives in SQLite's user_version, so the check on every request
  * costs one pragma plus a look at the migration files. Before it changes an existing schema,
- * the migrator copies the database to data/backup/, which lazy maintenance deletes a day
+ * the migrator copies the database to data/backup/, which lazy maintenance deletes 7 days
  * after the migration succeeded. A file lock keeps two requests from migrating at the same time.
  *
  * A release ZIP lists its migrations in its MIGRATIONS.txt file, and the migrator runs only those.
@@ -63,7 +63,7 @@ final class Migrator
                 $this->apply($number, $file);
             }
             if ($backup !== null) {
-                // Lazy maintenance deletes the backup 24 hours after this moment, the successful migration.
+                // Lazy maintenance deletes the backup 7 days after this moment, the successful migration.
                 touch($backup);
             }
 
@@ -97,6 +97,21 @@ final class Migrator
         $numbers = array_keys($this->all());
 
         return $this->releaseMigrations !== null && $this->version() > max([0, ...$numbers]);
+    }
+
+    /**
+     * Stops the release on a database that is ahead of it, see isAheadOfRelease().
+     *
+     * @throws DatabaseAheadException naming the backup of this release's schema version, if it exists
+     */
+    public function requireNotAhead(): void
+    {
+        if (!$this->isAheadOfRelease()) {
+            return;
+        }
+        $backup = self::BACKUP_DIR . '/' . sprintf(self::BACKUP_NAME, max([0, ...array_keys($this->all())]));
+
+        throw new DatabaseAheadException(is_file($this->dataDir . '/' . $backup) ? 'data/' . $backup : null);
     }
 
     public function version(): int

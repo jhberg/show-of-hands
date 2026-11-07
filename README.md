@@ -15,16 +15,18 @@ No database server, no Node, no cron job, and no shell are needed.
 ## Installation
 
 1. Download `show-of-hands-<version>.zip` from the repository's Releases page.
-2. Unpack it into an empty folder on the web space, for example `vote/`. The ZIP holds the folders `public/`, `src/`, `config/`, `data/`, and a few more.
-3. Point the document root of your (sub)domain at the `public/` folder inside it, for example `vote/public`. In Plesk, this is the subdomain's "Document root" under "Hosting settings". Choose PHP 8.3, and switch on HTTPS with a certificate.
+2. Unpack it into an empty folder on the web space, next to the web folder of your main site, not inside it: in Plesk, for example `vote.example.org/` beside `httpdocs/`, not `httpdocs/vote/`. Inside another site's folder, that site would serve the code and the configuration, and only the `.htaccess` rules would hold them back. The ZIP holds the folders `public/`, `src/`, `config/`, `data/`, and a few more.
+3. Point the document root of your (sub)domain at the `public/` folder inside it, for example `vote.example.org/public`. In Plesk, this is the subdomain's "Document root" under "Hosting settings". Choose PHP 8.3, and switch on HTTPS with a certificate. If the document root is the installation folder or a folder above it, the app stops and says how to fix it.
 4. Make sure PHP may write to `data/`. The app keeps its database, sessions, log, and caches there. What it creates there, only the user PHP runs as may read: folders get mode 700, the database 600, where the host allows it. Where PHP runs as your own account, as on Plesk, your FTP access still reaches them for [Backups](#backups); where PHP runs as another user, ask your host how to download the database. If PHP cannot write to `data/`, the page names the folders and says what to change.
-5. Copy `config/config.example.php` to `config/config.php` and fill in the values. See [Configuration](#configuration).
+5. Copy `config/config.example.php` to `config/config.php` and fill in the values. See [Configuration](#configuration). Give it mode `600`, or `640` where PHP runs as another user in your group, and the member file `config/members.csv` as well: they hold the app's secret, and names with addresses.
 6. Open the site. The first request creates the database, the default voice groups, and the first member from `bootstrap_admin`, with board and admin roles.
 7. Sign in as that member, open "Verwaltung" (Admin), and add the members. To add them all at once, put a member file next to the config first (see [Member file](#member-file)). Where a shell exists, `bin/console member:add` adds members as well.
 
 The app checks `config/config.php` on every request. If a value is missing or wrong, the page lists every problem with the key's name.
 
 Only `public/` is reachable from the web. Code, configuration, and data sit next to it, outside the document root. Should a host serve the whole folder anyway, the installation folder's `.htaccess` lets only `public/` through. `config/` and `data/` also carry their own `.htaccess` that denies all access, for hosts without `mod_rewrite`.
+
+In Plesk, leave "Serve static files directly by nginx" switched off under "Apache & nginx Settings". With it on, nginx answers requests for files such as `.css` or `.png` before Apache sees them, and nginx reads no `.htaccess` file. Whether it then also serves `.csv`, `.sqlite`, or `.php` files as plain files depends on the list of extensions there; it has not been tested.
 
 ## Google sign-in
 
@@ -109,19 +111,21 @@ The app derives its whole colour scheme, light and dark, from the accent and ink
 2. Pick a quiet moment, not a vote during rehearsal: while the files are being replaced, a request can meet old and new code at once.
 3. Download a copy of `data/app.sqlite`, as [Backups](#backups) describes.
 4. Unpack the ZIP over the installation and let it replace existing files. The ZIP contains no `config/config.php`, no `config/members.csv`, no `config/translations/`, no `public/brand/`, and no database, so your configuration, branding, and data stay.
-5. Open the site. If the release brings database changes, the first request copies the database to `data/backup/app-v<N>.sqlite` and then brings the schema up to date. `<N>` is the schema version before the update. Housekeeping deletes that copy a day later.
+5. Open the site. If the release brings database changes, the first request copies the database to `data/backup/app-v<N>.sqlite` and then brings the schema up to date. `<N>` is the schema version before the update. Housekeeping deletes that copy 7 days later.
 
 If the update fails, the page shows an error and the log in `data/logs/app.log` names it. Housekeeping keeps the copy in `data/backup/` while the database changes fail. It also keeps it after you unpacked the previous release, as long as the database is newer than that release. To go back:
 
 1. Unpack the previous release ZIP over the installation.
-2. Move `data/backup/app-v<N>.sqlite` to `data/app.sqlite`, replacing the file there. `<N>` is the number at the start of the last line in the previous release's `MIGRATIONS.txt` file, without leading zeros: `0009_…` means `app-v9.sqlite`. If no such copy exists, the release brought no database changes, or it made them more than a day ago and housekeeping deleted the copy. In the first case, skip this step. In the second, upload the copy you downloaded before the update as `data/app.sqlite`: everything since then is lost.
+2. Move `data/backup/app-v<N>.sqlite` to `data/app.sqlite`, replacing the file there. `<N>` is the number at the start of the last line in the previous release's `MIGRATIONS.txt` file, without leading zeros: `0009_…` means `app-v9.sqlite`. If no such copy exists, the release brought no database changes, or it made them more than 7 days ago and housekeeping deleted the copy. In the first case, skip this step. In the second, upload the copy you downloaded before the update as `data/app.sqlite`: everything since then is lost.
 3. Open the site. It works as before the update, with the data it had then.
+
+If you skip step 2, the site stops, from release 0.4.0 on: every page answers with an error that names the copy to move, until you move it or unpack the newer release again. The older release would otherwise run on a database it does not know.
 
 Move the copy rather than copy it: the next update must make a fresh one. The newer release's migration files stay in `migrations/`. They do no harm: each release runs only the migrations its `MIGRATIONS.txt` file lists. Other files a release no longer uses may stay behind after an update as well.
 
 ## Backups
 
-The app makes no backups of its own. The copy an update makes is gone a day later. Download your own copy of `data/app.sqlite`:
+The app makes no backups of its own. The copy an update makes is gone 7 days later. Download your own copy of `data/app.sqlite`:
 
 - before every update,
 - and regularly, for example once a month and after you changed many members.
@@ -161,7 +165,7 @@ The app stores as little as it can.
 - Ballots: deleted once the closing day of their poll has ended.
 - Closed polls, with their result and turnout: deleted after the retention period the admins choose (7, 14, or 30 days).
 - Sessions: deleted after `session.lifetime_days` without a visit.
-- The database copy an update makes: deleted a day after the update. Copies you download yourself are yours to delete (see [Backups](#backups)).
+- The database copy an update makes: deleted 7 days after the update. It holds the ballots of the polls that were open or closed that day when you updated, so those ballots stay in the copy up to 7 days longer than in the database. Copies you download yourself are yours to delete (see [Backups](#backups)).
 
 **Cookies and outside services.** The app sets a session cookie (`HttpOnly`, `Secure`, `SameSite=Lax`) and, once someone switches the language or the colour mode, a cookie for that choice. It loads no third-party scripts or fonts and sends no analytics. The only outside service is Google, for sign-in.
 
@@ -192,7 +196,9 @@ docker compose run --rm app tests/upgrade/run.sh <from-ref> [to-ref]   # install
 
 The upgrade test builds the release ZIPs of both refs, installs the first with sample data and a vote, unpacks the second over it, and checks the migration, the data, the templates, the `.htaccess` files, and the deletion of the backup. Then it unpacks a broken update with a failing migration and goes back as [Updates](#updates) describes.
 
-GitHub Actions runs `composer audit`, `composer check`, `composer test`, the Playwright journeys (in Chromium, and the voting journeys also in WebKit on an iPhone profile), and the upgrade test from the last release tag on pushes to `main` and on pull requests. A tag `v<version>` also builds the release ZIP and publishes it as a GitHub release, with the version's section of `CHANGELOG.md` as its notes. To release, add that section, run `bin/build-release` to check the ZIP, then tag the commit `v<version>` and push the tag.
+GitHub Actions runs `composer audit`, `composer check`, `composer test`, the Playwright journeys (in Chromium, and the voting journeys also in WebKit on an iPhone profile), and the upgrade test from the last tag on pushes to `main` and on pull requests.
+
+Every merge to `main` publishes a release. Each pull request adds a section `## <version>` at the top of `CHANGELOG.md` with what it changes. A new or changed feature raises the middle number, a fix, docs, or tests only the last one. The job "Changelog entry" fails a pull request that leaves `CHANGELOG.md` alone, or whose version does not follow the latest one. When two pull requests take the same version, the second one meets a conflict in `CHANGELOG.md`: rebase it and raise its version. After the merge, once the checks pass, the job "Tag and release" tags the commit `v<version>`, builds the ZIP, and publishes it as a GitHub release with the section as its notes. Nobody tags or releases by hand. If the job fails by chance, run it again. If its cause needs a fix, the next pull request brings it with a version of its own, and the failed version stays without a tag. A version that already has a tag stops the job, as after a push straight to `main`. `bin/changelog` holds these rules.
 
 Set `APP_PORT` to serve on another port than 8080.
 

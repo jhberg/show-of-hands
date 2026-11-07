@@ -2,10 +2,11 @@
 # Upgrade test: installs the release ZIP of one ref, adds data, unpacks the release ZIP of a later
 # ref over it, and checks that the data survived and the pages render the new templates. When the
 # later ref brings migrations, it also checks that they ran and that lazy maintenance deletes the
-# pre-migration backup once it is a day old. Then it unpacks a broken update with a failing
+# pre-migration backup once it is 7 days old. Then it unpacks a broken update with a failing
 # migration over the later release and goes back as the README says: the later release unpacked
-# again, the backup moved over the database. The site must work again, and a fixed update that
-# replaces the broken migration under its number must go through.
+# again, the backup moved over the database. Until the backup is moved, every page must stop and name
+# it. The site must work again, and a fixed update that replaces the broken migration under its number
+# must go through.
 #
 #   docker compose run --rm app tests/upgrade/run.sh <from-ref> [to-ref]
 #
@@ -149,12 +150,15 @@ page /polls/2 | strip_csrf >"$work/fresh-cache.html"
 diff -q "$work/after-update.html" "$work/fresh-cache.html" >/dev/null || fail "the poll page differs from a fresh template cache"
 
 if [ "$new_version" -gt "$old_version" ]; then
-    step "Maintenance keeps the backup for a day, then deletes it"
+    step "Maintenance keeps the backup for 7 days, then deletes it"
     run_maintenance
-    [ -f "$backup" ] || fail "maintenance deleted the backup before a day had passed"
-    touch -d '25 hours ago' "$backup"
+    [ -f "$backup" ] || fail "maintenance deleted the fresh backup"
+    touch -d '6 days ago' "$backup"
     run_maintenance
-    [ ! -f "$backup" ] || fail "maintenance kept the backup after a day"
+    [ -f "$backup" ] || fail "maintenance deleted the backup before 7 days had passed"
+    touch -d '8 days ago' "$backup"
+    run_maintenance
+    [ ! -f "$backup" ] || fail "maintenance kept the backup after 7 days"
 fi
 
 step "Each release caches into its own folder, and maintenance deletes the others"
@@ -175,6 +179,20 @@ done
 grep -q '^Require all denied' "$work/site/config/.htaccess" || fail "config/.htaccess denies nothing"
 grep -q '^Require all denied' "$work/site/data/.htaccess" || fail "data/.htaccess denies nothing"
 grep -q '^ *RewriteRule !^public/ - \[F\]' "$work/site/.htaccess" || fail "the root .htaccess lets more than public/ through"
+
+step "Served from the installation folder instead of public/, the app stops and says why"
+(cd "$work/site" && exec php -S "127.0.0.1:$((port + 1))" -t . public/index.php >"$work/wrong-root.log" 2>&1) &
+wrong_root=$!
+for _ in $(seq 50); do
+    status="$(curl -s -o "$work/wrong-root.html" -w '%{http_code}' "http://localhost:$((port + 1))/" || true)"
+    [ "$status" != 000 ] && break
+    sleep 0.1
+done
+kill "$wrong_root"
+wait "$wrong_root" 2>/dev/null || true
+[ "$status" = 500 ] || fail "the installation folder as document root answered $status, expected 500"
+grep -q 'Wrong document root' "$work/wrong-root.html" || fail "the page does not explain the document root"
+page /login >/dev/null || fail "the site with public/ as document root stopped too"
 
 step "A broken update: one migration works, the next fails"
 release_version="$(cat "$work/site/VERSION")"
@@ -197,8 +215,12 @@ backup="$work/site/data/backup/app-v$new_version.sqlite"
 
 step "Go back: unpack the release again, move the backup over the database"
 unzip -q -o "$new_zip" -d "$work/site"
-touch -d '25 hours ago' "$backup"
-run_maintenance
+touch -d '8 days ago' "$backup"
+sql "UPDATE settings SET value = '0' WHERE key = 'maintenance_last_run'"
+# Before the backup is moved, the release runs on a database newer than itself: every page stops.
+status="$(curl -s -o "$work/ahead.html" -w '%{http_code}' -b "$work/cookies" "$url/polls/2")"
+[ "$status" = 503 ] || fail "the release on a newer database answered $status, expected 503"
+grep -qF "Verschiebe data/backup/$(basename "$backup") nach data/app.sqlite" "$work/ahead.html" || fail "the page does not name the backup to move"
 [ -f "$backup" ] || fail "maintenance deleted the backup the way back needs"
 mv "$backup" "$work/site/data/app.sqlite"
 voted 2 Nein || fail "the site does not work after going back"

@@ -1,8 +1,9 @@
 # The document root is public/. Should a host serve this whole folder anyway, only public/ answers;
-# config/ and data/ also carry their own rule, in case mod_rewrite is missing. With the document
-# root at public/, the rule here has no effect: public/.htaccess sets rewrite rules of its own,
-# which replace the parent's.
+# config/ and data/ also carry their own rule, in case mod_rewrite is missing. The folder's own address
+# goes to the app, which explains how to set the document root. With the document root at public/, the
+# rules here have no effect: public/.htaccess sets rewrite rules of its own, which replace the parent's.
 <IfModule mod_rewrite.c>
     RewriteEngine On
+    RewriteRule ^$ public/index.php [L]
     RewriteRule !^public/ - [F]
 </IfModule>

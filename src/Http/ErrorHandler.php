@@ -7,6 +7,7 @@ namespace ShowOfHands\Http;
 use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
+use ShowOfHands\Infrastructure\Database\DatabaseAheadException;
 use ShowOfHands\Infrastructure\Log\ErrorLog;
 use Slim\Exception\HttpBadRequestException;
 use Slim\Exception\HttpForbiddenException;
@@ -37,9 +38,11 @@ final readonly class ErrorHandler
             $error instanceof HttpNotFoundException, $error instanceof HttpMethodNotAllowedException => [404, 'not_found'],
             // A page load writes too, for its lazy maintenance, but the member has nothing to tap again.
             self::isBusy($error) => [503, $request->getMethod() === 'GET' ? 'busy_load' : 'busy'],
+            // The way back after an update stopped halfway. Every request meets it, so the log stays out of it.
+            $error instanceof DatabaseAheadException => [503, $error->backup === null ? 'ahead_no_backup' : 'ahead'],
             default => [500, 'server'],
         };
-        if ($status === 500 || $status === 503) {
+        if (($status === 500 || $status === 503) && !$error instanceof DatabaseAheadException) {
             $this->log->error($error, $request);
         }
         if ($status === 403 && Htmx::isRequest($request)) {
@@ -49,6 +52,7 @@ final readonly class ErrorHandler
         try {
             return $this->renderer->render($request, $this->responses->createResponse(), 'errors/error.html.twig', [
                 'kind' => $kind,
+                'backup' => $error instanceof DatabaseAheadException ? $error->backup : null,
                 'details' => $this->showDetails && $status === 500 ? (string) $error : null,
             ], $status);
         } catch (\Throwable $renderError) {

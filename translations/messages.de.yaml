@@ -52,6 +52,10 @@ error:
   busy_load:
     title: Gerade ist viel los
     text: Die Seite konnte gerade nicht geladen werden. Lade sie gleich noch einmal.
+  ahead:
+    title: Datenbank passt nicht zum Release
+    text: Die Datenbank ist neuer als dieses Release. Verschiebe {backup} nach data/app.sqlite oder installiere das neuere Release wieder.
+    text_no_backup: Die Datenbank ist neuer als dieses Release, und in data/backup/ liegt keine passende Kopie. Installiere das neuere Release wieder oder lade deine eigene Kopie von vor dem Update als data/app.sqlite hoch.
 
 nav:
   label: Bereiche

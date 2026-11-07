@@ -9,6 +9,8 @@
     server: 'error.server.title'|trans,
     busy: 'error.busy.title'|trans,
     busy_load: 'error.busy_load.title'|trans,
+    ahead: 'error.ahead.title'|trans,
+    ahead_no_backup: 'error.ahead.title'|trans,
 }[kind] %}
 {% set text = {
     bad_request: 'error.bad_request.text'|trans,
@@ -18,6 +20,8 @@
     server: 'error.server.text'|trans,
     busy: 'error.busy.text'|trans,
     busy_load: 'error.busy_load.text'|trans,
+    ahead: 'error.ahead.text'|trans({backup: backup ?? ''}),
+    ahead_no_backup: 'error.ahead.text_no_backup'|trans,
 }[kind] %}
 
 {% block title %}{{ title }} · {{ parent() }}{% endblock %}

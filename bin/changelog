@@ -1,0 +1,63 @@
+#!/usr/bin/env bash
+# Reads CHANGELOG.md for the CI. Every merged pull request is a version, and its section sits at the
+# top of the file, under a heading "## <version>".
+#
+#   bin/changelog top                 the version of the topmost section
+#   bin/changelog notes <version>     the text of a version's section, without its heading
+#   bin/changelog check <base-ref>    a pull request's check against the branch it merges into
+#
+# The check fails unless the pull request changes CHANGELOG.md and its topmost version is new and
+# follows the previous one: the next patch, minor, or major version. The previous version is the
+# newer of the latest tag on the base and the base's topmost section, so a merge whose release
+# failed still counts.
+set -euo pipefail
+
+root="$(cd "$(dirname "$0")/.." && pwd)"
+file="$root/CHANGELOG.md"
+
+fail() {
+    echo "CHANGELOG.md: $*" >&2
+    exit 1
+}
+
+# The first "## x.y.z" heading of the changelog on stdin.
+top_of() { awk '/^## / { print $2; exit }'; }
+
+semver() { [[ "$1" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; }
+
+case "${1:-}" in
+top)
+    version="$(top_of <"$file")"
+    semver "$version" || fail "the topmost heading is \"## $version\", not \"## <major>.<minor>.<patch>\""
+    echo "$version"
+    ;;
+notes)
+    version="${2:?usage: bin/changelog notes <version>}"
+    notes="$(awk -v version="$version" '/^## / { found = ($2 == version); next } found' "$file")"
+    grep -q '[^[:space:]]' <<<"$notes" || fail "no section for $version"
+    printf '%s\n' "$notes"
+    ;;
+check)
+    base="${2:?usage: bin/changelog check <base-ref>}"
+    git -C "$root" diff --quiet "$base" HEAD -- CHANGELOG.md \
+        && fail "unchanged. Add a section for this pull request's version at the top, see 'Development' in the README."
+    version="$("$0" top)"
+    "$0" notes "$version" >/dev/null
+    tag="$(git -C "$root" describe --tags --abbrev=0 --match 'v*' "$base" 2>/dev/null || true)"
+    listed="$(git -C "$root" show "$base:CHANGELOG.md" 2>/dev/null | top_of || true)"
+    previous="$(printf '%s\n' "${tag#v}" "$listed" | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -1 || true)"
+    [ -n "$previous" ] || fail "neither a tag nor a section on $base to follow"
+    IFS=. read -r major minor patch <<<"$previous"
+    next="$major.$minor.$((patch + 1)) $major.$((minor + 1)).0 $((major + 1)).0.0"
+    [[ " $next " == *" $version "* ]] \
+        || fail "the topmost version is $version. After $previous it must be one of: ${next// /, }."
+    if git -C "$root" rev-parse -q --verify "refs/tags/v$version" >/dev/null; then
+        fail "v$version is taken. Rebase onto the base branch and raise the version."
+    fi
+    echo "CHANGELOG.md: $version follows $previous."
+    ;;
+*)
+    echo "usage: bin/changelog top | notes <version> | check <base-ref>" >&2
+    exit 2
+    ;;
+esac

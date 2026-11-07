@@ -99,7 +99,7 @@ final class MigratorTest extends TestCase
         $this->migrator($pdo)->migrate();
 
         clearstatcache();
-        self::assertGreaterThan(time() - 60, (int) filemtime($backup), 'Maintenance keeps the backup for a day after this success.');
+        self::assertGreaterThan(time() - 60, (int) filemtime($backup), 'Maintenance keeps the backup for 7 days after this success.');
     }
 
     public function testRollsBackAFailedMigration(): void
