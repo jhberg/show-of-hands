@@ -1,0 +1,5 @@
+# Every page links these files with their file time in ?v=, so a changed file gets a new URL.
+# Browsers may keep them for a year without asking again.
+<IfModule mod_headers.c>
+    Header set Cache-Control "public, max-age=31536000, immutable"
+</IfModule>

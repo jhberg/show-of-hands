@@ -37,8 +37,10 @@ final readonly class Flash
      * @param array<string, string|int> $params placeholders the page fills in when it renders,
      *                                         such as the member's choice, which the session never stores
      * @param string|null $page the page that renders, as given to toast(); every page shows a toast meant for any page
+     * @param array<string, string|int>|null $otherParams the placeholders for the choice the member did not make;
+     *                                                   given, the toast is padded to at least the length it would have for that choice
      */
-    public function take(array $params = [], ?string $page = null): ?string
+    public function take(array $params = [], ?string $page = null, ?array $otherParams = null): ?string
     {
         $flash = $this->session->get(self::KEY);
         if (!is_array($flash)) {
@@ -56,6 +58,23 @@ final readonly class Flash
         /** @var array<string, string|int> $stored */
         $stored = $flash['params'];
 
-        return $this->translator->trans($flash['key'], $stored + $params);
+        $text = $this->translator->trans($flash['key'], $stored + $params);
+        if ($otherParams === null) {
+            return $text;
+        }
+
+        return self::sameLength($text, $this->translator->trans($flash['key'], $stored + $otherParams), static fn(string $raw): string => htmlspecialchars($raw, ENT_QUOTES | ENT_SUBSTITUTE));
+    }
+
+    /**
+     * The text with trailing spaces, so that once encoded it is at least as long as the other text.
+     * A toast that names the member's choice gets as long as it would be for the other choice,
+     * because access logs record response sizes. The spaces do not show.
+     *
+     * @param callable(string): string $encode how the response carries the text, such as HTML or JSON
+     */
+    public static function sameLength(string $text, string $other, callable $encode): string
+    {
+        return $text . str_repeat(' ', max(0, strlen($encode($other)) - strlen($encode($text))));
     }
 }

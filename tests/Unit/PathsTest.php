@@ -12,11 +12,15 @@ final class PathsTest extends TestCase
 {
     use TempDirectory;
 
-    public function testEachReleaseCompilesTemplatesIntoItsOwnDirectory(): void
+    public function testEachReleaseCachesIntoItsOwnDirectory(): void
     {
         file_put_contents($this->tempDir() . '/VERSION', "1.2.0\n");
+        $paths = new Paths($this->tempDir());
 
-        self::assertSame($this->tempDir() . '/data/cache/twig/1.2.0', (new Paths($this->tempDir()))->templateCache());
+        self::assertSame('1.2.0', $paths->release);
+        self::assertSame($this->tempDir() . '/data/cache/1.2.0/twig', $paths->templateCache());
+        self::assertSame($this->tempDir() . '/data/cache/1.2.0/translations', $paths->translationCache());
+        self::assertSame($this->tempDir() . '/data/cache/1.2.0/container', $paths->containerCache());
     }
 
     public function testAVersionThatIsNoPlainNameFallsBackToDev(): void
@@ -24,13 +28,17 @@ final class PathsTest extends TestCase
         foreach (['..', '../x', '.hidden', ''] as $version) {
             file_put_contents($this->tempDir() . '/VERSION', $version . "\n");
 
-            self::assertSame($this->tempDir() . '/data/cache/twig/dev', (new Paths($this->tempDir()))->templateCache(), $version);
+            self::assertSame($this->tempDir() . '/data/cache/dev', (new Paths($this->tempDir()))->cache(), $version);
         }
     }
 
-    public function testACheckoutWithoutReleaseUsesTheDevCache(): void
+    public function testACheckoutUsesTheDevCacheAndCompilesNoContainer(): void
     {
-        self::assertSame($this->tempDir() . '/data/cache/twig/dev', (new Paths($this->tempDir()))->templateCache());
+        $paths = new Paths($this->tempDir());
+
+        self::assertNull($paths->release);
+        self::assertSame($this->tempDir() . '/data/cache/dev/twig', $paths->templateCache());
+        self::assertNull($paths->containerCache());
     }
 
     public function testAReleaseListsItsMigrations(): void

@@ -8,6 +8,9 @@ use function DI\autowire;
 
 use DI\Container;
 use DI\ContainerBuilder;
+
+use function DI\factory;
+
 use Psr\Http\Message\ResponseFactoryInterface;
 use ShowOfHands\Domain\BallotToken;
 use ShowOfHands\Http\Action\AdminMemberActiveAction;
@@ -54,6 +57,7 @@ use ShowOfHands\Infrastructure\Auth\GoogleSignIn;
 use ShowOfHands\Infrastructure\Auth\LeagueGoogleSignIn;
 use ShowOfHands\Infrastructure\Clock\Clock;
 use ShowOfHands\Infrastructure\Clock\SystemClock;
+use ShowOfHands\Infrastructure\Config\BootstrapAdmin;
 use ShowOfHands\Infrastructure\Config\BrandAssets;
 use ShowOfHands\Infrastructure\Config\Config;
 use ShowOfHands\Infrastructure\Database\ConnectionFactory;
@@ -63,6 +67,7 @@ use ShowOfHands\Infrastructure\Log\ErrorLog;
 use ShowOfHands\Infrastructure\Maintenance\Maintenance;
 use ShowOfHands\Infrastructure\Persistence\MemberImporter;
 use ShowOfHands\Infrastructure\Setup\FirstStart;
+use ShowOfHands\Infrastructure\Storage\DataDirectory;
 use ShowOfHands\Infrastructure\Theme\Theme;
 use ShowOfHands\Infrastructure\Theme\ThemeBuilder;
 use ShowOfHands\Paths;
@@ -88,7 +93,10 @@ final class AppFactory
      */
     public static function create(Paths $paths, Config $config, array $overrides = []): App
     {
-        $container = self::container($paths, $config, $overrides);
+        // Before anything caches there, so Twig and PHP-DI create their folders inside one only the app's user may read.
+        DataDirectory::create($paths->cache());
+        // Tests replace entries, which a compiled container would keep.
+        $container = self::container($paths, $config, $overrides, $overrides === [] ? $paths->containerCache() : null);
         $app = SlimAppFactory::createFromContainer($container);
         $container->set(RouteResolverInterface::class, $app->getRouteResolver());
 
@@ -161,68 +169,80 @@ final class AppFactory
     /**
      * The service container, also used by bin/console.
      *
+     * Closures take what they need as parameters instead of capturing it, so the container can
+     * compile: PHP-DI cannot compile a closure that captures variables.
+     *
      * @param array<string, mixed> $overrides
+     * @param string|null $compileTo where to compile the container, once per release and config
      */
-    public static function container(Paths $paths, Config $config, array $overrides = []): Container
+    public static function container(Paths $paths, Config $config, array $overrides = [], ?string $compileTo = null): Container
     {
-        // Read once: it costs a file read, and two definitions need it.
-        $templateCache = $paths->templateCache();
-        $themeVersion = substr(sha1(json_encode([
-            ThemeBuilder::VERSION,
-            $config->brand->accent,
-            $config->brand->ink,
-            $config->brand->fontFamily,
-            $config->brand->fontFiles,
-        ], JSON_THROW_ON_ERROR)), 0, 12);
-
         $builder = new ContainerBuilder();
+        if ($compileTo !== null) {
+            // The compiled container keeps the paths and config values the definitions below read,
+            // so an edited config.php compiles a new one.
+            $builder->enableCompilation($compileTo, 'CompiledContainer' . substr(sha1(serialize([$paths, $config])), 0, 12));
+        }
         $builder->addDefinitions([
             Paths::class => $paths,
             Config::class => $config,
             ResponseFactoryInterface::class => autowire(ResponseFactory::class),
-            \PDO::class => static fn(): \PDO => ConnectionFactory::open($paths->database()),
-            Migrator::class => static fn(\PDO $pdo): Migrator => new Migrator($pdo, $paths->migrations(), $paths->data(), $paths->releaseMigrations()),
-            Session::class => static fn(): Session => Session::native($paths->sessions(), $config->sessionLifetimeDays, $config->isHttps()),
+            \PDO::class => static fn(Paths $paths): \PDO => ConnectionFactory::open($paths->database()),
+            Migrator::class => static fn(\PDO $pdo, Paths $paths): Migrator => new Migrator($pdo, $paths->migrations(), $paths->data(), $paths->releaseMigrations()),
+            Session::class => static fn(Paths $paths, Config $config): Session => Session::native($paths->sessions(), $config->sessionLifetimeDays, $config->isHttps()),
             Clock::class => autowire(SystemClock::class),
-            BallotToken::class => static fn(): BallotToken => new BallotToken($config->secret),
-            ErrorLog::class => static fn(): ErrorLog => new ErrorLog($paths->data() . '/logs/app.log'),
+            BallotToken::class => static fn(Config $config): BallotToken => new BallotToken($config->secret),
+            ErrorLog::class => static fn(Paths $paths): ErrorLog => new ErrorLog($paths->log()),
             MemberImporter::class => autowire()->constructorParameter('file', $paths->memberFile()),
             FirstStart::class => autowire()
-                ->constructorParameter('admin', $config->bootstrapAdmin)
+                // An object, which a compiled container cannot hold, so it is read at runtime.
+                ->constructorParameter('admin', factory(static fn(Config $config): ?BootstrapAdmin => $config->bootstrapAdmin))
                 ->constructorParameter('defaultLocale', $config->defaultLocale),
             Maintenance::class => autowire()
                 ->constructorParameter('sessionsDir', $paths->sessions())
                 ->constructorParameter('backupDir', $paths->data() . '/' . Migrator::BACKUP_DIR)
-                ->constructorParameter('templateCache', $templateCache)
+                ->constructorParameter('cacheDir', $paths->cache())
+                ->constructorParameter('databaseFile', $paths->database())
                 ->constructorParameter('sessionLifetimeDays', $config->sessionLifetimeDays)
                 ->constructorParameter('timezone', $config->timezone),
-            GoogleSignIn::class => static fn(): GoogleSignIn => new LeagueGoogleSignIn($config->googleClientId, $config->googleClientSecret, $config->appUrl),
+            GoogleSignIn::class => static fn(Config $config): GoogleSignIn => new LeagueGoogleSignIn($config->googleClientId, $config->googleClientSecret, $config->appUrl),
             DevLoginGuard::class => static fn(): DevLoginGuard => DevLoginGuard::fromEnvironment(),
-            Translator::class => static fn(): Translator => TranslatorFactory::create(
+            Translator::class => static fn(Paths $paths, Config $config): Translator => TranslatorFactory::create(
                 [$paths->translations(), $paths->translationOverrides()],
                 $config->defaultLocale,
+                $paths->translationCache(),
             ),
-            Theme::class => static fn(): Theme => (new ThemeBuilder())->build($config->brand),
-            BrandAssets::class => static fn(): BrandAssets => new BrandAssets($paths->public()),
-            Environment::class => static function (Translator $translator, BrandAssets $assets, Session $session) use ($paths, $config, $themeVersion, $templateCache): Environment {
+            Theme::class => static fn(Config $config): Theme => (new ThemeBuilder())->build($config->brand),
+            BrandAssets::class => static fn(Paths $paths): BrandAssets => new BrandAssets($paths->public()),
+            Environment::class => static function (Translator $translator, BrandAssets $assets, Session $session, Paths $paths, Config $config): Environment {
                 $twig = new Environment(new FilesystemLoader($paths->templates()), [
-                    'cache' => $templateCache,
-                    'auto_reload' => true,
+                    'cache' => $paths->templateCache(),
+                    // A release compiles into its own folder and never changes its templates.
+                    'auto_reload' => $paths->release === null,
                     'strict_variables' => $config->isDev(),
                 ]);
                 $twig->addExtension(new TranslationExtension($translator));
-                $twig->addExtension(new TwigExtension($config->brand, $assets, $themeVersion, $paths->templates() . '/icons', $session, $translator, $config->timezone, $config->defaultLocale));
+                $twig->addExtension(new TwigExtension($config->brand, $assets, ThemeBuilder::version($config->brand), $paths->templates() . '/icons', $session, $translator, $config->timezone, $config->defaultLocale));
 
                 return $twig;
             },
             ErrorHandler::class => autowire()->constructorParameter('showDetails', $config->isDev()),
-            LocaleMiddleware::class => static fn(Translator $translator): LocaleMiddleware => new LocaleMiddleware($translator, $config->defaultLocale),
-            SecurityHeadersMiddleware::class => static fn(): SecurityHeadersMiddleware => new SecurityHeadersMiddleware($config->isHttps()),
+            LocaleMiddleware::class => static fn(Translator $translator, Config $config): LocaleMiddleware => new LocaleMiddleware($translator, $config->defaultLocale),
+            SecurityHeadersMiddleware::class => static fn(Config $config): SecurityHeadersMiddleware => new SecurityHeadersMiddleware($config->isHttps()),
             LocaleAction::class => autowire()->constructorParameter('https', $config->isHttps()),
             ColorModeAction::class => autowire()->constructorParameter('https', $config->isHttps()),
             LoginAction::class => autowire()
                 ->constructorParameter('googleConfigured', $config->hasGoogleClient())
                 ->constructorParameter('devLogin', $config->isDev()),
+            // PHP-DI compiles only defined entries and what they need. These run on the requests
+            // that come most often, the live refresh of every open phone among them.
+            PollLiveAction::class => autowire(),
+            PollAction::class => autowire(),
+            BallotAction::class => autowire(),
+            HomeAction::class => autowire(),
+            DatabaseMiddleware::class => autowire(),
+            MemberMiddleware::class => autowire(),
+            CsrfMiddleware::class => autowire(),
         ]);
         $builder->addDefinitions($overrides);
 

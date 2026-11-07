@@ -77,6 +77,10 @@ sign_in() { submit /dev-login /dev-login return=/ "email=$1"; }
 
 vote() { submit "/polls/$1" "/polls/$1/ballot" "choice=$2"; }
 
+# Whether the poll page confirms a choice. The page renders both sentences and hides the other one,
+# so the visible one follows a plain tag: <b> in releases before that, <span> since.
+voted() { page "/polls/$1" | grep -E "<(b|span)>Deine Stimme ist registriert: $2\." >/dev/null; }
+
 # Lazy maintenance runs on the next request once its last run is an hour old.
 run_maintenance() {
     sql "UPDATE settings SET value = '0' WHERE key = 'maintenance_last_run'"
@@ -103,7 +107,7 @@ step "Add data: a member votes Yes on poll 2"
 start_server
 sign_in theo.reinhardt@example.org
 vote 2 yes
-shows /polls/2 'Deine Stimme ist registriert: Ja.' || fail "the vote did not register in the old release"
+voted 2 Ja || fail "the vote did not register in the old release"
 stop_server
 
 step "Unpack $(basename "$new_zip") over the installation"
@@ -131,16 +135,16 @@ else
 fi
 
 step "The data still works in the new release"
-shows /polls/2 'Deine Stimme ist registriert: Ja.' || fail "the vote from the old release is gone"
+voted 2 Ja || fail "the vote from the old release is gone"
 vote 2 no
-shows /polls/2 'Deine Stimme ist registriert: Nein.' || fail "changing the vote failed"
+voted 2 Nein || fail "changing the vote failed"
 shows /polls/5 'Aufgenommen' || fail "the closed poll lost its result"
 
 step "Pages render the new templates, not the old release's compiled ones"
 # A ZIP restores its files' build times, which can be older than the old release's template cache.
 strip_csrf() { sed 's/name="_csrf" value="[^"]*"//g'; }
 page /polls/2 | strip_csrf >"$work/after-update.html"
-rm -rf "$work/site/data/cache/twig"
+rm -rf "$work/site/data/cache"
 page /polls/2 | strip_csrf >"$work/fresh-cache.html"
 diff -q "$work/after-update.html" "$work/fresh-cache.html" >/dev/null || fail "the poll page differs from a fresh template cache"
 
@@ -152,6 +156,16 @@ if [ "$new_version" -gt "$old_version" ]; then
     run_maintenance
     [ ! -f "$backup" ] || fail "maintenance kept the backup after a day"
 fi
+
+step "Each release caches into its own folder, and maintenance deletes the others"
+cache="$work/site/data/cache/$(cat "$work/site/VERSION")"
+mkdir -p "$work/site/data/cache/0.0.1/twig" "$work/site/data/cache/twig/0.0.1"
+run_maintenance
+for dir in twig translations container; do
+    [ -d "$cache/$dir" ] || fail "no $dir cache in $cache"
+done
+[ "$(find "$work/site/data/cache" -mindepth 1 -maxdepth 1 -type d)" = "$cache" ] || fail "maintenance kept the caches of other releases"
+[ "$(stat -c %a "$work/site/data/app.sqlite")" = 600 ] || fail "the database is readable by others"
 
 step "The release keeps everything but public/ private"
 listing="$(unzip -Z1 "$new_zip")"
@@ -176,7 +190,7 @@ printf '%s\n' "$probe" "$broken" >>"$work/site/MIGRATIONS.txt"
 echo "$release_version-broken" >"$work/site/VERSION"
 status="$(curl -s -o /dev/null -w '%{http_code}' -b "$work/cookies" "$url/polls/2")"
 [ "$status" = 500 ] || fail "the broken update answered $status, expected 500"
-grep -q "$broken failed" "$work/site/data/logs/app.log" || fail "the log does not name the failed migration"
+grep -q "GET /polls/2 RuntimeException: Migration $broken failed" "$work/site/data/logs/app.log" || fail "the log does not name the request and the failed migration"
 [ "$(sql 'PRAGMA user_version')" = "$probe_version" ] || fail "the working migration of the broken update did not run"
 backup="$work/site/data/backup/app-v$new_version.sqlite"
 [ -f "$backup" ] || fail "no backup before the broken update"
@@ -187,19 +201,19 @@ touch -d '25 hours ago' "$backup"
 run_maintenance
 [ -f "$backup" ] || fail "maintenance deleted the backup the way back needs"
 mv "$backup" "$work/site/data/app.sqlite"
-shows /polls/2 'Deine Stimme ist registriert: Nein.' || fail "the site does not work after going back"
+voted 2 Nein || fail "the site does not work after going back"
 shows /polls/5 'Aufgenommen' || fail "the closed poll lost its result after going back"
 [ "$(sql 'PRAGMA user_version')" = "$new_version" ] || fail "schema version is $(sql 'PRAGMA user_version') after going back, expected $new_version"
 [ "$(sql "SELECT COUNT(*) FROM sqlite_master WHERE name = 'rollback_probe'")" = 0 ] || fail "the broken update's migration ran again"
 vote 2 yes
-shows /polls/2 'Deine Stimme ist registriert: Ja.' || fail "voting failed after going back"
+voted 2 Ja || fail "voting failed after going back"
 
 step "A fixed update replaces the broken migration under its number"
 # The broken file stays behind from the failed update; the fixed release no longer lists it.
 printf 'CREATE TABLE rollback_fixed (n INTEGER);\n' >"$work/site/migrations/$fixed"
 printf '%s\n' "$probe" "$fixed" >>"$work/site/MIGRATIONS.txt"
 echo "$release_version-fixed" >"$work/site/VERSION"
-shows /polls/2 'Deine Stimme ist registriert: Ja.' || fail "the fixed update failed"
+voted 2 Ja || fail "the fixed update failed"
 [ "$(sql 'PRAGMA user_version')" = "$broken_version" ] || fail "the fixed update did not reach schema version $broken_version"
 [ "$(sql "SELECT COUNT(*) FROM sqlite_master WHERE name = 'rollback_fixed'")" = 1 ] || fail "the fixed migration did not run"
 [ -f "$backup" ] || fail "no fresh backup before the fixed update"

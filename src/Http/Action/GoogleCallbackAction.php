@@ -48,7 +48,7 @@ final readonly class GoogleCallbackAction
         try {
             $account = $this->google->finish($code, $pending['verifier']);
         } catch (GoogleSignInException $e) {
-            $this->log->error($e);
+            $this->log->error($e, $request);
 
             return $this->failed($response, $return);
         }

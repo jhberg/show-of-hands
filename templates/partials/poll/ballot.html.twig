@@ -54,7 +54,8 @@
             </div>
         </form>
         {% if choice is not null %}
-            <div class="reg">{{ icon('check') }}<span><b>{{ choice.value == 'yes' ? 'ballot.registered_yes'|trans : 'ballot.registered_no'|trans }}</b> {{ 'ballot.registered_text'|trans }}</span></div>
+            {# Both sentences, one hidden, so the response is as long for Yes as for No: access logs record sizes. #}
+            <div class="reg">{{ icon('check') }}<span><b><span{% if choice.value != 'yes' %} hidden{% endif %}>{{ 'ballot.registered_yes'|trans }}</span><span{% if choice.value != 'no' %} hidden{% endif %}>{{ 'ballot.registered_no'|trans }}</span></b> {{ 'ballot.registered_text'|trans }}</span></div>
         {% elseif recipient is null %}
             <p class="help mt-12">{{ 'ballot.hint'|trans }}</p>
         {% endif %}

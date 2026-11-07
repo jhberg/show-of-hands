@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace ShowOfHands\Infrastructure\Database;
 
+use ShowOfHands\Infrastructure\Storage\DataDirectory;
+
 /**
  * Applies the numbered SQL files in migrations/ that the database has not seen yet.
  *
@@ -179,9 +181,7 @@ final class Migrator
     private function backup(): string
     {
         $dir = $this->dataDir . '/' . self::BACKUP_DIR;
-        if (!is_dir($dir) && !mkdir($dir, 0o770, true) && !is_dir($dir)) {
-            throw new \RuntimeException("Cannot create {$dir}.");
-        }
+        DataDirectory::create($dir);
         // One backup per schema version. A migration that keeps failing must not copy the database on every request.
         $target = $dir . '/' . sprintf(self::BACKUP_NAME, $this->version());
         if (is_file($target)) {
@@ -190,7 +190,7 @@ final class Migrator
         // VACUUM INTO writes a consistent copy even while other connections read.
         $statement = $this->pdo->prepare('VACUUM INTO ?');
         $statement->execute([$target]);
-        chmod($target, 0o600);
+        DataDirectory::restrict($target);
 
         return $target;
     }

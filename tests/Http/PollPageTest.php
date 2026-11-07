@@ -170,7 +170,7 @@ final class PollPageTest extends HttpTestCase
         self::assertStringContainsString('Stimme registriert: Ja.', $html);
         self::assertMatchesRegularExpression('#id="choice-yes" name="choice" value="yes" aria-pressed="true"><span class="big">Ja</span><small>aufnehmen</small><span class="sel">.*Deine Stimme</span>#s', $html);
         self::assertStringContainsString('id="choice-no" name="choice" value="no" aria-pressed="false"', $html);
-        self::assertStringContainsString('<b>Deine Stimme ist registriert: Ja.</b> Du kannst sie ändern', $html);
+        self::assertStringContainsString('<b><span>Deine Stimme ist registriert: Ja.</span><span hidden>Deine Stimme ist registriert: Nein.</span></b> Du kannst sie ändern', $html);
         self::assertStringNotContainsString('Tippe auf Ja oder Nein.', $html);
         self::assertStringContainsString('<b>1</b> von 3 Stimmrechten abgegeben', $html);
         self::assertStringContainsString('1 Mitglied hat abgestimmt, 2 fehlen noch.', $html);
@@ -196,7 +196,8 @@ final class PollPageTest extends HttpTestCase
         $html = $this->body($response);
 
         self::assertSame(200, $response->getStatusCode());
-        self::assertSame('{"toast":"Stimme registriert: Ja."}', $response->getHeaderLine('HX-Trigger'));
+        // Padded to the length the toast has for Nein, so the response's size does not tell the choice.
+        self::assertSame('{"toast":"Stimme registriert: Ja.  "}', $response->getHeaderLine('HX-Trigger'));
         self::assertStringStartsWith('<main class="main"', ltrim(preg_replace('/\{#.*?#\}/s', '', $html) ?? ''));
         self::assertStringNotContainsString('<header', $html);
         self::assertStringNotContainsString('id="toast"', $html);
@@ -204,7 +205,7 @@ final class PollPageTest extends HttpTestCase
         self::assertStringContainsString('<b>1</b> von 3 Stimmrechten abgegeben', $html);
         self::assertNull($this->session->get('flash'));
 
-        self::assertSame('{"toast":"Bleibt bei Ja."}', $this->vote($poll, 'yes', htmx: true)->getHeaderLine('HX-Trigger'));
+        self::assertSame('{"toast":"Bleibt bei Ja.  "}', $this->vote($poll, 'yes', htmx: true)->getHeaderLine('HX-Trigger'));
     }
 
     public function testABallotForAClosedPollIsRefused(): void
@@ -327,7 +328,7 @@ final class PollPageTest extends HttpTestCase
         self::assertStringContainsString('Vote registered: No.', $html);
         self::assertStringContainsString('Audition on Tue, November 3, 2026', $html);
         self::assertStringContainsString('Should Robin Example be admitted to the choir?', $html);
-        self::assertStringContainsString('<b>Your vote is registered: No.</b>', $html);
+        self::assertStringContainsString('<b><span hidden>Your vote is registered: Yes.</span><span>Your vote is registered: No.</span></b>', $html);
         self::assertStringContainsString('<b>1</b> of 3 voting rights cast', $html);
         self::assertStringContainsString('1 member has voted, 2 are still missing.', $html);
         self::assertStringContainsString('No group', $html);

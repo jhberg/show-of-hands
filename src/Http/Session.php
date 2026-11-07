@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace ShowOfHands\Http;
 
+use ShowOfHands\Infrastructure\Storage\DataDirectory;
+
 /**
  * The visitor's session, started on first use. In production it is PHP's native file session
  * in data/sessions/. Tests use an in-memory session, because PHPUnit sends output before any test runs.
@@ -56,9 +58,7 @@ final class Session
         if (!$this->native) {
             return;
         }
-        if (!is_dir($this->savePath) && !mkdir($this->savePath, 0o770, true) && !is_dir($this->savePath)) {
-            throw new \RuntimeException("Cannot create {$this->savePath}.");
-        }
+        DataDirectory::create($this->savePath);
         session_name('soh_session');
         session_save_path($this->savePath);
         $cookie = ['path' => '/', 'secure' => $this->secure, 'httponly' => true, 'samesite' => 'Lax'];
