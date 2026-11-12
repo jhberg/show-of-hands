@@ -136,7 +136,7 @@ final class ConfigLoaderTest extends TestCase
 
         $errors = self::errors($data);
 
-        self::assertContains('brand.font.files[0].file must be a .woff2 or .woff file name in public/brand/fonts/.', $errors);
+        self::assertContains('brand.font.files[0].file must be a .woff2 or .woff file name in brand/fonts/.', $errors);
         self::assertContains('brand.font.files[1].weight must be a number between 100 and 900.', $errors);
     }
 

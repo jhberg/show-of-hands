@@ -35,8 +35,11 @@ fail() {
 }
 step() { echo "--- $*"; }
 
+# Releases up to 0.4.0 serve from public/; later ones from the installation folder itself.
 start_server() {
-    (cd "$work/site" && exec php -S "127.0.0.1:$port" -t public public/index.php >"$work/server.log" 2>&1) &
+    local docroot=.
+    [ -f "$work/site/index.php" ] || docroot=public
+    (cd "$work/site" && exec php -S "127.0.0.1:$port" -t "$docroot" "$docroot/index.php" >"$work/server.log" 2>&1) &
     server=$!
     for _ in $(seq 50); do
         curl -fsS -o /dev/null "$url/login" 2>/dev/null && return
@@ -99,6 +102,11 @@ cp "$root/tests/e2e/config.php" "$work/site/config/config.php"
 (cd "$work/site" && php bin/console seed:demo >/dev/null)
 # The instance's member file, which the update must leave as it is. Invented, like all test data.
 printf 'name;email;group\nRobin Example;robin.example@example.org;S1\n' >"$work/site/config/members.csv"
+# The instance's login logo, in public/brand/ for releases up to 0.4.0.
+brand="$work/site/brand"
+[ -f "$work/site/index.php" ] || brand="$work/site/public/brand"
+mkdir -p "$brand"
+printf '<svg xmlns="http://www.w3.org/2000/svg"/>\n' >"$brand/logo.svg"
 old_version="$(sql 'PRAGMA user_version')"
 members="$(sql 'SELECT COUNT(*) FROM members')"
 addresses="$(sql 'SELECT COUNT(*) FROM member_emails')"
@@ -113,6 +121,25 @@ stop_server
 
 step "Unpack $(basename "$new_zip") over the installation"
 unzip -q -o "$new_zip" -d "$work/site"
+if [ -d "$work/site/public" ] && [ -f "$work/site/index.php" ]; then
+    step "With public/ still there, every page says the update is not finished"
+    (cd "$work/site" && exec php -S "127.0.0.1:$((port + 1))" -t public public/index.php >"$work/left.log" 2>&1) &
+    left=$!
+    for _ in $(seq 50); do
+        status="$(curl -s -o "$work/left.html" -w '%{http_code}' "http://localhost:$((port + 1))/login" || true)"
+        [ "$status" != 000 ] && break
+        sleep 0.1
+    done
+    kill "$left"
+    wait "$left" 2>/dev/null || true
+    [ "$status" = 503 ] || fail "the old front controller answered $status, expected 503"
+    grep -q 'Update nicht abgeschlossen' "$work/left.html" || fail "the page does not say the update is not finished"
+    [ "$(sql 'PRAGMA user_version')" = "$old_version" ] || fail "the database migrated before the update was finished"
+
+    step "From public/ to the installation folder: move the brand files, delete public/"
+    [ ! -e "$work/site/public/brand" ] || mv "$work/site/public/brand" "$work/site/brand"
+    rm -rf "$work/site/public"
+fi
 cmp -s "$root/tests/e2e/config.php" "$work/site/config/config.php" || fail "the update changed config/config.php"
 grep -q '^Robin Example;' "$work/site/config/members.csv" || fail "the update changed config/members.csv"
 start_server
@@ -140,6 +167,7 @@ voted 2 Ja || fail "the vote from the old release is gone"
 vote 2 no
 voted 2 Nein || fail "changing the vote failed"
 shows /polls/5 'Aufgenommen' || fail "the closed poll lost its result"
+curl -fsS "$url/login" | grep -F 'src="/brand/logo.svg?v=' >/dev/null || fail "the login page lost the instance's logo"
 
 step "Pages render the new templates, not the old release's compiled ones"
 # A ZIP restores its files' build times, which can be older than the old release's template cache.
@@ -171,28 +199,36 @@ done
 [ "$(find "$work/site/data/cache" -mindepth 1 -maxdepth 1 -type d)" = "$cache" ] || fail "maintenance kept the caches of other releases"
 [ "$(stat -c %a "$work/site/data/app.sqlite")" = 600 ] || fail "the database is readable by others"
 
-step "The release keeps everything but public/ private"
+step "The release keeps everything but assets/ and brand/ private"
 listing="$(unzip -Z1 "$new_zip")"
 for rule in .htaccess config/.htaccess data/.htaccess; do
     grep -qx "$rule" <<<"$listing" || fail "the release has no $rule"
 done
+! grep -q '^public/' <<<"$listing" || fail "the release still has a public/ folder"
 grep -q '^Require all denied' "$work/site/config/.htaccess" || fail "config/.htaccess denies nothing"
 grep -q '^Require all denied' "$work/site/data/.htaccess" || fail "data/.htaccess denies nothing"
-grep -q '^ *RewriteRule !^public/ - \[F\]' "$work/site/.htaccess" || fail "the root .htaccess lets more than public/ through"
+grep -qF 'RewriteRule ^(assets|brand)/ - [L]' "$work/site/.htaccess" || fail "the root .htaccess serves files outside assets/ and brand/"
+grep -qF 'RewriteRule ^ index.php [QSA,L]' "$work/site/.htaccess" || fail "the root .htaccess does not send every other address to the app"
+for file in config/config.php config/members.csv data/app.sqlite README.md src/Paths.php vendor/autoload.php; do
+    status="$(curl -s -o /dev/null -w '%{http_code}' "$url/$file")"
+    [ "$status" = 404 ] || fail "/$file answered $status, expected 404"
+done
+status="$(curl -s -o /dev/null -w '%{http_code}' "$url/assets/css/app.css")"
+[ "$status" = 200 ] || fail "/assets/css/app.css answered $status, expected 200"
 
-step "Served from the installation folder instead of public/, the app stops and says why"
-(cd "$work/site" && exec php -S "127.0.0.1:$((port + 1))" -t . public/index.php >"$work/wrong-root.log" 2>&1) &
+step "Installed in a folder below the document root, the app stops and says why"
+(cd "$work" && exec php -S "127.0.0.1:$((port + 1))" -t . site/index.php >"$work/wrong-root.log" 2>&1) &
 wrong_root=$!
 for _ in $(seq 50); do
-    status="$(curl -s -o "$work/wrong-root.html" -w '%{http_code}' "http://localhost:$((port + 1))/" || true)"
+    status="$(curl -s -o "$work/wrong-root.html" -w '%{http_code}' "http://localhost:$((port + 1))/site/" || true)"
     [ "$status" != 000 ] && break
     sleep 0.1
 done
 kill "$wrong_root"
 wait "$wrong_root" 2>/dev/null || true
-[ "$status" = 500 ] || fail "the installation folder as document root answered $status, expected 500"
+[ "$status" = 500 ] || fail "the installation in a subfolder answered $status, expected 500"
 grep -q 'Wrong document root' "$work/wrong-root.html" || fail "the page does not explain the document root"
-page /login >/dev/null || fail "the site with public/ as document root stopped too"
+page /login >/dev/null || fail "the site with the installation folder as document root stopped too"
 
 step "A broken update: one migration works, the next fails"
 release_version="$(cat "$work/site/VERSION")"

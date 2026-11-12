@@ -7,6 +7,7 @@ namespace ShowOfHands\Http;
 use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
+use ShowOfHands\Http\Middleware\PublicFolderLeftException;
 use ShowOfHands\Infrastructure\Database\DatabaseAheadException;
 use ShowOfHands\Infrastructure\Log\ErrorLog;
 use Slim\Exception\HttpBadRequestException;
@@ -40,9 +41,10 @@ final readonly class ErrorHandler
             self::isBusy($error) => [503, $request->getMethod() === 'GET' ? 'busy_load' : 'busy'],
             // The way back after an update stopped halfway. Every request meets it, so the log stays out of it.
             $error instanceof DatabaseAheadException => [503, $error->backup === null ? 'ahead_no_backup' : 'ahead'],
+            $error instanceof PublicFolderLeftException => [503, 'public_left'],
             default => [500, 'server'],
         };
-        if (($status === 500 || $status === 503) && !$error instanceof DatabaseAheadException) {
+        if (($status === 500 || $status === 503) && !$error instanceof DatabaseAheadException && !$error instanceof PublicFolderLeftException) {
             $this->log->error($error, $request);
         }
         if ($status === 403 && Htmx::isRequest($request)) {

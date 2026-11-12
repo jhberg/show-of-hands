@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace ShowOfHands\Infrastructure\Config;
 
 /**
- * One self-hosted font file in public/brand/fonts/.
+ * One self-hosted font file in brand/fonts/.
  */
 final readonly class FontFile
 {

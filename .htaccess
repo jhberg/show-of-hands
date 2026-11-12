@@ -1,9 +1,22 @@
-# The document root is public/. Should a host serve this whole folder anyway, only public/ answers;
-# config/ and data/ also carry their own rule, in case mod_rewrite is missing. The folder's own address
-# goes to the app, which explains how to set the document root. With the document root at public/, the
-# rules here have no effect: public/.htaccess sets rewrite rules of its own, which replace the parent's.
+# The installation folder is the document root. From the web, only the files in assets/ and brand/
+# answer as they are. Every other address goes to the app: its pages, and also the address of any
+# file in config/, data/, src/, vendor/, or elsewhere, which the app answers with "not found".
+# config/ and data/ also deny all access on their own.
 <IfModule mod_rewrite.c>
     RewriteEngine On
-    RewriteRule ^$ public/index.php [L]
-    RewriteRule !^public/ - [F]
+    RewriteRule ^index\.php$ - [L]
+    RewriteCond %{REQUEST_FILENAME} -f
+    RewriteRule ^(assets|brand)/ - [L]
+    RewriteRule ^ index.php [QSA,L]
+</IfModule>
+
+# Without mod_rewrite, Apache would hand out every file as it is. Nothing goes out then.
+<IfModule !mod_rewrite.c>
+    Require all denied
+</IfModule>
+
+Options -Indexes
+
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options "nosniff"
 </IfModule>

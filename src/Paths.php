@@ -130,9 +130,4 @@ final readonly class Paths
     {
         return $this->root . '/config/translations';
     }
-
-    public function public(): string
-    {
-        return $this->root . '/public';
-    }
 }

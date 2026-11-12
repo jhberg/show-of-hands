@@ -1,3 +1,4 @@
-# The document root is public/. Should a host serve the whole folder anyway, nothing in config/ goes out:
-# not config.php with its secrets, and not members.csv with names and addresses.
+# Nothing in config/ goes out: not config.php with its secrets, and not members.csv with names and
+# addresses. The installation folder's .htaccess already sends these addresses to the app; this rule
+# holds should that one fail.
 Require all denied

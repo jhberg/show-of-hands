@@ -56,6 +56,9 @@ error:
     title: Database does not match this release
     text: The database is newer than this release. Move {backup} to data/app.sqlite, or install the newer release again.
     text_no_backup: The database is newer than this release, and data/backup/ holds no matching copy. Install the newer release again, or upload your own copy from before the update as data/app.sqlite.
+  public_left:
+    title: Update not finished
+    text: Since release 0.5.0, the installation folder itself is the document root, and the folder public/ is gone. Move public/brand/ to brand/, point the document root at the installation folder, then delete public/.
 
 nav:
   label: Sections

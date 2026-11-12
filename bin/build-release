@@ -6,8 +6,9 @@
 # The ref defaults to HEAD. The version is `git describe --tags --match 'v*'` of the ref without
 # the leading "v", so the tag v1.2.0 builds show-of-hands-1.2.0.zip. The script prints the ZIP's
 # path. The ZIP holds only committed files of that ref, never the working tree, and no instance
-# files: no config.php, no members.csv, no config/translations/, no public/brand/, no database. Its
-# contents unpack straight into the installation folder, for a new install and for an update.
+# files: no config.php, no members.csv, no config/translations/, no brand/, no database. Its
+# contents unpack straight into the installation folder, which is the document root, for a new
+# install and for an update.
 set -euo pipefail
 
 root="$(cd "$(dirname "$0")/.." && pwd)"
@@ -31,15 +32,18 @@ composer install --working-dir="$work/src" --no-dev --classmap-authoritative \
 # The runtime: the app, its dependencies, the console, and the documented config and member file templates.
 # bin/build-release and the test and dev tooling stay out.
 cd "$work/src"
-cp -R public src templates translations migrations vendor LICENSE README.md "$work/release/"
+cp -R src templates translations migrations vendor LICENSE README.md "$work/release/"
+# Releases up to 0.4.0, which tests/upgrade/run.sh builds with this script too, keep the front
+# controller and the assets in public/, the document root back then.
+if [ -d public ]; then cp -R public "$work/release/"; else cp -R index.php assets "$work/release/"; fi
 mkdir -p "$work/release/bin" "$work/release/config" "$work/release/data"
 cp bin/console "$work/release/bin/"
 cp config/config.example.php "$work/release/config/"
 # Older refs, which tests/upgrade/run.sh builds with this script too, have no member file template.
 if [ -f config/members.example.csv ]; then cp config/members.example.csv "$work/release/config/"; fi
 if [ -f CHANGELOG.md ]; then cp CHANGELOG.md "$work/release/"; fi
-# The rules that keep everything but public/ private should a host serve the whole folder. data/ ships
-# empty except for its rule. Older refs lack the root and config/ rules.
+# The rules that keep everything but assets/ and brand/ private. data/ ships empty except for its rule.
+# Older refs lack the root and config/ rules.
 for rule in .htaccess config/.htaccess data/.htaccess; do
     if [ -f "$rule" ]; then cp "$rule" "$work/release/$rule"; fi
 done

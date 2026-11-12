@@ -5,13 +5,13 @@ declare(strict_types=1);
 namespace ShowOfHands\Infrastructure\Config;
 
 /**
- * Finds the instance's logo and favicon in public/brand/, falling back to the default favicon
- * in public/assets/brand-default/. URLs carry the file time, so a replaced file shows at once.
+ * Finds the instance's logo and favicon in brand/, falling back to the default favicon
+ * in assets/brand-default/. URLs carry the file time, so a replaced file shows at once.
  * A logo may come with a `-dark` variant, which the page shows when the device is in dark mode.
  */
 final readonly class BrandAssets
 {
-    public function __construct(private string $publicDir) {}
+    public function __construct(private string $root) {}
 
     /** Logo on the login page. Null means the page shows the wordmark instead. */
     public function logo(): ?string
@@ -43,11 +43,11 @@ final readonly class BrandAssets
     }
 
     /**
-     * Appends the file time to a path under public/, so browsers fetch the file again after an update.
+     * Appends the file time to a path under the installation folder, so browsers fetch the file again after an update.
      */
     public function asset(string $path): string
     {
-        $mtime = @filemtime($this->publicDir . $path);
+        $mtime = @filemtime($this->root . $path);
 
         return $mtime === false ? $path : $path . '?v=' . $mtime;
     }
@@ -58,7 +58,7 @@ final readonly class BrandAssets
     private function find(string $base, array $extensions): ?string
     {
         foreach ($extensions as $extension) {
-            if (is_file($this->publicDir . $base . '.' . $extension)) {
+            if (is_file($this->root . $base . '.' . $extension)) {
                 return $this->asset($base . '.' . $extension);
             }
         }

@@ -1,2 +1,3 @@
-# The document root is public/. Should a host serve the whole folder anyway, nothing in data/ goes out.
+# Nothing in data/ goes out: not the database, its backups, the sessions, or the log. The installation
+# folder's .htaccess already sends these addresses to the app; this rule holds should that one fail.
 Require all denied

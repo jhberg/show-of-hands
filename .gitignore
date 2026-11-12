@@ -6,7 +6,7 @@
 /config/config.php
 /config/members.csv
 /config/translations/
-/public/brand/
+/brand/
 
 # Runtime data: database, backups, sessions, logs, caches
 /data/*

@@ -50,7 +50,7 @@ final class BrandCheckCommand extends Command
         }
         $table->render();
 
-        $assets = new BrandAssets($this->paths->public());
+        $assets = new BrandAssets($this->paths->root);
         $output->writeln('Login logo:       ' . ($assets->logo() ?? 'none, the login page shows the wordmark'));
         $output->writeln('Login logo dark:  ' . $this->darkVariant($assets->logoDark(), $assets->logo(), 'logo'));
         $output->writeln('Header logo:      ' . ($assets->headerLogo() ?? 'none, the header shows the wordmark'));
