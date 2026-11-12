@@ -9,18 +9,18 @@ use ShowOfHands\Infrastructure\Config\BrandAssets;
 final class BrandLogoTest extends HttpTestCase
 {
     /**
-     * Rebuilds the app with a public directory of its own that holds the given brand files.
+     * Rebuilds the app with an installation folder of its own that holds the given brand files.
      *
-     * @param list<string> $files names under public/brand/
+     * @param list<string> $files names under brand/
      */
     private function withBrandFiles(array $files): void
     {
-        $public = $this->dataDir . '/public';
-        mkdir($public . '/brand', 0o777, true);
+        $root = $this->dataDir . '/root';
+        mkdir($root . '/brand', 0o777, true);
         foreach ($files as $file) {
-            file_put_contents($public . '/brand/' . $file, '<svg xmlns="http://www.w3.org/2000/svg"/>');
+            file_put_contents($root . '/brand/' . $file, '<svg xmlns="http://www.w3.org/2000/svg"/>');
         }
-        $this->app = $this->createApp(overrides: [BrandAssets::class => new BrandAssets($public)]);
+        $this->app = $this->createApp(overrides: [BrandAssets::class => new BrandAssets($root)]);
     }
 
     public function testTheLoginPageShowsTheDarkLogoInDarkMode(): void

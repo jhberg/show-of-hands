@@ -203,7 +203,7 @@ final class ConfigLoader
         $weight = $entry['weight'] ?? 400;
         $style = $entry['style'] ?? 'normal';
         if (!is_string($file) || preg_match('/^[A-Za-z0-9._-]+\.(woff2|woff)$/', $file) !== 1) {
-            $this->errors[] = "{$key}.file must be a .woff2 or .woff file name in public/brand/fonts/.";
+            $this->errors[] = "{$key}.file must be a .woff2 or .woff file name in brand/fonts/.";
 
             return null;
         }

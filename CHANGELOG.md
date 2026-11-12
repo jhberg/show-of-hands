@@ -4,6 +4,15 @@ Every merged pull request is a version, with a section here, newest first. The C
 
 0.1.0 is the first release. The versions 0.0.1 to 0.0.23 are development states before it, without a release. 0.1.1 to 0.3.1 were tagged afterwards and have no release either. `bin/build-release <tag>` builds the ZIP of any tag.
 
+## 0.5.0
+
+### Changed
+
+- The app runs from the document root itself. Unpack the ZIP straight into the folder the domain serves: hosts that let PHP read only inside that folder can run the app now. The folder `public/` is gone: `index.php` and `assets/` lie in the installation folder, and the instance's logos and fonts move from `public/brand/` to `brand/`.
+- The `.htaccess` in the installation folder lets the web reach only the files in `assets/` and `brand/`. Every other address goes to the app, which answers "not found" for files in `config/`, `data/`, `src/`, and the other folders. Without `mod_rewrite`, the site answers nothing rather than hand out files.
+- If the app sits in a folder below the document root, it stops with a message that says how to fix it. The document root as the installation folder no longer stops it.
+- An update from 0.4.0 needs more than unpacking the ZIP: move `public/brand/` to `brand/`, delete `public/`, and point the document root at the installation folder. The README's section "From 0.4.0 or earlier" has the details.
+
 ## 0.4.0
 
 ### Added

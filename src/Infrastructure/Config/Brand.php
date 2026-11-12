@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace ShowOfHands\Infrastructure\Config;
 
 /**
- * Name, wordmark, colours, and font of one choir. Logo and favicon are files in public/brand/.
+ * Name, wordmark, colours, and font of one choir. Logo and favicon are files in brand/.
  */
 final readonly class Brand
 {

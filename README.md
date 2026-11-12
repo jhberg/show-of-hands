@@ -7,7 +7,7 @@ Each choir runs its own copy on an ordinary PHP web space, with its own name, lo
 ## Requirements
 
 - PHP 8.3 with the extensions `pdo_sqlite`, `intl`, `mbstring`, and `openssl`, plus `curl` or `allow_url_fopen` for the call to Google
-- A web space whose document root can point at the `public/` folder (for example a Plesk subdomain), served over HTTPS
+- A (sub)domain of its own on an Apache web space with `mod_rewrite` and `.htaccess` files, served over HTTPS
 - A Google Cloud OAuth client (see [Google sign-in](#google-sign-in))
 
 No database server, no Node, no cron job, and no shell are needed.
@@ -15,8 +15,8 @@ No database server, no Node, no cron job, and no shell are needed.
 ## Installation
 
 1. Download `show-of-hands-<version>.zip` from the repository's Releases page.
-2. Unpack it into an empty folder on the web space, next to the web folder of your main site, not inside it: in Plesk, for example `vote.example.org/` beside `httpdocs/`, not `httpdocs/vote/`. Inside another site's folder, that site would serve the code and the configuration, and only the `.htaccess` rules would hold them back. The ZIP holds the folders `public/`, `src/`, `config/`, `data/`, and a few more.
-3. Point the document root of your (sub)domain at the `public/` folder inside it, for example `vote.example.org/public`. In Plesk, this is the subdomain's "Document root" under "Hosting settings". Choose PHP 8.3, and switch on HTTPS with a certificate. If the document root is the installation folder or a folder above it, the app stops and says how to fix it.
+2. Unpack it straight into the document root of the (sub)domain, the folder the domain serves, for example `vote.example.org/public` or `vote.example.org/httpdocs`. Everything goes in there: `index.php`, `.htaccess`, and the folders `assets/`, `src/`, `config/`, `data/`, and a few more. Use a (sub)domain of its own, not a subfolder of another site: if the app sits in a folder below the document root, it stops and says how to fix it.
+3. In the domain's hosting settings, choose PHP 8.3, and switch on HTTPS with a certificate.
 4. Make sure PHP may write to `data/`. The app keeps its database, sessions, log, and caches there. What it creates there, only the user PHP runs as may read: folders get mode 700, the database 600, where the host allows it. Where PHP runs as your own account, as on Plesk, your FTP access still reaches them for [Backups](#backups); where PHP runs as another user, ask your host how to download the database. If PHP cannot write to `data/`, the page names the folders and says what to change.
 5. Copy `config/config.example.php` to `config/config.php` and fill in the values. See [Configuration](#configuration). Give it mode `600`, or `640` where PHP runs as another user in your group, and the member file `config/members.csv` as well: they hold the app's secret, and names with addresses.
 6. Open the site. The first request creates the database, the default voice groups, and the first member from `bootstrap_admin`, with board and admin roles.
@@ -24,9 +24,9 @@ No database server, no Node, no cron job, and no shell are needed.
 
 The app checks `config/config.php` on every request. If a value is missing or wrong, the page lists every problem with the key's name.
 
-Only `public/` is reachable from the web. Code, configuration, and data sit next to it, outside the document root. Should a host serve the whole folder anyway, the installation folder's `.htaccess` lets only `public/` through. `config/` and `data/` also carry their own `.htaccess` that denies all access, for hosts without `mod_rewrite`.
+Code, configuration, and data all lie in the document root, so the `.htaccess` file in it decides what the web reaches. Apache hands out only the files in `assets/` and `brand/`. Every other address goes to the app, which answers the address of a file in `config/`, `data/`, `src/`, or elsewhere with "not found". `config/` and `data/` also carry their own `.htaccess` that denies all access. Without `mod_rewrite`, the site answers nothing at all rather than hand out files.
 
-In Plesk, leave "Serve static files directly by nginx" switched off under "Apache & nginx Settings". With it on, nginx answers requests for files such as `.css` or `.png` before Apache sees them, and nginx reads no `.htaccess` file. Whether it then also serves `.csv`, `.sqlite`, or `.php` files as plain files depends on the list of extensions there; it has not been tested.
+In Plesk, leave "Serve static files directly by nginx" switched off under "Apache & nginx Settings". With it on, nginx answers requests for files with the extensions listed there before Apache sees them, and nginx reads no `.htaccess` file. It would hand out such files from `config/` and `data/` as well.
 
 ## Google sign-in
 
@@ -95,12 +95,12 @@ The brand lives in files that updates never touch:
 | What | Where |
 |---|---|
 | Name, wordmark, accent and ink colour, font | `brand` in `config/config.php` |
-| Login logo | `public/brand/logo.svg` or `logo.png`. Without one, the login page shows the wordmark. |
-| Login logo for dark mode | `public/brand/logo-dark.svg` or `.png` (optional). Devices in dark mode, and members who chose dark mode, see it in place of the login logo. Without one, they see the login logo. |
-| Header logo | `public/brand/header-logo.svg` or `.png` (optional). Without one, the header shows the wordmark. |
-| Header logo for dark mode | `public/brand/header-logo-dark.svg` or `.png` (optional). Devices in dark mode, and members who chose dark mode, see it in place of the header logo. |
-| Favicon | `public/brand/favicon.png` |
-| Fonts | `public/brand/fonts/*.woff2`, listed in `brand.font.files` |
+| Login logo | `brand/logo.svg` or `logo.png`. Without one, the login page shows the wordmark. |
+| Login logo for dark mode | `brand/logo-dark.svg` or `.png` (optional). Devices in dark mode, and members who chose dark mode, see it in place of the login logo. Without one, they see the login logo. |
+| Header logo | `brand/header-logo.svg` or `.png` (optional). Without one, the header shows the wordmark. |
+| Header logo for dark mode | `brand/header-logo-dark.svg` or `.png` (optional). Devices in dark mode, and members who chose dark mode, see it in place of the header logo. |
+| Favicon | `brand/favicon.png` |
+| Fonts | `brand/fonts/*.woff2`, listed in `brand.font.files` |
 | Wording | `config/translations/messages.de.yaml` and `messages.en.yaml`. List only the keys you change. |
 
 The app derives its whole colour scheme, light and dark, from the accent and ink colours. `bin/console brand:check` prints the contrast of every text and background pair. It fails when a pair is below its minimum: 4.5:1 for text, 3:1 for the focus ring.
@@ -110,7 +110,7 @@ The app derives its whole colour scheme, light and dark, from the accent and ink
 1. Download the new release ZIP. Its `VERSION` file names the version, as does the one in your installation. Read its section in `CHANGELOG.md`. A new setting in `config.example.php` is optional unless the notes say otherwise.
 2. Pick a quiet moment, not a vote during rehearsal: while the files are being replaced, a request can meet old and new code at once.
 3. Download a copy of `data/app.sqlite`, as [Backups](#backups) describes.
-4. Unpack the ZIP over the installation and let it replace existing files. The ZIP contains no `config/config.php`, no `config/members.csv`, no `config/translations/`, no `public/brand/`, and no database, so your configuration, branding, and data stay.
+4. Unpack the ZIP over the installation and let it replace existing files. The ZIP contains no `config/config.php`, no `config/members.csv`, no `config/translations/`, no `brand/`, and no database, so your configuration, branding, and data stay.
 5. Open the site. If the release brings database changes, the first request copies the database to `data/backup/app-v<N>.sqlite` and then brings the schema up to date. `<N>` is the schema version before the update. Housekeeping deletes that copy 7 days later.
 
 If the update fails, the page shows an error and the log in `data/logs/app.log` names it. Housekeeping keeps the copy in `data/backup/` while the database changes fail. It also keeps it after you unpacked the previous release, as long as the database is newer than that release. To go back:
@@ -122,6 +122,18 @@ If the update fails, the page shows an error and the log in `data/logs/app.log` 
 If you skip step 2, the site stops, from release 0.4.0 on: every page answers with an error that names the copy to move, until you move it or unpack the newer release again. The older release would otherwise run on a database it does not know.
 
 Move the copy rather than copy it: the next update must make a fresh one. The newer release's migration files stay in `migrations/`. They do no harm: each release runs only the migrations its `MIGRATIONS.txt` file lists. Other files a release no longer uses may stay behind after an update as well.
+
+### From 0.4.0 or earlier
+
+Up to release 0.4.0, the document root was the `public/` folder inside the installation folder. Since 0.5.0, it is the installation folder itself. Until the folder `public/` is gone, every page says the update is not finished. After you unpacked the new ZIP:
+
+1. Move `public/brand/` to `brand/` in the installation folder, if it exists.
+2. Point the document root of the (sub)domain at the installation folder, for example from `vote.example.org/public` to `vote.example.org`. In Plesk, this is "Document root" under "Hosting settings".
+3. Delete the folder `public/`.
+
+Where the host lets PHP read only inside the document root, move the whole installation instead: everything in the installation folder but `public/` goes into the document root, and `public/brand/` becomes `brand/` there.
+
+To go back to 0.4.0 after this, unpack its ZIP, move `brand/` back to `public/brand/`, and point the document root at `public/` again. Then follow the steps above for going back.
 
 ## Backups
 
@@ -190,6 +202,7 @@ docker compose run --rm app composer test         # unit and HTTP tests
 docker compose run --rm app composer fix          # apply the coding standard
 docker compose run --rm app bin/console brand:check
 docker compose --profile e2e up --exit-code-from e2e e2e   # Playwright journeys against a seeded copy on port 8081
+docker compose --profile apache up --exit-code-from apache-check apache-check   # Apache with the .htaccess files: assets/ answers, nothing else
 docker compose run --rm app bin/build-release [ref]        # release ZIP of a git ref into build/
 docker compose run --rm app tests/upgrade/run.sh <from-ref> [to-ref]   # install one release, update to the next
 ```

@@ -63,6 +63,15 @@ jobs:
           path: tests/e2e/results/
           retention-days: 7
 
+  apache:
+    name: Apache keeps internal files private
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - run: docker compose build app
+      - run: docker compose run --rm app composer install --no-interaction --no-progress
+      - run: docker compose --profile apache up --build --exit-code-from apache-check apache-check
+
   upgrade:
     name: Upgrade from the last release
     runs-on: ubuntu-latest
@@ -84,7 +93,7 @@ jobs:
   release:
     name: Tag and release
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    needs: [check, e2e, upgrade]
+    needs: [check, e2e, apache, upgrade]
     runs-on: ubuntu-latest
     permissions:
       contents: write

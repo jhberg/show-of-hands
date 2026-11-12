@@ -50,6 +50,7 @@ use ShowOfHands\Http\Middleware\CsrfMiddleware;
 use ShowOfHands\Http\Middleware\DatabaseMiddleware;
 use ShowOfHands\Http\Middleware\LocaleMiddleware;
 use ShowOfHands\Http\Middleware\MemberMiddleware;
+use ShowOfHands\Http\Middleware\PublicFolderLeftMiddleware;
 use ShowOfHands\Http\Middleware\RequireMember;
 use ShowOfHands\Http\Middleware\RequireRole;
 use ShowOfHands\Http\Middleware\SecurityHeadersMiddleware;
@@ -156,6 +157,7 @@ final class AppFactory
         $app->addRoutingMiddleware();
         $app->addBodyParsingMiddleware();
         $app->add(DatabaseMiddleware::class);
+        $app->add(PublicFolderLeftMiddleware::class);
         $errors = $app->addErrorMiddleware($config->isDev(), true, true);
         // Resolved from the container only when an error happens.
         $errors->setDefaultErrorHandler(ErrorHandler::class);
@@ -213,7 +215,7 @@ final class AppFactory
                 $paths->translationCache(),
             ),
             Theme::class => static fn(Config $config): Theme => (new ThemeBuilder())->build($config->brand),
-            BrandAssets::class => static fn(Paths $paths): BrandAssets => new BrandAssets($paths->public()),
+            BrandAssets::class => static fn(Paths $paths): BrandAssets => new BrandAssets($paths->root),
             Environment::class => static function (Translator $translator, BrandAssets $assets, Session $session, Paths $paths, Config $config): Environment {
                 $twig = new Environment(new FilesystemLoader($paths->templates()), [
                     'cache' => $paths->templateCache(),
@@ -241,6 +243,7 @@ final class AppFactory
             BallotAction::class => autowire(),
             HomeAction::class => autowire(),
             DatabaseMiddleware::class => autowire(),
+            PublicFolderLeftMiddleware::class => static fn(Paths $paths): PublicFolderLeftMiddleware => new PublicFolderLeftMiddleware($paths->root),
             MemberMiddleware::class => autowire(),
             CsrfMiddleware::class => autowire(),
         ]);

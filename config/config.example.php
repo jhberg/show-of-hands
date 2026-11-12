@@ -36,7 +36,7 @@ return [
     'brand' => [
         // The choir's name, used in the page title and in texts such as "your {brand} account".
         'name' => 'Example Choir',
-        // Header text when public/brand/ holds no header logo. Defaults to the name.
+        // Header text when brand/ holds no header logo. Defaults to the name.
         'wordmark' => 'Example Choir',
         // Characters of the wordmark drawn in the accent colour, for example '*'.
         'wordmark_accent' => '',
@@ -45,7 +45,7 @@ return [
             'accent' => '#3b6fb6',
             'ink' => '#1f2433',
         ],
-        // Optional self-hosted font. Put the files into public/brand/fonts/.
+        // Optional self-hosted font. Put the files into brand/fonts/.
         'font' => [
             'family' => null,
             'files' => [

@@ -8,17 +8,19 @@ use ShowOfHands\Infrastructure\Config\ConfigLoader;
 use ShowOfHands\Infrastructure\Storage\DataDirectory;
 use ShowOfHands\Paths;
 
-$root = dirname(__DIR__);
+$root = __DIR__;
 
 header_remove('X-Powered-By');
 
 // A warning on the page would show server paths. Only development shows them, once the config says so.
 ini_set('display_errors', '0');
 
-// PHP's built-in dev server sends every request here. Let it serve existing files itself.
+// PHP's built-in dev server sends every request here. Like the .htaccess, it serves files itself only
+// from assets/ and brand/; every other address goes to the app.
 if (PHP_SAPI === 'cli-server') {
     $uri = $_SERVER['REQUEST_URI'] ?? '/';
-    if (is_string($uri) && is_file(__DIR__ . parse_url($uri, PHP_URL_PATH))) {
+    $file = is_string($uri) ? realpath(__DIR__ . parse_url($uri, PHP_URL_PATH)) : false;
+    if ($file !== false && is_file($file) && preg_match('#^' . preg_quote(__DIR__, '#') . '/(assets|brand)/#', $file) === 1) {
         return false;
     }
 }
@@ -43,8 +45,8 @@ function renderStartError(string $title, string $text, array $items): void
     '<h1>', $title, '</h1><p>', htmlspecialchars($text, ENT_QUOTES), '</p><ul>', $list, '</ul></html>';
 }
 
-// The document root must be public/. A host that serves the installation folder, or a folder above it,
-// leaves config/ and data/ to the .htaccess rules alone, and nginx in front of Apache reads none of them.
+// The document root must be the installation folder itself. Installed in a folder below it, the app's
+// addresses would start with that folder's name, which it does not know.
 // Mass hosting can report a document root that is not the domain's, so the check trusts it only when it
 // and the script's path together lead to this file. PHP's built-in server names the request's path as
 // the script, and its document root is always the one it was started with.
@@ -52,14 +54,13 @@ $documentRoot = $_SERVER['DOCUMENT_ROOT'] ?? '';
 $scriptName = $_SERVER['SCRIPT_NAME'] ?? '';
 $documentRoot = is_string($documentRoot) && $documentRoot !== '' && is_string($scriptName)
     && (PHP_SAPI === 'cli-server' || realpath($documentRoot . $scriptName) === __FILE__) ? realpath($documentRoot) : false;
-if ($documentRoot !== false && $documentRoot !== __DIR__ && str_starts_with($root . '/', rtrim($documentRoot, '/') . '/')) {
+if ($documentRoot !== false && $documentRoot !== __DIR__ && str_starts_with(__DIR__ . '/', rtrim($documentRoot, '/') . '/')) {
     renderStartError(
         'Wrong document root',
-        'The web server serves the installation folder instead of its public/ folder, so the app stops. '
-        . 'Only public/ may be reachable from the web: config/ holds the app\'s secret and the member file, data/ the database. '
-        . 'Point the document root of this domain at the public/ folder:',
+        'The app sits in a folder below the document root of this domain, so the app stops. '
+        . 'Unpack it straight into the document root, or point the document root at the installation folder:',
         [
-            'In Plesk: Websites & Domains, the domain, Hosting settings, field "Document root". Add /public to the folder there, for example vote.example.org/public.',
+            'In Plesk: Websites & Domains, the domain, Hosting settings, field "Document root".',
             'Elsewhere: in the domain settings of your web space, or ask your host.',
             'Then open the site again.',
         ],

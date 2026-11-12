@@ -22,7 +22,7 @@ services:
     environment:
       SHOW_OF_HANDS_CONFIG: /app/tests/e2e/config.php
       SHOW_OF_HANDS_DATA: /tmp/e2e-data
-    command: sh -c "bin/console seed:demo && php -S 0.0.0.0:8081 -t public public/index.php"
+    command: sh -c "bin/console seed:demo && php -S 0.0.0.0:8081 -t . index.php"
     healthcheck:
       test: ["CMD", "php", "-r", "exit(@file_get_contents('http://localhost:8081/login') === false ? 1 : 0);"]
       interval: 2s
@@ -44,5 +44,40 @@ services:
       CI: "1"
     command: sh -c "npm ci --no-audit --no-fund && npx playwright test"
 
+  # Apache with the checkout as document root, as on the shared web space:
+  # docker compose --profile apache up --exit-code-from apache-check apache-check
+  # The app answers on http://localhost:8082 too, seeded, with the dev login.
+  apache:
+    build: docker/apache
+    profiles: [apache]
+    volumes:
+      - .:/var/www/html
+      # A brand/ of its own, which the check puts a file into, so the checkout's brand files stay out.
+      - apache-brand:/var/www/html/brand
+    ports:
+      - "127.0.0.1:${APACHE_PORT:-8082}:80"
+    environment:
+      SHOW_OF_HANDS_CONFIG: /var/www/html/tests/apache/config.php
+      SHOW_OF_HANDS_DATA: /tmp/apache-data
+      SHOW_OF_HANDS_DEV_PEERS: "172.16.0.0/12,192.168.0.0/16"
+    command: sh -c "bin/console seed:demo && chown -R www-data:www-data /tmp/apache-data && echo '<svg xmlns=\"http://www.w3.org/2000/svg\"/>' > brand/check.svg && exec apache2-foreground"
+    healthcheck:
+      test: ["CMD", "curl", "-fs", "-o", "/dev/null", "http://localhost/login"]
+      interval: 2s
+      retries: 30
+
+  apache-check:
+    build: docker/apache
+    profiles: [apache]
+    network_mode: service:apache
+    depends_on:
+      apache:
+        condition: service_healthy
+    working_dir: /var/www/html
+    volumes:
+      - .:/var/www/html
+    command: tests/apache/check.sh
+
 volumes:
   e2e-node-modules:
+  apache-brand:

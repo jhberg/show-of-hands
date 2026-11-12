@@ -103,9 +103,9 @@ final class ConsoleTest extends TestCase
     public function testBrandCheckListsTheDarkLogos(): void
     {
         $root = $this->tempDir() . '/root';
-        mkdir($root . '/public/brand', 0o777, true);
+        mkdir($root . '/brand', 0o777, true);
         foreach (['logo.svg', 'logo-dark.png', 'header-logo-dark.svg'] as $file) {
-            file_put_contents($root . '/public/brand/' . $file, '<svg xmlns="http://www.w3.org/2000/svg"/>');
+            file_put_contents($root . '/brand/' . $file, '<svg xmlns="http://www.w3.org/2000/svg"/>');
         }
         $tester = new CommandTester(new BrandCheckCommand(new Paths($root)));
 
